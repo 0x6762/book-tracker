@@ -30,8 +30,12 @@ class BookTrackerApp extends StatelessWidget {
       create: (context) => BookProvider(),
       child: MaterialApp(
         title: 'Book Tracker',
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.dark,
+          ),
           useMaterial3: true,
         ),
         home: const BookTrackerHomePage(),
@@ -73,10 +77,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Book Tracker'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
+      appBar: AppBar(title: const Text('Readr')),
       body: Column(
         children: [
           // Search Bar
@@ -148,38 +149,29 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // For now, just add a sample book
-          final sampleBook = BookEntity(
-            googleBooksId: 'sample_${DateTime.now().millisecondsSinceEpoch}',
-            title: 'Sample Book ${DateTime.now().millisecondsSinceEpoch}',
-            authors: 'Sample Author',
-            description: 'This is a sample book for testing',
-          );
-          context.read<BookProvider>().addBook(sampleBook);
-        },
-        child: const Icon(Icons.add),
-      ),
     );
   }
 
   Widget _buildSearchResults(BookProvider bookProvider) {
     if (bookProvider.searchResults.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
+            const Icon(Icons.search_off, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
             Text(
               'No books found',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[200],
+              ),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
               'Try a different search term',
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: TextStyle(fontSize: 16, color: Colors.grey[400]),
             ),
           ],
         ),
@@ -258,10 +250,10 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: Colors.blue[900]?.withOpacity(0.3),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.menu_book, size: 64, color: Colors.blue[400]),
+                child: Icon(Icons.menu_book, size: 64, color: Colors.blue[300]),
               ),
               const SizedBox(height: 24),
               Text(
@@ -269,7 +261,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.grey[800],
+                  color: Colors.grey[200],
                 ),
               ),
               const SizedBox(height: 12),
@@ -278,7 +270,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.grey[600],
+                  color: Colors.grey[400],
                   height: 1.5,
                 ),
               ),
@@ -289,18 +281,18 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.blue[100],
+                  color: Colors.blue[800]?.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.search, color: Colors.blue[600], size: 20),
+                    Icon(Icons.search, color: Colors.blue[300], size: 20),
                     const SizedBox(width: 8),
                     Text(
                       'Start by searching for a book',
                       style: TextStyle(
-                        color: Colors.blue[700],
+                        color: Colors.blue[200],
                         fontWeight: FontWeight.w500,
                       ),
                     ),
