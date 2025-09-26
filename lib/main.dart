@@ -312,30 +312,63 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
         return Card(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           elevation: 2,
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(12),
-            leading: book.thumbnailUrl != null
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: CachedNetworkImage(
-                      imageUrl: book.thumbnailUrl!,
-                      width: 60,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        width: 60,
-                        height: 80,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Book cover
+                book.thumbnailUrl != null
+                    ? Container(
+                        height: 100,
                         decoration: BoxDecoration(
-                          color: Colors.grey[200],
                           borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
-                        child: const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: book.thumbnailUrl!,
+                            height: 100,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              height: 100,
+                              width: 75, // 3:4 aspect ratio for 100 height
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              height: 100,
+                              width: 75, // 3:4 aspect ratio for 100 height
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.book,
+                                size: 30,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        width: 60,
-                        height: 80,
+                      )
+                    : Container(
+                        width: 75,
+                        height: 100,
                         decoration: BoxDecoration(
                           color: Colors.grey[300],
                           borderRadius: BorderRadius.circular(8),
@@ -346,53 +379,66 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
                           color: Colors.grey,
                         ),
                       ),
-                    ),
-                  )
-                : Container(
-                    width: 60,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.book, size: 30, color: Colors.grey),
+                const SizedBox(width: 16),
+                // Book details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        book.title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        book.authors,
+                        style: TextStyle(color: Colors.grey[400], fontSize: 16),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+                      if (book.publishedDate != null &&
+                          book.publishedDate!.isNotEmpty) ...[
+                        Text(
+                          'Published: ${book.publishedDate}',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                      ],
+                      if (book.pageCount != null) ...[
+                        Text(
+                          '${book.pageCount} pages',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                      ],
+                      const SizedBox(height: 16),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                            size: 28,
+                          ),
+                          onPressed: () => bookProvider.deleteBook(book.id!),
+                        ),
+                      ),
+                    ],
                   ),
-            title: Text(
-              book.title,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text(
-                  book.authors,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                if (book.publishedDate != null &&
-                    book.publishedDate!.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    'Published: ${book.publishedDate}',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                  ),
-                ],
-                if (book.pageCount != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    '${book.pageCount} pages',
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                  ),
-                ],
               ],
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red),
-              onPressed: () => bookProvider.deleteBook(book.id!),
             ),
           ),
         );
