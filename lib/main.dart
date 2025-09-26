@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'presentation/providers/book_provider.dart';
-import 'domain/entities/book.dart';
+import 'presentation/widgets/search_bar_widget.dart';
+import 'presentation/widgets/book_card_widget.dart';
+import 'presentation/widgets/search_result_card_widget.dart';
+import 'presentation/widgets/empty_state_widget.dart';
+import 'presentation/constants/app_constants.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,11 +32,11 @@ class BookTrackerApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => BookProvider(),
       child: MaterialApp(
-        title: 'Book Tracker',
+        title: AppConstants.appTitle,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
+            seedColor: AppConstants.primaryBlue,
             brightness: Brightness.dark,
           ),
           useMaterial3: true,
@@ -61,11 +64,6 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<BookProvider>().loadBooks();
     });
-
-    // Listen to text changes to update the clear icon
-    _searchController.addListener(() {
-      setState(() {});
-    });
   }
 
   @override
@@ -77,49 +75,11 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Readr')),
+      appBar: AppBar(title: const Text(AppConstants.appName)),
       body: Column(
         children: [
           // Search Bar
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search for books... (min 3 characters)',
-                prefixIcon: const Icon(Icons.search),
-                border: const OutlineInputBorder(),
-                suffixIcon: Consumer<BookProvider>(
-                  builder: (context, bookProvider, child) {
-                    if (bookProvider.isSearching) {
-                      return const Padding(
-                        padding: EdgeInsets.all(12.0),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      );
-                    }
-                    // Show clear icon if there's text in the field
-                    if (_searchController.text.isNotEmpty) {
-                      return IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          context.read<BookProvider>().searchBooks('');
-                        },
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
-              ),
-              onChanged: (query) {
-                context.read<BookProvider>().searchBooks(query);
-              },
-            ),
-          ),
+          SearchBarWidget(controller: _searchController),
           // Content
           Expanded(
             child: Consumer<BookProvider>(
@@ -154,27 +114,10 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
 
   Widget _buildSearchResults(BookProvider bookProvider) {
     if (bookProvider.searchResults.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.search_off, size: 64, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              'No books found',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[200],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Try a different search term',
-              style: TextStyle(fontSize: 16, color: Colors.grey[400]),
-            ),
-          ],
-        ),
+      return const EmptyStateWidget(
+        title: 'No books found',
+        subtitle: 'Try a different search term',
+        icon: Icons.search_off,
       );
     }
 
@@ -182,39 +125,14 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
       itemCount: bookProvider.searchResults.length,
       itemBuilder: (context, index) {
         final book = bookProvider.searchResults[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: ListTile(
-            leading: book.thumbnailUrl != null
-                ? CachedNetworkImage(
-                    imageUrl: book.thumbnailUrl!,
-                    width: 50,
-                    height: 70,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      width: 50,
-                      height: 70,
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) =>
-                        const Icon(Icons.book, size: 50),
-                  )
-                : const Icon(Icons.book, size: 50),
-            title: Text(book.title),
-            subtitle: Text(book.authors),
-            trailing: IconButton(
-              icon: const Icon(Icons.add),
-              onPressed: () {
-                context.read<BookProvider>().addBook(book);
-                // Clear search input and results after adding
-                _searchController.clear();
-                context.read<BookProvider>().searchBooks('');
-              },
-            ),
-          ),
+        return SearchResultCardWidget(
+          book: book,
+          onAdd: () {
+            context.read<BookProvider>().addBook(book);
+            // Clear search input and results after adding
+            _searchController.clear();
+            context.read<BookProvider>().searchBooks('');
+          },
         );
       },
     );
@@ -241,67 +159,12 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     }
 
     if (bookProvider.books.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.blue[900]?.withOpacity(0.3),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.menu_book, size: 64, color: Colors.blue[300]),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Your Library is Empty',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[200],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Search for books above and add them to your personal collection',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[400],
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.blue[800]?.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.search, color: Colors.blue[300], size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Start by searching for a book',
-                      style: TextStyle(
-                        color: Colors.blue[200],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+      return const EmptyStateWidget(
+        title: 'Your Library is Empty',
+        subtitle:
+            'Search for books above and add them to your personal collection',
+        actionText: 'Start by searching for a book',
+        icon: Icons.menu_book,
       );
     }
 
@@ -309,139 +172,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
       itemCount: bookProvider.books.length,
       itemBuilder: (context, index) {
         final book = bookProvider.books[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          elevation: 2,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Book cover
-                book.thumbnailUrl != null
-                    ? Container(
-                        height: 100,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: CachedNetworkImage(
-                            imageUrl: book.thumbnailUrl!,
-                            height: 100,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              height: 100,
-                              width: 75, // 3:4 aspect ratio for 100 height
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Center(
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              height: 100,
-                              width: 75, // 3:4 aspect ratio for 100 height
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.book,
-                                size: 30,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
-                        ),
-                      )
-                    : Container(
-                        width: 75,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.book,
-                          size: 30,
-                          color: Colors.grey,
-                        ),
-                      ),
-                const SizedBox(width: 16),
-                // Book details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        book.title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        book.authors,
-                        style: TextStyle(color: Colors.grey[400], fontSize: 16),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-                      if (book.publishedDate != null &&
-                          book.publishedDate!.isNotEmpty) ...[
-                        Text(
-                          'Published: ${book.publishedDate}',
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                      ],
-                      if (book.pageCount != null) ...[
-                        Text(
-                          '${book.pageCount} pages',
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                      ],
-                      const SizedBox(height: 16),
-                      Align(
-                        alignment: Alignment.bottomRight,
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.delete_outline,
-                            color: Colors.red,
-                            size: 28,
-                          ),
-                          onPressed: () => bookProvider.deleteBook(book.id!),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        return BookCardWidget(book: book);
       },
     );
   }

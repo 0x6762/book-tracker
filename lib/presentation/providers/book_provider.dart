@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../data/database/app_database.dart';
 import '../../data/datasources/google_books_api_service.dart';
@@ -8,9 +7,7 @@ import '../../domain/repositories/books_repository.dart';
 
 class BookProvider with ChangeNotifier {
   final BooksRepository _repository;
-  Timer? _searchDebounceTimer;
   static const int _minQueryLength = 3;
-  static const Duration _debounceDelay = Duration(milliseconds: 500);
 
   List<BookEntity> _books = [];
   List<BookEntity> _searchResults = [];
@@ -65,9 +62,6 @@ class BookProvider with ChangeNotifier {
   }
 
   void searchBooks(String query) {
-    // Cancel previous timer
-    _searchDebounceTimer?.cancel();
-
     final trimmedQuery = query.trim();
 
     // Clear results immediately if query is empty
@@ -86,10 +80,8 @@ class BookProvider with ChangeNotifier {
       return;
     }
 
-    // Set up debounced search
-    _searchDebounceTimer = Timer(_debounceDelay, () {
-      _performSearch(trimmedQuery);
-    });
+    // Perform search immediately (no debouncing needed)
+    _performSearch(trimmedQuery);
   }
 
   Future<void> _performSearch(String query) async {
@@ -112,11 +104,5 @@ class BookProvider with ChangeNotifier {
   void _setSearching(bool searching) {
     _isSearching = searching;
     notifyListeners();
-  }
-
-  @override
-  void dispose() {
-    _searchDebounceTimer?.cancel();
-    super.dispose();
   }
 }
