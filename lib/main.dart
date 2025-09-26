@@ -69,10 +69,25 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Search for books...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: 'Search for books... (min 3 characters)',
+                prefixIcon: const Icon(Icons.search),
+                border: const OutlineInputBorder(),
+                suffixIcon: Consumer<BookProvider>(
+                  builder: (context, bookProvider, child) {
+                    if (bookProvider.isSearching) {
+                      return const Padding(
+                        padding: EdgeInsets.all(12.0),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
               ),
               onChanged: (query) {
                 context.read<BookProvider>().searchBooks(query);
@@ -85,7 +100,16 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
               builder: (context, bookProvider, child) {
                 // Show search results if searching
                 if (bookProvider.isSearching) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Searching for books...'),
+                      ],
+                    ),
+                  );
                 }
 
                 if (bookProvider.searchResults.isNotEmpty) {
@@ -116,6 +140,27 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
   }
 
   Widget _buildSearchResults(BookProvider bookProvider) {
+    if (bookProvider.searchResults.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No books found',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Try a different search term',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       itemCount: bookProvider.searchResults.length,
       itemBuilder: (context, index) {
