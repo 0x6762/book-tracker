@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/book_provider.dart';
 import '../constants/app_constants.dart';
-import 'book_cover_widget.dart';
 import '../../domain/entities/book.dart';
 
 class SearchResultCardWidget extends StatelessWidget {
@@ -19,12 +18,32 @@ class SearchResultCardWidget extends StatelessWidget {
         vertical: AppConstants.smallSpacing,
       ),
       child: ListTile(
-        leading: BookCoverWidget(
-          thumbnailUrl: book.thumbnailUrl,
+        leading: Container(
           height: AppConstants.searchBookHeight,
           width: AppConstants.searchBookWidth,
-          iconSize: 50,
-          showShadow: false,
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+          ),
+          child: book.thumbnailUrl != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.circular(
+                    AppConstants.borderRadius,
+                  ),
+                  child: Image.network(
+                    book.thumbnailUrl!,
+                    height: AppConstants.searchBookHeight,
+                    width: AppConstants.searchBookWidth,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return _buildPlaceholder();
+                    },
+                    errorBuilder: (context, error, stackTrace) =>
+                        _buildErrorWidget(),
+                  ),
+                )
+              : _buildErrorWidget(),
         ),
         title: Text(book.title),
         subtitle: Text(book.authors),
@@ -39,6 +58,30 @@ class SearchResultCardWidget extends StatelessWidget {
               },
         ),
       ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      height: AppConstants.searchBookHeight,
+      width: AppConstants.searchBookWidth,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+      ),
+      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Container(
+      height: AppConstants.searchBookHeight,
+      width: AppConstants.searchBookWidth,
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+      ),
+      child: const Icon(Icons.book, size: 50, color: Colors.grey),
     );
   }
 }

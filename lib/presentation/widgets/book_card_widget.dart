@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/book_provider.dart';
 import '../constants/app_constants.dart';
-import 'book_cover_widget.dart';
 import '../../domain/entities/book.dart';
 
 class BookCardWidget extends StatelessWidget {
@@ -25,11 +25,34 @@ class BookCardWidget extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Book cover
-            BookCoverWidget(
-              thumbnailUrl: book.thumbnailUrl,
+            Container(
               height: AppConstants.bookCoverHeight,
               width: AppConstants.bookCoverWidth,
-              iconSize: AppConstants.bookIconSize,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: book.thumbnailUrl != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.borderRadius,
+                      ),
+                      child: CachedNetworkImage(
+                        imageUrl: book.thumbnailUrl!,
+                        height: AppConstants.bookCoverHeight,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => _buildPlaceholder(),
+                        errorWidget: (context, url, error) =>
+                            _buildErrorWidget(),
+                      ),
+                    )
+                  : _buildErrorWidget(),
             ),
             const SizedBox(width: AppConstants.largeSpacing),
             // Book details
@@ -99,6 +122,34 @@ class BookCardWidget extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      height: AppConstants.bookCoverHeight,
+      width: AppConstants.bookCoverWidth,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+      ),
+      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return Container(
+      height: AppConstants.bookCoverHeight,
+      width: AppConstants.bookCoverWidth,
+      decoration: BoxDecoration(
+        color: Colors.grey[300],
+        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+      ),
+      child: Icon(
+        Icons.book,
+        size: AppConstants.bookIconSize,
+        color: Colors.grey,
       ),
     );
   }
