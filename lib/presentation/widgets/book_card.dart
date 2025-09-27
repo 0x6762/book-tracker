@@ -3,11 +3,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../constants/app_constants.dart';
 import '../../domain/entities/book.dart';
 
-class BookCardWidget extends StatelessWidget {
+class BookCard extends StatelessWidget {
   final BookEntity book;
   final VoidCallback? onDelete;
 
-  const BookCardWidget({super.key, required this.book, this.onDelete});
+  const BookCard({super.key, required this.book, this.onDelete});
 
   @override
   Widget build(BuildContext context) {

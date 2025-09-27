@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/book_provider.dart';
-import '../widgets/search_result_card_widget.dart';
-import '../widgets/empty_state_widget.dart';
-import '../widgets/shared_search_bar_widget.dart';
-import '../constants/app_constants.dart';
+import '../widgets/search_result_card.dart';
+import '../widgets/empty_state.dart';
+import '../widgets/search_input.dart';
 
 class SearchScreen extends StatefulWidget {
   final TextEditingController searchController;
@@ -66,10 +65,10 @@ class _SearchScreenState extends State<SearchScreen>
             position: _slideAnimation,
             child: Column(
               children: [
-                // Shared Search Bar with Hero Animation
+                // Search Bar with Hero Animation
                 Hero(
                   tag: 'search_bar',
-                  child: SharedSearchBarWidget(
+                  child: SearchInput(
                     controller: widget.searchController,
                     isSearchMode: true,
                     showBackButton: true,
@@ -93,19 +92,27 @@ class _SearchScreenState extends State<SearchScreen>
                         );
                       }
 
-                      if (bookProvider.searchResults.isEmpty) {
-                        return const EmptyStateWidget(
+                      // Only show empty state if user has searched but found no results
+                      if (bookProvider.searchResults.isEmpty &&
+                          widget.searchController.text.isNotEmpty) {
+                        return const EmptyState(
                           title: 'No books found',
                           subtitle: 'Try a different search term',
                           icon: Icons.search_off,
                         );
                       }
 
+                      // Show blank screen when no search has been performed
+                      if (bookProvider.searchResults.isEmpty &&
+                          widget.searchController.text.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+
                       return ListView.builder(
                         itemCount: bookProvider.searchResults.length,
                         itemBuilder: (context, index) {
                           final book = bookProvider.searchResults[index];
-                          return SearchResultCardWidget(
+                          return SearchResultCard(
                             book: book,
                             onAdd: () {
                               context.read<BookProvider>().addBook(book);

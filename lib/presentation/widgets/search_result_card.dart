@@ -4,11 +4,11 @@ import '../providers/book_provider.dart';
 import '../constants/app_constants.dart';
 import '../../domain/entities/book.dart';
 
-class SearchResultCardWidget extends StatelessWidget {
+class SearchResultCard extends StatelessWidget {
   final BookEntity book;
   final VoidCallback? onAdd;
 
-  const SearchResultCardWidget({super.key, required this.book, this.onAdd});
+  const SearchResultCard({super.key, required this.book, this.onAdd});
 
   @override
   Widget build(BuildContext context) {

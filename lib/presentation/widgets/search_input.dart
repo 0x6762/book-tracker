@@ -3,14 +3,14 @@ import 'package:provider/provider.dart';
 import '../providers/book_provider.dart';
 import '../constants/app_constants.dart';
 
-class SharedSearchBarWidget extends StatefulWidget {
+class SearchInput extends StatefulWidget {
   final TextEditingController controller;
   final VoidCallback? onTap;
   final bool isSearchMode;
   final bool showBackButton;
   final VoidCallback? onBack;
 
-  const SharedSearchBarWidget({
+  const SearchInput({
     super.key,
     required this.controller,
     this.onTap,
@@ -20,10 +20,10 @@ class SharedSearchBarWidget extends StatefulWidget {
   });
 
   @override
-  State<SharedSearchBarWidget> createState() => _SharedSearchBarWidgetState();
+  State<SearchInput> createState() => _SearchInputState();
 }
 
-class _SharedSearchBarWidgetState extends State<SharedSearchBarWidget>
+class _SearchInputState extends State<SearchInput>
     with TickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
@@ -93,31 +93,33 @@ class _SharedSearchBarWidgetState extends State<SharedSearchBarWidget>
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+      child: Material(
+        color: Colors.transparent,
+        child: TextField(
+          enabled: false, // Disable interaction
+          style: const TextStyle(color: Colors.black87, fontSize: 16),
+          decoration: InputDecoration(
+            hintText: 'Search for books...',
+            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
+            prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+            filled: true,
+            fillColor: Colors.grey[100],
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(25),
+              borderSide: BorderSide.none,
             ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          child: Row(
-            children: [
-              Icon(Icons.search, color: Colors.grey[600], size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Search for books...',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 16),
-                ),
-              ),
-            ],
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(25),
+              borderSide: BorderSide.none,
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(25),
+              borderSide: BorderSide.none,
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 16,
+            ),
           ),
         ),
       ),
@@ -130,6 +132,7 @@ class _SharedSearchBarWidgetState extends State<SharedSearchBarWidget>
       child: TextField(
         controller: widget.controller,
         autofocus: true,
+        style: const TextStyle(color: Colors.black87, fontSize: 16),
         decoration: InputDecoration(
           hintText: 'Search for books...',
           hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),

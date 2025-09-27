@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'presentation/providers/book_provider.dart';
-import 'presentation/widgets/shared_search_bar_widget.dart';
-import 'presentation/widgets/book_card_widget.dart';
-import 'presentation/widgets/empty_state_widget.dart';
+import 'presentation/widgets/search_input.dart';
+import 'presentation/widgets/book_card.dart';
+import 'presentation/widgets/empty_state.dart';
 import 'presentation/screens/search_screen.dart';
 import 'presentation/constants/app_constants.dart';
 
@@ -109,10 +109,10 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
       appBar: AppBar(title: const Text(AppConstants.appName)),
       body: Column(
         children: [
-          // Shared Search Bar with Hero Animation
+          // Search Bar with Hero Animation
           Hero(
             tag: 'search_bar',
-            child: SharedSearchBarWidget(
+            child: SearchInput(
               controller: _searchController,
               onTap: _navigateToSearch,
               isSearchMode: false,
@@ -152,7 +152,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     }
 
     if (bookProvider.books.isEmpty) {
-      return const EmptyStateWidget(
+      return const EmptyState(
         title: 'Your Library is Empty',
         subtitle:
             'Search for books above and add them to your personal collection',
@@ -165,7 +165,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
       itemCount: bookProvider.books.length,
       itemBuilder: (context, index) {
         final book = bookProvider.books[index];
-        return BookCardWidget(
+        return BookCard(
           book: book,
           onDelete: () {
             context.read<BookProvider>().deleteBook(book.id!);

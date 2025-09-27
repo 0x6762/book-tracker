@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
 
-class EmptyStateWidget extends StatelessWidget {
+class EmptyState extends StatelessWidget {
   final String title;
   final String subtitle;
   final String? actionText;
   final IconData icon;
 
-  const EmptyStateWidget({
+  const EmptyState({
     super.key,
     required this.title,
     required this.subtitle,
