@@ -76,38 +76,44 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text(AppConstants.appName)),
-      body: Column(
-        children: [
-          // Search Bar
-          SearchBarWidget(controller: _searchController),
-          // Content
-          Expanded(
-            child: Consumer<BookProvider>(
-              builder: (context, bookProvider, child) {
-                // Show search results if searching
-                if (bookProvider.isSearching) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Searching for books...'),
-                      ],
-                    ),
-                  );
-                }
+      body: GestureDetector(
+        onTap: () {
+          // Unfocus search field when tapping outside
+          FocusScope.of(context).unfocus();
+        },
+        child: Column(
+          children: [
+            // Search Bar
+            SearchBarWidget(controller: _searchController),
+            // Content
+            Expanded(
+              child: Consumer<BookProvider>(
+                builder: (context, bookProvider, child) {
+                  // Show search results if searching
+                  if (bookProvider.isSearching) {
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Searching for books...'),
+                        ],
+                      ),
+                    );
+                  }
 
-                if (bookProvider.searchResults.isNotEmpty) {
-                  return _buildSearchResults(bookProvider);
-                }
+                  if (bookProvider.searchResults.isNotEmpty) {
+                    return _buildSearchResults(bookProvider);
+                  }
 
-                // Show regular book list
-                return _buildBookList(bookProvider);
-              },
+                  // Show regular book list
+                  return _buildBookList(bookProvider);
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -172,7 +178,12 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
       itemCount: bookProvider.books.length,
       itemBuilder: (context, index) {
         final book = bookProvider.books[index];
-        return BookCardWidget(book: book);
+        return BookCardWidget(
+          book: book,
+          onDelete: () {
+            context.read<BookProvider>().deleteBook(book.id!);
+          },
+        );
       },
     );
   }

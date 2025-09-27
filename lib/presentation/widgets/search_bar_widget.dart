@@ -35,10 +35,27 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
       child: TextField(
         controller: widget.controller,
         decoration: InputDecoration(
-          hintText:
-              'Search for books... (min ${AppConstants.minQueryLength} characters)',
-          prefixIcon: const Icon(Icons.search),
-          border: const OutlineInputBorder(),
+          hintText: 'Search for books...',
+          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
+          prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+          filled: true,
+          fillColor: Colors.grey[100],
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(56), // Pill shape
+            borderSide: BorderSide.none, // No border
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(56),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(56),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
           suffixIcon: Consumer<BookProvider>(
             builder: (context, bookProvider, child) {
               if (bookProvider.isSearching) {
@@ -54,7 +71,7 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
               // Show clear icon if there's text in the field
               if (widget.controller.text.isNotEmpty) {
                 return IconButton(
-                  icon: const Icon(Icons.clear),
+                  icon: Icon(Icons.clear, color: Colors.grey[600]),
                   onPressed: () {
                     widget.controller.clear();
                     context.read<BookProvider>().searchBooks('');
