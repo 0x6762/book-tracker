@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'domain/entities/book.dart';
 import 'presentation/providers/book_provider.dart';
 import 'presentation/widgets/search_input.dart';
 import 'presentation/widgets/book_card.dart';
 import 'presentation/widgets/empty_state.dart';
+import 'presentation/widgets/progress_update_modal.dart';
 import 'presentation/screens/search_screen.dart';
 import 'presentation/constants/app_constants.dart';
 import 'presentation/theme/app_theme.dart';
@@ -61,7 +63,9 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     super.initState();
     // Load books when the page initializes
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BookProvider>().loadBooks();
+      if (mounted) {
+        context.read<BookProvider>().loadBooks();
+      }
     });
   }
 
@@ -176,8 +180,37 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
           onDelete: () {
             context.read<BookProvider>().deleteBook(book.id!);
           },
+          onStartReading: () {
+            context.read<BookProvider>().startReading(book.id!);
+          },
+          onUpdateProgress: () {
+            _showProgressModal(context, book, bookProvider);
+          },
+          onCompleteReading: () {
+            context.read<BookProvider>().completeReading(book.id!);
+          },
         );
       },
+    );
+  }
+
+  void _showProgressModal(
+    BuildContext context,
+    BookEntity book,
+    BookProvider bookProvider,
+  ) {
+    showDialog(
+      context: context,
+      builder: (context) => ProgressUpdateModal(
+        book: book,
+        onUpdateProgress: (currentPage) {
+          bookProvider.updateProgress(book.id!, currentPage);
+          Navigator.of(context).pop();
+        },
+        onCompleteReading: () {
+          bookProvider.completeReading(book.id!);
+        },
+      ),
     );
   }
 }

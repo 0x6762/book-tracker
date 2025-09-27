@@ -19,12 +19,35 @@ class Books extends Table {
   IntColumn get pageCount => integer().nullable()();
 }
 
-@DriftDatabase(tables: [Books])
+// Reading progress table
+class ReadingProgress extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get bookId => integer().references(Books, #id)();
+  IntColumn get currentPage => integer()();
+  DateTimeColumn get startDate => dateTime()();
+  DateTimeColumn get endDate => dateTime().nullable()();
+  BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
+}
+
+@DriftDatabase(tables: [Books, ReadingProgress])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (Migrator m) async {
+      await m.createAll();
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        // Add ReadingProgress table
+        await m.createTable(readingProgress);
+      }
+    },
+  );
 
   // Books DAO methods
   Future<List<Book>> getAllBooks() => select(books).get();
@@ -33,6 +56,26 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteBook(int id) =>
       (delete(books)..where((tbl) => tbl.id.equals(id))).go();
+
+  // Reading progress DAO methods
+  Future<List<ReadingProgressData>> getAllReadingProgress() =>
+      select(readingProgress).get();
+
+  Future<ReadingProgressData?> getReadingProgressByBookId(int bookId) =>
+      (select(
+        readingProgress,
+      )..where((tbl) => tbl.bookId.equals(bookId))).getSingleOrNull();
+
+  Future<int> insertReadingProgress(ReadingProgressCompanion progress) =>
+      into(readingProgress).insert(progress);
+
+  Future<int> updateReadingProgress(ReadingProgressCompanion progress) =>
+      (update(
+        readingProgress,
+      )..where((tbl) => tbl.id.equals(progress.id.value))).write(progress);
+
+  Future<int> deleteReadingProgress(int id) =>
+      (delete(readingProgress)..where((tbl) => tbl.id.equals(id))).go();
 }
 
 LazyDatabase _openConnection() {

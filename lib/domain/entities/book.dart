@@ -1,3 +1,5 @@
+import 'reading_progress.dart';
+
 class BookEntity {
   final int? id;
   final String googleBooksId;
@@ -7,6 +9,7 @@ class BookEntity {
   final String? thumbnailUrl;
   final String? publishedDate;
   final int? pageCount;
+  final ReadingProgress? readingProgress;
 
   const BookEntity({
     this.id,
@@ -17,6 +20,7 @@ class BookEntity {
     this.thumbnailUrl,
     this.publishedDate,
     this.pageCount,
+    this.readingProgress,
   });
 
   @override
@@ -27,4 +31,21 @@ class BookEntity {
 
   @override
   int get hashCode => googleBooksId.hashCode;
+
+  // Reading progress helpers
+  double get progressPercentage {
+    if (readingProgress == null || pageCount == null || pageCount! <= 0) {
+      return 0.0;
+    }
+    return readingProgress!.getProgressPercentage(pageCount!);
+  }
+
+  bool get isCurrentlyReading =>
+      readingProgress != null && !readingProgress!.isCompleted;
+
+  bool get isCompleted => readingProgress?.isCompleted ?? false;
+
+  bool get hasReadingProgress => readingProgress != null;
+
+  int get daysReading => readingProgress?.getDaysReading() ?? 0;
 }

@@ -4,9 +4,15 @@ import '../../data/datasources/google_books_api_service.dart';
 import '../../data/repositories/books_repository_impl.dart';
 import '../../domain/entities/book.dart';
 import '../../domain/repositories/books_repository.dart';
+import '../../domain/usecases/start_reading_usecase.dart';
+import '../../domain/usecases/update_progress_usecase.dart';
+import '../../domain/usecases/complete_reading_usecase.dart';
 
 class BookProvider with ChangeNotifier {
   final BooksRepository _repository;
+  late final StartReadingUseCase _startReadingUseCase;
+  late final UpdateProgressUseCase _updateProgressUseCase;
+  late final CompleteReadingUseCase _completeReadingUseCase;
   static const int _minQueryLength = 3;
 
   List<BookEntity> _books = [];
@@ -27,7 +33,11 @@ class BookProvider with ChangeNotifier {
           BooksRepositoryImpl(
             database: AppDatabase(),
             apiService: GoogleBooksApiService(),
-          );
+          ) {
+    _startReadingUseCase = StartReadingUseCase(_repository);
+    _updateProgressUseCase = UpdateProgressUseCase(_repository);
+    _completeReadingUseCase = CompleteReadingUseCase(_repository);
+  }
 
   Future<void> loadBooks() async {
     _setLoading(true);
@@ -104,5 +114,47 @@ class BookProvider with ChangeNotifier {
   void _setSearching(bool searching) {
     _isSearching = searching;
     notifyListeners();
+  }
+
+  // Reading progress methods
+  Future<void> startReading(int bookId) async {
+    try {
+      await _startReadingUseCase(bookId);
+      await _refreshBooks();
+    } catch (e) {
+      _error = 'Failed to start reading: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateProgress(int bookId, int currentPage) async {
+    try {
+      await _updateProgressUseCase(bookId, currentPage);
+      await _refreshBooks();
+    } catch (e) {
+      _error = 'Failed to update progress: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> completeReading(int bookId) async {
+    try {
+      await _completeReadingUseCase(bookId);
+      await _refreshBooks();
+    } catch (e) {
+      _error = 'Failed to complete reading: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> _refreshBooks() async {
+    try {
+      _books = await _repository.getAllBooks();
+      _error = null;
+      notifyListeners();
+    } catch (e) {
+      _error = 'Failed to refresh books: $e';
+      notifyListeners();
+    }
   }
 }

@@ -6,8 +6,18 @@ import '../../domain/entities/book.dart';
 class BookCard extends StatelessWidget {
   final BookEntity book;
   final VoidCallback? onDelete;
+  final VoidCallback? onStartReading;
+  final VoidCallback? onUpdateProgress;
+  final VoidCallback? onCompleteReading;
 
-  const BookCard({super.key, required this.book, this.onDelete});
+  const BookCard({
+    super.key,
+    required this.book,
+    this.onDelete,
+    this.onStartReading,
+    this.onUpdateProgress,
+    this.onCompleteReading,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -113,6 +123,13 @@ class BookCard extends StatelessWidget {
                       ),
                       const SizedBox(height: AppConstants.smallSpacing),
                     ],
+                    // Reading progress section
+                    if (book.hasReadingProgress) ...[
+                      _buildProgressSection(),
+                      const SizedBox(height: AppConstants.smallSpacing),
+                    ],
+                    // Action buttons
+                    _buildActionButtons(),
                   ],
                 ),
               ),
@@ -174,6 +191,135 @@ class BookCard extends StatelessWidget {
         size: AppConstants.bookIconSize,
         color: Colors.grey,
       ),
+    );
+  }
+
+  Widget _buildProgressSection() {
+    final progress = book.readingProgress!;
+    final progressPercentage = book.progressPercentage;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Progress bar
+        Container(
+          width: double.infinity,
+          height: 6,
+          decoration: BoxDecoration(
+            color: Colors.grey[700],
+            borderRadius: BorderRadius.circular(3),
+          ),
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: progressPercentage / 100,
+            child: Container(
+              decoration: BoxDecoration(
+                color: book.isCompleted ? Colors.green : Colors.blue,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        // Progress text
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              '${progressPercentage.toStringAsFixed(1)}% complete',
+              style: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (book.pageCount != null)
+              Text(
+                '${progress.currentPage}/${book.pageCount}',
+                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+              ),
+          ],
+        ),
+        if (book.daysReading > 0) ...[
+          const SizedBox(height: 2),
+          Text(
+            '${book.daysReading} days reading',
+            style: TextStyle(color: Colors.grey[500], fontSize: 11),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Row(
+      children: [
+        if (!book.hasReadingProgress) ...[
+          // Start reading button
+          ElevatedButton.icon(
+            onPressed: onStartReading,
+            icon: const Icon(Icons.play_arrow, size: 16),
+            label: const Text('Start Reading'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              textStyle: const TextStyle(fontSize: 12),
+            ),
+          ),
+        ] else if (book.isCurrentlyReading) ...[
+          // Update progress button
+          ElevatedButton.icon(
+            onPressed: onUpdateProgress,
+            icon: const Icon(Icons.edit, size: 16),
+            label: const Text('Update'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              textStyle: const TextStyle(fontSize: 12),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Complete button
+          ElevatedButton.icon(
+            onPressed: onCompleteReading,
+            icon: const Icon(Icons.check, size: 16),
+            label: const Text('Complete'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              textStyle: const TextStyle(fontSize: 12),
+            ),
+          ),
+        ] else if (book.isCompleted) ...[
+          // Completed indicator
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.green.withOpacity(0.5)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle, size: 16, color: Colors.green),
+                const SizedBox(width: 4),
+                Text(
+                  'Completed',
+                  style: TextStyle(
+                    color: Colors.green[700],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
