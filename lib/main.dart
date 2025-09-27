@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'presentation/providers/book_provider.dart';
 import 'presentation/widgets/search_input.dart';
 import 'presentation/widgets/book_card.dart';
@@ -16,8 +15,10 @@ void main() async {
   // Make sure to copy .env.example to .env and add your API key
   try {
     await dotenv.load(fileName: ".env");
+    print('✅ .env file loaded successfully');
   } catch (e) {
-    print('Warning: Could not load .env file. Using default values.');
+    print('⚠️ Warning: Could not load .env file: $e');
+    print('📝 Please create a .env file with your Google Books API key');
     // Set default values if .env file is not available
     dotenv.testLoad(fileInput: 'GOOGLE_BOOKS_API_KEY=your_api_key_here');
   }
@@ -41,7 +42,11 @@ class BookTrackerApp extends StatelessWidget {
             brightness: Brightness.dark,
           ),
           useMaterial3: true,
-          textTheme: GoogleFonts.interTextTheme(),
+          textTheme: const TextTheme().apply(
+            fontFamily: 'Inter',
+            bodyColor: Colors.white,
+            displayColor: Colors.white,
+          ),
         ),
         home: const BookTrackerHomePage(),
       ),

@@ -16,7 +16,12 @@ class GoogleBooksApiService {
   Future<List<BookEntity>> searchBooks(String query) async {
     try {
       final apiKey = dotenv.env['GOOGLE_BOOKS_API_KEY'];
+      print(
+        '🔑 API Key loaded: ${apiKey != null ? 'Yes (${apiKey.length} chars)' : 'No'}',
+      );
+
       if (apiKey == null || apiKey.isEmpty) {
+        print('❌ API key is null or empty');
         throw Exception(
           'Google Books API key not found. Please check your .env file.',
         );
@@ -24,10 +29,13 @@ class GoogleBooksApiService {
 
       // Validate API key format (basic check)
       if (apiKey == 'your_api_key_here' || apiKey.length < 20) {
+        print('❌ API key is invalid: $apiKey');
         throw Exception(
           'Invalid API key. Please set a valid Google Books API key in your .env file.',
         );
       }
+
+      print('🔍 Searching for: $query');
 
       final response = await _dio.get(
         '/volumes',
@@ -36,11 +44,14 @@ class GoogleBooksApiService {
 
       if (response.statusCode == 200) {
         final List<dynamic> items = response.data['items'] ?? [];
+        print('✅ Found ${items.length} books');
         return items.map((item) => _mapToBookEntity(item)).toList();
       } else {
+        print('❌ API Error: ${response.statusCode}');
         throw Exception('Failed to search books: ${response.statusCode}');
       }
     } on DioException catch (e) {
+      print('🌐 Network Error: ${e.type} - ${e.message}');
       if (e.response?.statusCode == 403) {
         throw Exception('API key is invalid or quota exceeded');
       } else if (e.response?.statusCode == 400) {
@@ -49,6 +60,7 @@ class GoogleBooksApiService {
         throw Exception('Network error: ${e.message}');
       }
     } catch (e) {
+      print('💥 Unexpected Error: $e');
       throw Exception('Unexpected error: $e');
     }
   }
