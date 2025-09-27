@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'presentation/providers/book_provider.dart';
-import 'presentation/widgets/search_bar_widget.dart';
+import 'presentation/widgets/shared_search_bar_widget.dart';
 import 'presentation/widgets/book_card_widget.dart';
-import 'presentation/widgets/search_result_card_widget.dart';
 import 'presentation/widgets/empty_state_widget.dart';
+import 'presentation/screens/search_screen.dart';
 import 'presentation/constants/app_constants.dart';
 
 void main() async {
@@ -72,75 +72,62 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text(AppConstants.appName)),
-      body: GestureDetector(
-        onTap: () {
-          // Unfocus search field when tapping outside
-          FocusScope.of(context).unfocus();
-        },
-        child: Column(
-          children: [
-            // Search Bar
-            SearchBarWidget(controller: _searchController),
-            // Content
-            Expanded(
-              child: Consumer<BookProvider>(
-                builder: (context, bookProvider, child) {
-                  // Show search results if searching
-                  if (bookProvider.isSearching) {
-                    return const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(),
-                          SizedBox(height: 16),
-                          Text('Searching for books...'),
-                        ],
-                      ),
-                    );
-                  }
-
-                  if (bookProvider.searchResults.isNotEmpty) {
-                    return _buildSearchResults(bookProvider);
-                  }
-
-                  // Show regular book list
-                  return _buildBookList(bookProvider);
-                },
-              ),
-            ),
-          ],
+  void _navigateToSearch() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => SearchScreen(
+          searchController: _searchController,
+          onBack: () {
+            Navigator.of(context).pop();
+            _searchController.clear();
+            context.read<BookProvider>().searchBooks('');
+          },
         ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 1.0);
+          const end = Offset.zero;
+          const curve = Curves.easeOutCubic;
+
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 400),
       ),
     );
   }
 
-  Widget _buildSearchResults(BookProvider bookProvider) {
-    if (bookProvider.searchResults.isEmpty) {
-      return const EmptyStateWidget(
-        title: 'No books found',
-        subtitle: 'Try a different search term',
-        icon: Icons.search_off,
-      );
-    }
-
-    return ListView.builder(
-      itemCount: bookProvider.searchResults.length,
-      itemBuilder: (context, index) {
-        final book = bookProvider.searchResults[index];
-        return SearchResultCardWidget(
-          book: book,
-          onAdd: () {
-            context.read<BookProvider>().addBook(book);
-            // Clear search input and results after adding
-            _searchController.clear();
-            context.read<BookProvider>().searchBooks('');
-          },
-        );
-      },
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text(AppConstants.appName)),
+      body: Column(
+        children: [
+          // Shared Search Bar with Hero Animation
+          Hero(
+            tag: 'search_bar',
+            child: SharedSearchBarWidget(
+              controller: _searchController,
+              onTap: _navigateToSearch,
+              isSearchMode: false,
+            ),
+          ),
+          // Content
+          Expanded(
+            child: Consumer<BookProvider>(
+              builder: (context, bookProvider, child) {
+                return _buildBookList(bookProvider);
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
