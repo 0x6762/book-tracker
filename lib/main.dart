@@ -7,6 +7,7 @@ import 'presentation/widgets/book_card.dart';
 import 'presentation/widgets/empty_state.dart';
 import 'presentation/screens/search_screen.dart';
 import 'presentation/constants/app_constants.dart';
+import 'presentation/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,18 +37,9 @@ class BookTrackerApp extends StatelessWidget {
       child: MaterialApp(
         title: AppConstants.appTitle,
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color.fromARGB(255, 32, 32, 32),
-            brightness: Brightness.dark,
-          ),
-          useMaterial3: true,
-          textTheme: const TextTheme().apply(
-            fontFamily: 'Inter',
-            bodyColor: Colors.white,
-            displayColor: Colors.white,
-          ),
-        ),
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: ThemeMode.system, // Follows system theme
         home: const BookTrackerHomePage(),
       ),
     );
@@ -116,7 +108,9 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
       appBar: AppBar(
         title: Text(
           AppConstants.appName,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
       body: Column(
