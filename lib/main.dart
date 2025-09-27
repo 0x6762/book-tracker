@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'presentation/providers/book_provider.dart';
 import 'presentation/widgets/search_input.dart';
 import 'presentation/widgets/book_card.dart';
@@ -36,10 +37,11 @@ class BookTrackerApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
-            seedColor: AppConstants.primaryBlue,
+            seedColor: const Color.fromARGB(255, 32, 32, 32),
             brightness: Brightness.dark,
           ),
           useMaterial3: true,
+          textTheme: GoogleFonts.interTextTheme(),
         ),
         home: const BookTrackerHomePage(),
       ),
@@ -106,7 +108,12 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text(AppConstants.appName)),
+      appBar: AppBar(
+        title: Text(
+          AppConstants.appName,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+      ),
       body: Column(
         children: [
           // Search Bar with Hero Animation

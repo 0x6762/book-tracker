@@ -116,9 +116,8 @@ class _SearchScreenState extends State<SearchScreen>
                             book: book,
                             onAdd: () {
                               context.read<BookProvider>().addBook(book);
-                              // Clear search input and results after adding
-                              widget.searchController.clear();
-                              context.read<BookProvider>().searchBooks('');
+                              // Navigate back to main screen after adding book
+                              widget.onBack();
                             },
                           );
                         },
