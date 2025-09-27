@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/book_provider.dart';
 import '../constants/app_constants.dart';
+import '../theme/app_theme.dart';
+import '../theme/color_schemes.dart';
 
 class SearchInput extends StatefulWidget {
   final TextEditingController controller;
@@ -89,6 +91,9 @@ class _SearchInputState extends State<SearchInput>
   }
 
   Widget _buildTapMode() {
+    final theme = Theme.of(context);
+    final customTheme = AppTheme.bookTrackerTheme(context);
+
     return GestureDetector(
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
@@ -97,23 +102,38 @@ class _SearchInputState extends State<SearchInput>
         color: Colors.transparent,
         child: TextField(
           enabled: false, // Disable interaction
-          style: const TextStyle(color: Colors.black87, fontSize: 16),
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
           decoration: InputDecoration(
             hintText: 'Search for books...',
-            hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
-            prefixIcon: Icon(Icons.search, color: Colors.grey[600]),
+            hintStyle: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            prefixIcon: Icon(
+              Icons.search,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
             filled: true,
-            fillColor: Colors.grey[100],
+            fillColor: theme.colorScheme.brightness == Brightness.light
+                ? AppColorSchemes.searchBarBackground
+                : AppColorSchemes.searchBarBackgroundDark,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(56),
+              borderRadius: BorderRadius.circular(
+                customTheme.borderRadius * 4.5,
+              ), // 12 * 4.5 = 54
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(56),
+              borderRadius: BorderRadius.circular(
+                customTheme.borderRadius * 4.5,
+              ),
               borderSide: BorderSide.none,
             ),
             disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(56),
+              borderRadius: BorderRadius.circular(
+                customTheme.borderRadius * 4.5,
+              ),
               borderSide: BorderSide.none,
             ),
             contentPadding: const EdgeInsets.symmetric(
@@ -127,35 +147,46 @@ class _SearchInputState extends State<SearchInput>
   }
 
   Widget _buildSearchMode() {
+    final theme = Theme.of(context);
+    final customTheme = AppTheme.bookTrackerTheme(context);
+
     return Material(
       color: Colors.transparent,
       child: TextField(
         controller: widget.controller,
         autofocus: true,
-        style: const TextStyle(color: Colors.black87, fontSize: 16),
+        style: theme.textTheme.bodyLarge?.copyWith(
+          color: theme.colorScheme.onSurface,
+        ),
         decoration: InputDecoration(
           hintText: 'Search for books...',
-          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 16),
+          hintStyle: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
           prefixIcon: widget.showBackButton
               ? IconButton(
-                  icon: const Icon(Icons.arrow_back),
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   onPressed: widget.onBack,
-                  color: Colors.grey[600],
                 )
-              : Icon(Icons.search, color: Colors.grey[600]),
+              : Icon(Icons.search, color: theme.colorScheme.onSurfaceVariant),
           filled: true,
-          fillColor: Colors.grey[100],
+          fillColor: theme.colorScheme.brightness == Brightness.light
+              ? AppColorSchemes.searchBarBackground
+              : AppColorSchemes.searchBarBackgroundDark,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(56),
+            borderRadius: BorderRadius.circular(customTheme.borderRadius * 4.5),
             borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(56),
+            borderRadius: BorderRadius.circular(customTheme.borderRadius * 4.5),
             borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(56),
-            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(customTheme.borderRadius * 4.5),
+            borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,
@@ -164,18 +195,24 @@ class _SearchInputState extends State<SearchInput>
           suffixIcon: Consumer<BookProvider>(
             builder: (context, bookProvider, child) {
               if (bookProvider.isSearching) {
-                return const Padding(
-                  padding: EdgeInsets.all(12.0),
+                return Padding(
+                  padding: const EdgeInsets.all(12.0),
                   child: SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: theme.colorScheme.primary,
+                    ),
                   ),
                 );
               }
               if (widget.controller.text.isNotEmpty) {
                 return IconButton(
-                  icon: Icon(Icons.clear, color: Colors.grey[600]),
+                  icon: Icon(
+                    Icons.clear,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   onPressed: () {
                     widget.controller.clear();
                     context.read<BookProvider>().searchBooks('');

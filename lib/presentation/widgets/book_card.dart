@@ -102,7 +102,7 @@ class BookCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: AppConstants.mediumSpacing),
+                    const SizedBox(height: AppConstants.smallSpacing),
                     if (book.pageCount != null) ...[
                       Text(
                         '${book.pageCount} pages',

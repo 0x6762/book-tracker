@@ -39,7 +39,7 @@ class BookTrackerApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.system, // Follows system theme
+        themeMode: ThemeMode.dark, // Force dark theme
         home: const BookTrackerHomePage(),
       ),
     );

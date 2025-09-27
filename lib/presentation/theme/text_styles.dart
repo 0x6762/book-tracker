@@ -8,14 +8,14 @@ class AppTextStyles {
   static const TextStyle displayLarge = TextStyle(
     fontFamily: fontFamily,
     fontSize: 32,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w600,
     letterSpacing: -0.5,
   );
 
   static const TextStyle displayMedium = TextStyle(
     fontFamily: fontFamily,
     fontSize: 28,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w600,
     letterSpacing: -0.25,
   );
 
@@ -105,7 +105,7 @@ class AppTextStyles {
   static const TextStyle appBarTitle = TextStyle(
     fontFamily: fontFamily,
     fontSize: 18,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w600,
   );
 
   static const TextStyle bookTitle = TextStyle(
