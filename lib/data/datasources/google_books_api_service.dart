@@ -13,6 +13,28 @@ class GoogleBooksApiService {
     _dio.options.receiveTimeout = const Duration(seconds: 10);
   }
 
+  Future<BookEntity?> getBookDetails(String googleBooksId) async {
+    try {
+      final apiKey = dotenv.env['GOOGLE_BOOKS_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        throw Exception('Google Books API key not found');
+      }
+
+      final response = await _dio.get(
+        '/volumes/$googleBooksId',
+        queryParameters: {'key': apiKey},
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        return _mapToBookEntity(response.data);
+      }
+      return null;
+    } catch (e) {
+      print('❌ Error fetching book details: $e');
+      return null;
+    }
+  }
+
   Future<List<BookEntity>> searchBooks(String query) async {
     try {
       final apiKey = dotenv.env['GOOGLE_BOOKS_API_KEY'];
@@ -96,27 +118,15 @@ class GoogleBooksApiService {
   }
 
   String? _getBestImageUrl(Map<String, dynamic> imageLinks) {
-    // Try highest resolution images first, fallback to smaller ones
+    // Try large resolution first for user's collection, fallback to smaller ones
     String? originalUrl =
-        imageLinks['extraLarge'] ??
         imageLinks['large'] ??
         imageLinks['medium'] ??
         imageLinks['thumbnail'] ??
-        imageLinks['smallThumbnail'];
+        imageLinks['smallThumbnail'] ??
+        imageLinks['extraLarge'];
 
-    // Optimize the image URL for better quality
-    if (originalUrl != null) {
-      String optimizedUrl = originalUrl;
-
-      // Replace zoom=1 with zoom=0 for higher quality (undocumented but works)
-      optimizedUrl = optimizedUrl.replaceAll('zoom=1', 'zoom=0');
-      // Remove any size restrictions for maximum quality
-      optimizedUrl = optimizedUrl.replaceAll(RegExp(r'&w=\d+'), '');
-      optimizedUrl = optimizedUrl.replaceAll(RegExp(r'&h=\d+'), '');
-
-      return optimizedUrl;
-    }
-
+    // Return the raw URL without optimization
     return originalUrl;
   }
 
@@ -124,68 +134,14 @@ class GoogleBooksApiService {
     Map<String, dynamic> imageLinks, {
     bool isForSearch = false,
   }) {
-    // For search results, use smaller images for better performance
-    if (isForSearch) {
-      // Search results: prioritize medium (400px) for 67.5px display
-      String? originalUrl =
-          imageLinks['medium'] ??
-          imageLinks['thumbnail'] ??
-          imageLinks['smallThumbnail'] ??
-          imageLinks['large'] ??
-          imageLinks['extraLarge'];
-
-      return originalUrl;
-    } else {
-      // Book details: use highest quality available
-      return _getBestImageUrl(imageLinks);
-    }
+    // Both search and collection now use the same large priority
+    return _getBestImageUrl(imageLinks);
   }
 
-  /// Upgrades a book's image quality from search quality to high quality
+  /// Upgrades a book's image quality (now just returns the original since both use large)
   BookEntity upgradeBookImageQuality(BookEntity book) {
-    // This method assumes the book was created from search results
-    // and we want to upgrade it to high quality for the user's collection
-    return BookEntity(
-      googleBooksId: book.googleBooksId,
-      title: book.title,
-      authors: book.authors,
-      description: book.description,
-      thumbnailUrl: _getBestImageUrl(
-        _extractImageLinksFromUrl(book.thumbnailUrl),
-      ),
-      publishedDate: book.publishedDate,
-      pageCount: book.pageCount,
-      averageRating: book.averageRating,
-      ratingsCount: book.ratingsCount,
-    );
-  }
-
-  Map<String, dynamic> _extractImageLinksFromUrl(String? thumbnailUrl) {
-    // Since we don't have the original imageLinks, we'll create a fallback
-    // that prioritizes higher quality images
-    if (thumbnailUrl == null) return {};
-
-    // If the URL contains 'medium' or smaller, we know we can upgrade
-    if (thumbnailUrl.contains('medium') ||
-        thumbnailUrl.contains('thumbnail') ||
-        thumbnailUrl.contains('smallThumbnail')) {
-      // Return a map that will trigger the high-quality selection
-      return {
-        'extraLarge': thumbnailUrl.replaceAll(
-          RegExp(r'(medium|thumbnail|smallThumbnail)'),
-          'extraLarge',
-        ),
-        'large': thumbnailUrl.replaceAll(
-          RegExp(r'(medium|thumbnail|smallThumbnail)'),
-          'large',
-        ),
-        'medium': thumbnailUrl,
-        'thumbnail': thumbnailUrl,
-        'smallThumbnail': thumbnailUrl,
-      };
-    }
-
-    // If it's already high quality, return as is
-    return {'extraLarge': thumbnailUrl};
+    // Since both search and collection now use the same large priority,
+    // no upgrade is needed - just return the original book
+    return book;
   }
 }

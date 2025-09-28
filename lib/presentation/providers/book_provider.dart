@@ -88,9 +88,8 @@ class BookProvider with ChangeNotifier {
         return;
       }
 
-      // Upgrade image quality for user's collection
-      final upgradedBook = await _upgradeBookImageQuality(book);
-      await _database.insertBook(upgradedBook.toCompanion());
+      // No upgrade needed since both search and collection use large
+      await _database.insertBook(book.toCompanion());
       await loadBooks(); // Refresh list
     } catch (e) {
       _error = 'Failed to add book: $e';
@@ -98,15 +97,10 @@ class BookProvider with ChangeNotifier {
     }
   }
 
-  Future<BookEntity> _upgradeBookImageQuality(BookEntity book) async {
-    try {
-      // Upgrade image quality without additional API call
-      return _apiService.upgradeBookImageQuality(book);
-    } catch (e) {
-      // If upgrade fails, return original book
-      print('⚠️ Failed to upgrade image quality: $e');
-      return book;
-    }
+  BookEntity _upgradeBookImageQuality(BookEntity book) {
+    // Since both search and collection now use the same large priority,
+    // no upgrade is needed - just return the original book
+    return _apiService.upgradeBookImageQuality(book);
   }
 
   Future<void> deleteBook(int id) async {
