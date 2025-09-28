@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../constants/app_constants.dart';
 import '../../domain/entities/book.dart';
 import 'reading_timer.dart';
+import '../screens/book_details_screen.dart';
 
 class BookCard extends StatelessWidget {
   final BookEntity book;
@@ -53,37 +54,44 @@ class BookCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Book cover
-              Container(
-                height: AppConstants.bookCoverHeight,
-                width: AppConstants.bookCoverWidth,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(
-                    AppConstants.borderRadius,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
+              // Book cover with Hero animation
+              GestureDetector(
+                onTap: () => _navigateToDetails(context),
+                child: Hero(
+                  tag: 'book_cover_${book.id}',
+                  child: Container(
+                    height: AppConstants.bookCoverHeight,
+                    width: AppConstants.bookCoverWidth,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.borderRadius,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
+                    child: book.thumbnailUrl != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.borderRadius,
+                            ),
+                            child: CachedNetworkImage(
+                              imageUrl: book.thumbnailUrl!,
+                              height: AppConstants.bookCoverHeight,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) =>
+                                  _buildPlaceholder(),
+                              errorWidget: (context, url, error) =>
+                                  _buildErrorWidget(),
+                            ),
+                          )
+                        : _buildErrorWidget(),
+                  ),
                 ),
-                child: book.thumbnailUrl != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          AppConstants.borderRadius,
-                        ),
-                        child: CachedNetworkImage(
-                          imageUrl: book.thumbnailUrl!,
-                          height: AppConstants.bookCoverHeight,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => _buildPlaceholder(),
-                          errorWidget: (context, url, error) =>
-                              _buildErrorWidget(),
-                        ),
-                      )
-                    : _buildErrorWidget(),
               ),
               const SizedBox(width: AppConstants.largeSpacing),
               // Book details
@@ -129,13 +137,6 @@ class BookCard extends StatelessWidget {
                     ],
                     // Action buttons
                     _buildActionButtons(),
-                    const SizedBox(height: AppConstants.smallSpacing),
-                    // Reading timer
-                    ReadingTimer(
-                      bookId: book.id!,
-                      bookTitle: book.title,
-                      book: book,
-                    ),
                   ],
                 ),
               ),
@@ -248,20 +249,9 @@ class BookCard extends StatelessWidget {
         ),
         if (book.daysReading > 0) ...[
           const SizedBox(height: 2),
-          Row(
-            children: [
-              Text(
-                '${book.daysReading} days reading',
-                style: TextStyle(color: Colors.grey[500], fontSize: 11),
-              ),
-              if (progress.totalReadingTimeMinutes > 0) ...[
-                const SizedBox(width: 8),
-                Text(
-                  '• ${progress.getFormattedReadingTime()}',
-                  style: TextStyle(color: Colors.grey[500], fontSize: 11),
-                ),
-              ],
-            ],
+          Text(
+            '${book.daysReading} days reading',
+            style: TextStyle(color: Colors.grey[500], fontSize: 11),
           ),
         ],
       ],
@@ -331,6 +321,31 @@ class BookCard extends StatelessWidget {
           ],
         ],
       ],
+    );
+  }
+
+  void _navigateToDetails(BuildContext context) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            BookDetailsScreen(book: book),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOutCubic;
+
+          var tween = Tween(
+            begin: begin,
+            end: end,
+          ).chain(CurveTween(curve: curve));
+
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
     );
   }
 }
