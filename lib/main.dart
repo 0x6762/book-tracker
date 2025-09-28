@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'domain/entities/book.dart';
+import 'package:timezone/data/latest.dart' as tz;
 import 'presentation/providers/book_provider.dart';
 import 'presentation/widgets/search_input.dart';
 import 'presentation/widgets/book_card.dart';
@@ -12,6 +12,9 @@ import 'presentation/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize timezone data
+  tz.initializeTimeZones();
 
   // Load environment variables from .env file
   // Make sure to copy .env.example to .env and add your API key
@@ -57,6 +60,12 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
   @override
   void initState() {
     super.initState();
+    // Initialize notifications
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<BookProvider>().initializeNotifications();
+      }
+    });
     // Delay book loading to let UI render first
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
