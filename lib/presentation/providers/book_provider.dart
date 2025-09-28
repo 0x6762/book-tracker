@@ -50,11 +50,8 @@ class BookProvider with ChangeNotifier {
 
   Future<void> addBook(BookEntity book) async {
     try {
-      // Check if book already exists
-      final existingBooks = await _repository.getAllBooks();
-      final bookExists = existingBooks.any(
-        (existingBook) => existingBook.googleBooksId == book.googleBooksId,
-      );
+      // Check if book already exists (efficient check)
+      final bookExists = await _repository.bookExists(book.googleBooksId);
 
       if (bookExists) {
         _error = 'Book already exists in your library';

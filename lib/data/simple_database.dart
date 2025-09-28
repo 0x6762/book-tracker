@@ -1,0 +1,139 @@
+import 'dart:io';
+import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as p;
+import '../domain/entities/book.dart';
+import '../domain/entities/reading_progress.dart';
+
+part 'simple_database.g.dart';
+
+// Simplified table with reading progress embedded
+class Books extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get googleBooksId => text().unique()();
+  TextColumn get title => text()();
+  TextColumn get authors => text()();
+  TextColumn get description => text().nullable()();
+  TextColumn get thumbnailUrl => text().nullable()();
+  TextColumn get publishedDate => text().nullable()();
+  IntColumn get pageCount => integer().nullable()();
+
+  // Reading progress fields embedded in books table
+  IntColumn get currentPage => integer().withDefault(const Constant(0))();
+  DateTimeColumn get startDate => dateTime().nullable()();
+  DateTimeColumn get endDate => dateTime().nullable()();
+  BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
+}
+
+@DriftDatabase(tables: [Books])
+class SimpleDatabase extends _$SimpleDatabase {
+  SimpleDatabase() : super(_openConnection());
+
+  @override
+  int get schemaVersion => 1;
+
+  // Simple methods - no complex joins needed
+  Future<List<Book>> getAllBooks() => select(books).get();
+
+  Future<int> insertBook(BooksCompanion book) => into(books).insert(book);
+
+  Future<int> deleteBook(int id) =>
+      (delete(books)..where((tbl) => tbl.id.equals(id))).go();
+
+  Future<bool> bookExists(String googleBooksId) async {
+    final result =
+        await (select(books)
+              ..where((tbl) => tbl.googleBooksId.equals(googleBooksId)))
+            .getSingleOrNull();
+    return result != null;
+  }
+
+  Future<void> updateProgress(int bookId, int currentPage) async {
+    await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
+      BooksCompanion(currentPage: Value(currentPage)),
+    );
+  }
+
+  Future<void> completeReading(int bookId) async {
+    await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
+      BooksCompanion(
+        isCompleted: const Value(true),
+        endDate: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> startReading(int bookId, int currentPage) async {
+    await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
+      BooksCompanion(
+        currentPage: Value(currentPage),
+        startDate: Value(DateTime.now()),
+        isCompleted: const Value(false),
+      ),
+    );
+  }
+}
+
+LazyDatabase _openConnection() {
+  return LazyDatabase(() async {
+    print('🔌 Opening simple database connection...');
+    final stopwatch = Stopwatch()..start();
+
+    final dbFolder = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dbFolder.path, 'simple_book_tracker.db'));
+    final database = NativeDatabase(file);
+
+    stopwatch.stop();
+    print(
+      '🔌 Simple database connection opened in ${stopwatch.elapsedMilliseconds}ms',
+    );
+    return database;
+  });
+}
+
+// Simple extension to convert to domain entity
+extension BookToEntity on Book {
+  BookEntity toEntity() {
+    return BookEntity(
+      id: id,
+      googleBooksId: googleBooksId,
+      title: title,
+      authors: authors,
+      description: description,
+      thumbnailUrl: thumbnailUrl,
+      publishedDate: publishedDate,
+      pageCount: pageCount,
+      readingProgress: startDate != null
+          ? ReadingProgress(
+              id: id,
+              bookId: id,
+              currentPage: currentPage,
+              startDate: startDate!,
+              endDate: endDate,
+              isCompleted: isCompleted,
+            )
+          : null,
+    );
+  }
+}
+
+// Simple extension to convert from domain entity
+extension EntityToBook on BookEntity {
+  BooksCompanion toCompanion() {
+    return BooksCompanion(
+      id: id != null ? Value(id!) : const Value.absent(),
+      googleBooksId: Value(googleBooksId),
+      title: Value(title),
+      authors: Value(authors),
+      description: Value(description),
+      thumbnailUrl: Value(thumbnailUrl),
+      publishedDate: Value(publishedDate),
+      pageCount: Value(pageCount),
+      currentPage: Value(readingProgress?.currentPage ?? 0),
+      startDate: Value(readingProgress?.startDate),
+      endDate: Value(readingProgress?.endDate),
+      isCompleted: Value(readingProgress?.isCompleted ?? false),
+    );
+  }
+}

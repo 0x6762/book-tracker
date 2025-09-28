@@ -94,4 +94,9 @@ class BooksRepositoryImpl implements BooksRepository {
     final progress = await _database.getReadingProgressByBookId(bookId);
     return progress?.toEntity();
   }
+
+  @override
+  Future<bool> bookExists(String googleBooksId) async {
+    return await _database.bookExists(googleBooksId);
+  }
 }

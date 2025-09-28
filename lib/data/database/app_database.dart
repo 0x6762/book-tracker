@@ -29,12 +29,20 @@ class ReadingProgress extends Table {
   BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
 }
 
+// Data class for books with their reading progress
+class BookWithProgress {
+  final Book book;
+  final ReadingProgressData? progress;
+
+  BookWithProgress({required this.book, this.progress});
+}
+
 @DriftDatabase(tables: [Books, ReadingProgress])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3; // Increment to force fresh migration
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -50,7 +58,28 @@ class AppDatabase extends _$AppDatabase {
   );
 
   // Books DAO methods
-  Future<List<Book>> getAllBooks() => select(books).get();
+  Future<List<Book>> getAllBooks() async {
+    return await select(books).get();
+  }
+
+  // Optimized method to get books with their reading progress in a single query
+  Future<List<BookWithProgress>> getAllBooksWithProgress() async {
+    final query = select(books).join([
+      leftOuterJoin(
+        readingProgress,
+        readingProgress.bookId.equalsExp(books.id),
+      ),
+    ]);
+
+    final results = await query.get();
+
+    return results.map((row) {
+      final book = row.readTable(books);
+      final progress = row.readTableOrNull(readingProgress);
+
+      return BookWithProgress(book: book, progress: progress);
+    }).toList();
+  }
 
   Future<int> insertBook(BooksCompanion book) => into(books).insert(book);
 
@@ -76,13 +105,22 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteReadingProgress(int id) =>
       (delete(readingProgress)..where((tbl) => tbl.id.equals(id))).go();
+
+  // Check if book exists by googleBooksId (more efficient than loading all books)
+  Future<bool> bookExists(String googleBooksId) async {
+    final result =
+        await (select(books)
+              ..where((tbl) => tbl.googleBooksId.equals(googleBooksId)))
+            .getSingleOrNull();
+    return result != null;
+  }
 }
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'book_tracker.db'));
-    return NativeDatabase.createInBackground(file);
+    return NativeDatabase(file);
   });
 }
 

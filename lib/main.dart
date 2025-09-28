@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'domain/entities/book.dart';
-import 'presentation/providers/book_provider.dart';
+import 'presentation/simple_book_provider.dart';
 import 'presentation/widgets/search_input.dart';
 import 'presentation/widgets/book_card.dart';
 import 'presentation/widgets/empty_state.dart';
@@ -18,10 +18,7 @@ void main() async {
   // Make sure to copy .env.example to .env and add your API key
   try {
     await dotenv.load(fileName: ".env");
-    print('✅ .env file loaded successfully');
   } catch (e) {
-    print('⚠️ Warning: Could not load .env file: $e');
-    print('📝 Please create a .env file with your Google Books API key');
     // Set default values if .env file is not available
     dotenv.testLoad(fileInput: 'GOOGLE_BOOKS_API_KEY=your_api_key_here');
   }
@@ -35,7 +32,7 @@ class BookTrackerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => BookProvider(),
+      create: (context) => SimpleBookProvider(),
       child: MaterialApp(
         title: AppConstants.appTitle,
         debugShowCheckedModeBanner: false,
@@ -61,10 +58,15 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
   @override
   void initState() {
     super.initState();
-    // Load books when the page initializes
+    // Delay book loading to let UI render first
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<BookProvider>().loadBooks();
+        // Add a small delay to let the UI render first
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) {
+            context.read<SimpleBookProvider>().loadBooks();
+          }
+        });
       }
     });
   }
@@ -83,7 +85,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
           onBack: () {
             Navigator.of(context).pop();
             _searchController.clear();
-            context.read<BookProvider>().searchBooks('');
+            context.read<SimpleBookProvider>().searchBooks('');
           },
         ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -130,7 +132,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
           ),
           // Content
           Expanded(
-            child: Consumer<BookProvider>(
+            child: Consumer<SimpleBookProvider>(
               builder: (context, bookProvider, child) {
                 return _buildBookList(bookProvider);
               },
@@ -141,7 +143,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     );
   }
 
-  Widget _buildBookList(BookProvider bookProvider) {
+  Widget _buildBookList(SimpleBookProvider bookProvider) {
     if (bookProvider.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -181,13 +183,13 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
         return BookCard(
           book: book,
           onDelete: () {
-            context.read<BookProvider>().deleteBook(book.id!);
+            context.read<SimpleBookProvider>().deleteBook(book.id!);
           },
           onUpdateProgress: () {
             _showProgressModal(context, book, bookProvider);
           },
           onCompleteReading: () {
-            context.read<BookProvider>().completeReading(book.id!);
+            context.read<SimpleBookProvider>().completeReading(book.id!);
           },
         );
       },
@@ -197,7 +199,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
   void _showProgressModal(
     BuildContext context,
     BookEntity book,
-    BookProvider bookProvider,
+    SimpleBookProvider bookProvider,
   ) {
     showDialog(
       context: context,

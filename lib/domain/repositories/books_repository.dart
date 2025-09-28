@@ -12,4 +12,7 @@ abstract class BooksRepository {
   Future<void> updateReadingProgress(int bookId, int currentPage);
   Future<void> completeReading(int bookId);
   Future<ReadingProgress?> getReadingProgress(int bookId);
+
+  // Utility methods
+  Future<bool> bookExists(String googleBooksId);
 }
