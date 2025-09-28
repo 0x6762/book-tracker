@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../constants/app_constants.dart';
 import '../../domain/entities/book.dart';
+import 'reading_timer.dart';
 
 class BookCard extends StatelessWidget {
   final BookEntity book;
@@ -128,6 +129,9 @@ class BookCard extends StatelessWidget {
                     ],
                     // Action buttons
                     _buildActionButtons(),
+                    const SizedBox(height: AppConstants.smallSpacing),
+                    // Reading timer
+                    ReadingTimer(bookId: book.id!, bookTitle: book.title),
                   ],
                 ),
               ),

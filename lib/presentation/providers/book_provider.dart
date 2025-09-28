@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../data/simple_database.dart';
 import '../../data/datasources/google_books_api_service.dart';
@@ -13,11 +14,37 @@ class BookProvider with ChangeNotifier {
   bool _isSearching = false;
   String? _error;
 
+  // Timer state
+  Timer? _timer;
+  int _remainingSeconds = 0;
+  int _totalSeconds = 0;
+  bool _isTimerRunning = false;
+  int? _currentBookId;
+
   List<BookEntity> get books => _books;
   List<BookEntity> get searchResults => _searchResults;
   bool get isLoading => _isLoading;
   bool get isSearching => _isSearching;
   String? get error => _error;
+
+  // Timer getters
+  int get remainingSeconds => _remainingSeconds;
+  int get totalSeconds => _totalSeconds;
+  bool get isTimerRunning => _isTimerRunning;
+  int? get currentBookId => _currentBookId;
+  bool get isTimerCompleted => _remainingSeconds <= 0 && _totalSeconds > 0;
+
+  String get formattedTime {
+    final hours = _remainingSeconds ~/ 3600;
+    final minutes = (_remainingSeconds % 3600) ~/ 60;
+    final seconds = _remainingSeconds % 60;
+
+    if (hours > 0) {
+      return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    } else {
+      return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+    }
+  }
 
   Future<void> loadBooks() async {
     _setLoading(true);
@@ -138,5 +165,94 @@ class BookProvider with ChangeNotifier {
   void clearError() {
     _error = null;
     notifyListeners();
+  }
+
+  // Timer methods
+  void setTimer(int bookId, int minutes) {
+    stopTimer(); // Stop any existing timer
+
+    _currentBookId = bookId;
+    _totalSeconds = minutes * 60;
+    _remainingSeconds = _totalSeconds;
+    _isTimerRunning = false;
+    notifyListeners();
+  }
+
+  void startTimer(int bookId) {
+    if (_isTimerRunning && _currentBookId == bookId) {
+      return; // Already running for this book
+    }
+
+    if (_remainingSeconds <= 0) {
+      return; // No time left
+    }
+
+    _isTimerRunning = true;
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_remainingSeconds > 0) {
+        _remainingSeconds--;
+        notifyListeners();
+      } else {
+        // Timer completed
+        _timer?.cancel();
+        _timer = null;
+        _isTimerRunning = false;
+        notifyListeners();
+        _showTimerCompletedNotification();
+      }
+    });
+
+    notifyListeners();
+  }
+
+  void stopTimer() {
+    _timer?.cancel();
+    _timer = null;
+    _isTimerRunning = false;
+    _currentBookId = null;
+    _remainingSeconds = 0;
+    _totalSeconds = 0;
+    notifyListeners();
+  }
+
+  void pauseTimer() {
+    if (_timer != null) {
+      _timer?.cancel();
+      _timer = null;
+      _isTimerRunning = false;
+      notifyListeners();
+    }
+  }
+
+  void resumeTimer() {
+    if (!_isTimerRunning && _currentBookId != null && _remainingSeconds > 0) {
+      _isTimerRunning = true;
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (_remainingSeconds > 0) {
+          _remainingSeconds--;
+          notifyListeners();
+        } else {
+          // Timer completed
+          _timer?.cancel();
+          _timer = null;
+          _isTimerRunning = false;
+          notifyListeners();
+          _showTimerCompletedNotification();
+        }
+      });
+      notifyListeners();
+    }
+  }
+
+  void _showTimerCompletedNotification() {
+    // This will be handled by the UI to show a notification
+    print('⏰ Reading session completed!');
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 }
