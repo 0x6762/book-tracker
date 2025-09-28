@@ -78,11 +78,24 @@ class BookProvider with ChangeNotifier {
         return;
       }
 
-      await _database.insertBook(book.toCompanion());
+      // Upgrade image quality for user's collection
+      final upgradedBook = await _upgradeBookImageQuality(book);
+      await _database.insertBook(upgradedBook.toCompanion());
       await loadBooks(); // Refresh list
     } catch (e) {
       _error = 'Failed to add book: $e';
       notifyListeners();
+    }
+  }
+
+  Future<BookEntity> _upgradeBookImageQuality(BookEntity book) async {
+    try {
+      // Upgrade image quality without additional API call
+      return _apiService.upgradeBookImageQuality(book);
+    } catch (e) {
+      // If upgrade fails, return original book
+      print('⚠️ Failed to upgrade image quality: $e');
+      return book;
     }
   }
 
