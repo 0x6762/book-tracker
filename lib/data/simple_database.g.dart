@@ -158,6 +158,28 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         requiredDuringInsert: false,
         defaultValue: const Constant(0),
       );
+  static const VerificationMeta _averageRatingMeta = const VerificationMeta(
+    'averageRating',
+  );
+  @override
+  late final GeneratedColumn<double> averageRating = GeneratedColumn<double>(
+    'average_rating',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ratingsCountMeta = const VerificationMeta(
+    'ratingsCount',
+  );
+  @override
+  late final GeneratedColumn<int> ratingsCount = GeneratedColumn<int>(
+    'ratings_count',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -173,6 +195,8 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     endDate,
     isCompleted,
     totalReadingTimeMinutes,
+    averageRating,
+    ratingsCount,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -288,6 +312,24 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         ),
       );
     }
+    if (data.containsKey('average_rating')) {
+      context.handle(
+        _averageRatingMeta,
+        averageRating.isAcceptableOrUnknown(
+          data['average_rating']!,
+          _averageRatingMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ratings_count')) {
+      context.handle(
+        _ratingsCountMeta,
+        ratingsCount.isAcceptableOrUnknown(
+          data['ratings_count']!,
+          _ratingsCountMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -349,6 +391,14 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.int,
         data['${effectivePrefix}total_reading_time_minutes'],
       )!,
+      averageRating: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}average_rating'],
+      ),
+      ratingsCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ratings_count'],
+      ),
     );
   }
 
@@ -372,6 +422,8 @@ class Book extends DataClass implements Insertable<Book> {
   final DateTime? endDate;
   final bool isCompleted;
   final int totalReadingTimeMinutes;
+  final double? averageRating;
+  final int? ratingsCount;
   const Book({
     required this.id,
     required this.googleBooksId,
@@ -386,6 +438,8 @@ class Book extends DataClass implements Insertable<Book> {
     this.endDate,
     required this.isCompleted,
     required this.totalReadingTimeMinutes,
+    this.averageRating,
+    this.ratingsCount,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -415,6 +469,12 @@ class Book extends DataClass implements Insertable<Book> {
     }
     map['is_completed'] = Variable<bool>(isCompleted);
     map['total_reading_time_minutes'] = Variable<int>(totalReadingTimeMinutes);
+    if (!nullToAbsent || averageRating != null) {
+      map['average_rating'] = Variable<double>(averageRating);
+    }
+    if (!nullToAbsent || ratingsCount != null) {
+      map['ratings_count'] = Variable<int>(ratingsCount);
+    }
     return map;
   }
 
@@ -445,6 +505,12 @@ class Book extends DataClass implements Insertable<Book> {
           : Value(endDate),
       isCompleted: Value(isCompleted),
       totalReadingTimeMinutes: Value(totalReadingTimeMinutes),
+      averageRating: averageRating == null && nullToAbsent
+          ? const Value.absent()
+          : Value(averageRating),
+      ratingsCount: ratingsCount == null && nullToAbsent
+          ? const Value.absent()
+          : Value(ratingsCount),
     );
   }
 
@@ -469,6 +535,8 @@ class Book extends DataClass implements Insertable<Book> {
       totalReadingTimeMinutes: serializer.fromJson<int>(
         json['totalReadingTimeMinutes'],
       ),
+      averageRating: serializer.fromJson<double?>(json['averageRating']),
+      ratingsCount: serializer.fromJson<int?>(json['ratingsCount']),
     );
   }
   @override
@@ -490,6 +558,8 @@ class Book extends DataClass implements Insertable<Book> {
       'totalReadingTimeMinutes': serializer.toJson<int>(
         totalReadingTimeMinutes,
       ),
+      'averageRating': serializer.toJson<double?>(averageRating),
+      'ratingsCount': serializer.toJson<int?>(ratingsCount),
     };
   }
 
@@ -507,6 +577,8 @@ class Book extends DataClass implements Insertable<Book> {
     Value<DateTime?> endDate = const Value.absent(),
     bool? isCompleted,
     int? totalReadingTimeMinutes,
+    Value<double?> averageRating = const Value.absent(),
+    Value<int?> ratingsCount = const Value.absent(),
   }) => Book(
     id: id ?? this.id,
     googleBooksId: googleBooksId ?? this.googleBooksId,
@@ -524,6 +596,10 @@ class Book extends DataClass implements Insertable<Book> {
     isCompleted: isCompleted ?? this.isCompleted,
     totalReadingTimeMinutes:
         totalReadingTimeMinutes ?? this.totalReadingTimeMinutes,
+    averageRating: averageRating.present
+        ? averageRating.value
+        : this.averageRating,
+    ratingsCount: ratingsCount.present ? ratingsCount.value : this.ratingsCount,
   );
   Book copyWithCompanion(BooksCompanion data) {
     return Book(
@@ -554,6 +630,12 @@ class Book extends DataClass implements Insertable<Book> {
       totalReadingTimeMinutes: data.totalReadingTimeMinutes.present
           ? data.totalReadingTimeMinutes.value
           : this.totalReadingTimeMinutes,
+      averageRating: data.averageRating.present
+          ? data.averageRating.value
+          : this.averageRating,
+      ratingsCount: data.ratingsCount.present
+          ? data.ratingsCount.value
+          : this.ratingsCount,
     );
   }
 
@@ -572,7 +654,9 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
           ..write('isCompleted: $isCompleted, ')
-          ..write('totalReadingTimeMinutes: $totalReadingTimeMinutes')
+          ..write('totalReadingTimeMinutes: $totalReadingTimeMinutes, ')
+          ..write('averageRating: $averageRating, ')
+          ..write('ratingsCount: $ratingsCount')
           ..write(')'))
         .toString();
   }
@@ -592,6 +676,8 @@ class Book extends DataClass implements Insertable<Book> {
     endDate,
     isCompleted,
     totalReadingTimeMinutes,
+    averageRating,
+    ratingsCount,
   );
   @override
   bool operator ==(Object other) =>
@@ -609,7 +695,9 @@ class Book extends DataClass implements Insertable<Book> {
           other.startDate == this.startDate &&
           other.endDate == this.endDate &&
           other.isCompleted == this.isCompleted &&
-          other.totalReadingTimeMinutes == this.totalReadingTimeMinutes);
+          other.totalReadingTimeMinutes == this.totalReadingTimeMinutes &&
+          other.averageRating == this.averageRating &&
+          other.ratingsCount == this.ratingsCount);
 }
 
 class BooksCompanion extends UpdateCompanion<Book> {
@@ -626,6 +714,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<DateTime?> endDate;
   final Value<bool> isCompleted;
   final Value<int> totalReadingTimeMinutes;
+  final Value<double?> averageRating;
+  final Value<int?> ratingsCount;
   const BooksCompanion({
     this.id = const Value.absent(),
     this.googleBooksId = const Value.absent(),
@@ -640,6 +730,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.endDate = const Value.absent(),
     this.isCompleted = const Value.absent(),
     this.totalReadingTimeMinutes = const Value.absent(),
+    this.averageRating = const Value.absent(),
+    this.ratingsCount = const Value.absent(),
   });
   BooksCompanion.insert({
     this.id = const Value.absent(),
@@ -655,6 +747,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.endDate = const Value.absent(),
     this.isCompleted = const Value.absent(),
     this.totalReadingTimeMinutes = const Value.absent(),
+    this.averageRating = const Value.absent(),
+    this.ratingsCount = const Value.absent(),
   }) : googleBooksId = Value(googleBooksId),
        title = Value(title),
        authors = Value(authors);
@@ -672,6 +766,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<DateTime>? endDate,
     Expression<bool>? isCompleted,
     Expression<int>? totalReadingTimeMinutes,
+    Expression<double>? averageRating,
+    Expression<int>? ratingsCount,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -688,6 +784,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
       if (isCompleted != null) 'is_completed': isCompleted,
       if (totalReadingTimeMinutes != null)
         'total_reading_time_minutes': totalReadingTimeMinutes,
+      if (averageRating != null) 'average_rating': averageRating,
+      if (ratingsCount != null) 'ratings_count': ratingsCount,
     });
   }
 
@@ -705,6 +803,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<DateTime?>? endDate,
     Value<bool>? isCompleted,
     Value<int>? totalReadingTimeMinutes,
+    Value<double?>? averageRating,
+    Value<int?>? ratingsCount,
   }) {
     return BooksCompanion(
       id: id ?? this.id,
@@ -721,6 +821,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
       isCompleted: isCompleted ?? this.isCompleted,
       totalReadingTimeMinutes:
           totalReadingTimeMinutes ?? this.totalReadingTimeMinutes,
+      averageRating: averageRating ?? this.averageRating,
+      ratingsCount: ratingsCount ?? this.ratingsCount,
     );
   }
 
@@ -768,6 +870,12 @@ class BooksCompanion extends UpdateCompanion<Book> {
         totalReadingTimeMinutes.value,
       );
     }
+    if (averageRating.present) {
+      map['average_rating'] = Variable<double>(averageRating.value);
+    }
+    if (ratingsCount.present) {
+      map['ratings_count'] = Variable<int>(ratingsCount.value);
+    }
     return map;
   }
 
@@ -786,7 +894,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
           ..write('isCompleted: $isCompleted, ')
-          ..write('totalReadingTimeMinutes: $totalReadingTimeMinutes')
+          ..write('totalReadingTimeMinutes: $totalReadingTimeMinutes, ')
+          ..write('averageRating: $averageRating, ')
+          ..write('ratingsCount: $ratingsCount')
           ..write(')'))
         .toString();
   }
@@ -818,6 +928,8 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<DateTime?> endDate,
       Value<bool> isCompleted,
       Value<int> totalReadingTimeMinutes,
+      Value<double?> averageRating,
+      Value<int?> ratingsCount,
     });
 typedef $$BooksTableUpdateCompanionBuilder =
     BooksCompanion Function({
@@ -834,6 +946,8 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<DateTime?> endDate,
       Value<bool> isCompleted,
       Value<int> totalReadingTimeMinutes,
+      Value<double?> averageRating,
+      Value<int?> ratingsCount,
     });
 
 class $$BooksTableFilterComposer
@@ -907,6 +1021,16 @@ class $$BooksTableFilterComposer
 
   ColumnFilters<int> get totalReadingTimeMinutes => $composableBuilder(
     column: $table.totalReadingTimeMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get averageRating => $composableBuilder(
+    column: $table.averageRating,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ratingsCount => $composableBuilder(
+    column: $table.ratingsCount,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -984,6 +1108,16 @@ class $$BooksTableOrderingComposer
     column: $table.totalReadingTimeMinutes,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get averageRating => $composableBuilder(
+    column: $table.averageRating,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ratingsCount => $composableBuilder(
+    column: $table.ratingsCount,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BooksTableAnnotationComposer
@@ -1047,6 +1181,16 @@ class $$BooksTableAnnotationComposer
     column: $table.totalReadingTimeMinutes,
     builder: (column) => column,
   );
+
+  GeneratedColumn<double> get averageRating => $composableBuilder(
+    column: $table.averageRating,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get ratingsCount => $composableBuilder(
+    column: $table.ratingsCount,
+    builder: (column) => column,
+  );
 }
 
 class $$BooksTableTableManager
@@ -1090,6 +1234,8 @@ class $$BooksTableTableManager
                 Value<DateTime?> endDate = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
                 Value<int> totalReadingTimeMinutes = const Value.absent(),
+                Value<double?> averageRating = const Value.absent(),
+                Value<int?> ratingsCount = const Value.absent(),
               }) => BooksCompanion(
                 id: id,
                 googleBooksId: googleBooksId,
@@ -1104,6 +1250,8 @@ class $$BooksTableTableManager
                 endDate: endDate,
                 isCompleted: isCompleted,
                 totalReadingTimeMinutes: totalReadingTimeMinutes,
+                averageRating: averageRating,
+                ratingsCount: ratingsCount,
               ),
           createCompanionCallback:
               ({
@@ -1120,6 +1268,8 @@ class $$BooksTableTableManager
                 Value<DateTime?> endDate = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
                 Value<int> totalReadingTimeMinutes = const Value.absent(),
+                Value<double?> averageRating = const Value.absent(),
+                Value<int?> ratingsCount = const Value.absent(),
               }) => BooksCompanion.insert(
                 id: id,
                 googleBooksId: googleBooksId,
@@ -1134,6 +1284,8 @@ class $$BooksTableTableManager
                 endDate: endDate,
                 isCompleted: isCompleted,
                 totalReadingTimeMinutes: totalReadingTimeMinutes,
+                averageRating: averageRating,
+                ratingsCount: ratingsCount,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

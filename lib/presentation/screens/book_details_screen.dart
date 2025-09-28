@@ -24,66 +24,95 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      body: CustomScrollView(
-        slivers: [
-          // App bar with book cover
-          _buildSliverAppBar(context),
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        elevation: 0,
+        title: Text(
+          'Book Details',
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Centered book cover
+            _buildBookCover(context),
+            const SizedBox(height: 24),
 
-          // Book content
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Book title and authors
-                  _buildBookInfo(context),
-                  const SizedBox(height: 24),
+            // Book title and authors
+            _buildBookTitle(context),
+            const SizedBox(height: 16),
 
-                  // Reading progress section
-                  _buildReadingProgress(context),
-                  const SizedBox(height: 24),
+            // Book info box
+            _buildBookInfoBox(context),
+            const SizedBox(height: 24),
 
-                  // Reading timer section
-                  _buildReadingTimer(context),
-                  const SizedBox(height: 24),
+            // Book info
+            _buildBookInfo(context),
+            const SizedBox(height: 24),
 
-                  // Reading statistics
-                  _buildReadingStats(context),
-                  const SizedBox(height: 24),
+            // Reading progress section
+            _buildReadingProgress(context),
+            const SizedBox(height: 24),
 
-                  // Action buttons
-                  _buildActionButtons(context),
-                ],
-              ),
-            ),
-          ),
-        ],
+            // Reading timer section
+            _buildReadingTimer(context),
+            const SizedBox(height: 24),
+
+            // Reading statistics
+            _buildReadingStats(context),
+            const SizedBox(height: 24),
+
+            // Action buttons
+            _buildActionButtons(context),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context) {
-    return SliverAppBar(
-      expandedHeight: 300,
-      pinned: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            // Book cover background
-            if (widget.book.thumbnailUrl != null)
-              Hero(
-                tag: 'book_cover_${widget.book.id}',
-                child: CachedNetworkImage(
-                  imageUrl: widget.book.thumbnailUrl!,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: Theme.of(context).colorScheme.surfaceVariant,
-                    child: const Center(child: CircularProgressIndicator()),
-                  ),
-                  errorWidget: (context, url, error) => Container(
+  Widget _buildBookCover(BuildContext context) {
+    return Center(
+      child: Hero(
+        tag: 'book_cover_${widget.book.id}',
+        child: Container(
+          height: 280,
+          width: 200,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: widget.book.thumbnailUrl != null
+                ? CachedNetworkImage(
+                    imageUrl: widget.book.thumbnailUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      child: const Center(child: CircularProgressIndicator()),
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      child: Icon(
+                        Icons.book,
+                        size: 80,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                : Container(
                     color: Theme.of(context).colorScheme.surfaceVariant,
                     child: Icon(
                       Icons.book,
@@ -91,62 +120,152 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
-                ),
-              )
-            else
-              Container(
-                color: Theme.of(context).colorScheme.surfaceVariant,
-                child: Icon(
-                  Icons.book,
-                  size: 80,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-
-            // Gradient overlay
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
-                ),
-              ),
-            ),
-
-            // Book title overlay
-            Positioned(
-              bottom: 16,
-              left: 16,
-              right: 16,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.book.title,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.book.authors,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildBookTitle(BuildContext context) {
+    return Center(
+      child: Column(
+        children: [
+          Text(
+            widget.book.title,
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            widget.book.authors,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBookInfoBox(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Pages
+          if (widget.book.pageCount != null) ...[
+            Expanded(
+              child: _buildInfoItem(
+                context,
+                Icons.menu_book,
+                'Pages',
+                '${widget.book.pageCount}',
+              ),
+            ),
+            const SizedBox(width: 16),
+          ],
+
+          // Published
+          if (widget.book.publishedDate != null) ...[
+            Expanded(
+              child: _buildInfoItem(
+                context,
+                Icons.calendar_today,
+                'Published',
+                _formatPublishedDate(widget.book.publishedDate!),
+              ),
+            ),
+            const SizedBox(width: 16),
+          ],
+
+          // Rating
+          Expanded(
+            child: _buildInfoItem(
+              context,
+              Icons.star,
+              'Rating',
+              widget.book.hasRating ? widget.book.formattedRating : 'N/A',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    String value,
+  ) {
+    return Column(
+      children: [
+        Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  String _formatPublishedDate(String date) {
+    try {
+      final parsedDate = DateTime.parse(date);
+      final now = DateTime.now();
+      final difference = now.difference(parsedDate);
+
+      if (difference.inDays < 30) {
+        return '${difference.inDays} days ago';
+      } else if (difference.inDays < 365) {
+        final months = (difference.inDays / 30).floor();
+        return '$months month${months == 1 ? '' : 's'} ago';
+      } else {
+        final years = (difference.inDays / 365).floor();
+        return '$years year${years == 1 ? '' : 's'} ago';
+      }
+    } catch (e) {
+      return date; // Return original if parsing fails
+    }
+  }
+
+  String _calculateReadingSpeed() {
+    if (!widget.book.hasReadingProgress ||
+        widget.book.readingProgress!.totalReadingTimeMinutes <= 0 ||
+        widget.book.pageCount == null) {
+      return 'N/A';
+    }
+
+    final progress = widget.book.readingProgress!;
+    final hours = progress.totalReadingTimeMinutes / 60;
+    final pagesPerHour = (progress.currentPage / hours).round();
+    return '$pagesPerHour p/h';
   }
 
   Widget _buildBookInfo(BuildContext context) {
@@ -163,45 +282,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
           const SizedBox(height: 8),
           _buildExpandableDescription(context),
           const SizedBox(height: 16),
-        ],
-
-        if (widget.book.pageCount != null) ...[
-          Row(
-            children: [
-              Icon(
-                Icons.menu_book,
-                size: 16,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '${widget.book.pageCount} pages',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-        ],
-
-        if (widget.book.publishedDate != null) ...[
-          Row(
-            children: [
-              Icon(
-                Icons.calendar_today,
-                size: 16,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Published ${widget.book.publishedDate}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
         ],
       ],
     );
@@ -240,8 +320,8 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 ),
                 const SizedBox(width: 4),
                 Icon(
-                  _isDescriptionExpanded 
-                      ? Icons.keyboard_arrow_up 
+                  _isDescriptionExpanded
+                      ? Icons.keyboard_arrow_up
                       : Icons.keyboard_arrow_down,
                   size: 16,
                   color: Theme.of(context).colorScheme.primary,
@@ -356,7 +436,11 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   }
 
   Widget _buildReadingTimer(BuildContext context) {
-    return ReadingTimer(bookId: widget.book.id!, bookTitle: widget.book.title, book: widget.book);
+    return ReadingTimer(
+      bookId: widget.book.id!,
+      bookTitle: widget.book.title,
+      book: widget.book,
+    );
   }
 
   Widget _buildReadingStats(BuildContext context) {
@@ -407,7 +491,8 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             ],
           ),
 
-            if (progress.totalReadingTimeMinutes > 0 && widget.book.daysReading > 0) ...[
+          if (progress.totalReadingTimeMinutes > 0 &&
+              widget.book.daysReading > 0) ...[
             const SizedBox(height: 12),
             Row(
               children: [
@@ -485,7 +570,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 onPressed: () => _showProgressModal(context, bookProvider),
                 icon: const Icon(Icons.edit),
                 label: Text(
-                  widget.book.hasReadingProgress ? 'Update Progress' : 'Start Reading',
+                  widget.book.hasReadingProgress
+                      ? 'Update Progress'
+                      : 'Start Reading',
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.primary,
@@ -536,7 +623,8 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
 
   String _calculateAverageSessionTime(ReadingProgress progress) {
     if (widget.book.daysReading <= 0) return '0m';
-    final avgMinutes = progress.totalReadingTimeMinutes / widget.book.daysReading;
+    final avgMinutes =
+        progress.totalReadingTimeMinutes / widget.book.daysReading;
     final hours = avgMinutes ~/ 60;
     final minutes = (avgMinutes % 60).round();
 

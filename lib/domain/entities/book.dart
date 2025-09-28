@@ -10,6 +10,8 @@ class BookEntity {
   final String? publishedDate;
   final int? pageCount;
   final ReadingProgress? readingProgress;
+  final double? averageRating;
+  final int? ratingsCount;
 
   const BookEntity({
     this.id,
@@ -21,6 +23,8 @@ class BookEntity {
     this.publishedDate,
     this.pageCount,
     this.readingProgress,
+    this.averageRating,
+    this.ratingsCount,
   });
 
   @override
@@ -48,4 +52,25 @@ class BookEntity {
   bool get hasReadingProgress => readingProgress != null;
 
   int get daysReading => readingProgress?.getDaysReading() ?? 0;
+
+  // Rating helpers
+  bool get hasRating => averageRating != null && averageRating! > 0;
+
+  String get formattedRating {
+    if (!hasRating) return 'No rating';
+    return '${averageRating!.toStringAsFixed(1)}/5.0';
+  }
+
+  String get formattedRatingCount {
+    if (ratingsCount == null || ratingsCount! <= 0) return '';
+    if (ratingsCount! >= 1000) {
+      return '(${(ratingsCount! / 1000).toStringAsFixed(1)}k)';
+    }
+    return '($ratingsCount)';
+  }
+
+  String get fullRatingText {
+    if (!hasRating) return 'No rating';
+    return '$formattedRating ${formattedRatingCount}';
+  }
 }

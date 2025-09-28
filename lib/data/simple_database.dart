@@ -28,6 +28,10 @@ class Books extends Table {
   // Reading time tracking
   IntColumn get totalReadingTimeMinutes =>
       integer().withDefault(const Constant(0))();
+
+  // Book ratings
+  RealColumn get averageRating => real().nullable()();
+  IntColumn get ratingsCount => integer().nullable()();
 }
 
 @DriftDatabase(tables: [Books])
@@ -35,7 +39,7 @@ class SimpleDatabase extends _$SimpleDatabase {
   SimpleDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -46,6 +50,11 @@ class SimpleDatabase extends _$SimpleDatabase {
       if (from < 2) {
         // Add totalReadingTimeMinutes column
         await m.addColumn(books, books.totalReadingTimeMinutes);
+      }
+      if (from < 3) {
+        // Add rating columns
+        await m.addColumn(books, books.averageRating);
+        await m.addColumn(books, books.ratingsCount);
       }
     },
   );
@@ -145,6 +154,9 @@ extension BookToEntity on Book {
               totalReadingTimeMinutes: totalReadingTimeMinutes,
             )
           : null,
+      // Map rating fields
+      averageRating: averageRating,
+      ratingsCount: ratingsCount,
     );
   }
 }
@@ -165,6 +177,12 @@ extension EntityToBook on BookEntity {
       startDate: Value(readingProgress?.startDate),
       endDate: Value(readingProgress?.endDate),
       isCompleted: Value(readingProgress?.isCompleted ?? false),
+      totalReadingTimeMinutes: Value(
+        readingProgress?.totalReadingTimeMinutes ?? 0,
+      ),
+      // Map rating fields
+      averageRating: Value(averageRating),
+      ratingsCount: Value(ratingsCount),
     );
   }
 }

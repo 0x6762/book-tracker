@@ -85,6 +85,8 @@ class GoogleBooksApiService {
       thumbnailUrl: imageLinks['thumbnail'] ?? imageLinks['smallThumbnail'],
       publishedDate: volumeInfo['publishedDate'] ?? '',
       pageCount: volumeInfo['pageCount']?.toInt(),
+      averageRating: volumeInfo['averageRating']?.toDouble(),
+      ratingsCount: volumeInfo['ratingsCount']?.toInt(),
     );
   }
 }
