@@ -8,16 +8,8 @@ import '../screens/book_details_screen.dart';
 class BookCard extends StatelessWidget {
   final BookEntity book;
   final VoidCallback? onDelete;
-  final VoidCallback? onUpdateProgress;
-  final VoidCallback? onCompleteReading;
 
-  const BookCard({
-    super.key,
-    required this.book,
-    this.onDelete,
-    this.onUpdateProgress,
-    this.onCompleteReading,
-  });
+  const BookCard({super.key, required this.book, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -43,104 +35,107 @@ class BookCard extends StatelessWidget {
       onDismissed: (direction) {
         onDelete?.call();
       },
-      child: Card(
-        margin: const EdgeInsets.symmetric(
-          horizontal: AppConstants.cardMargin,
-          vertical: AppConstants.cardVerticalMargin,
-        ),
-        elevation: 2,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Book cover with Hero animation
-              GestureDetector(
-                onTap: () => _navigateToDetails(context),
-                child: Hero(
-                  tag: 'book_cover_${book.id}',
-                  child: Container(
-                    height: AppConstants.bookCoverHeight,
-                    width: AppConstants.bookCoverWidth,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.borderRadius,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: book.thumbnailUrl != null
-                        ? ClipRRect(
-                            borderRadius: BorderRadius.circular(
-                              AppConstants.borderRadius,
-                            ),
-                            child: CachedNetworkImage(
-                              imageUrl: book.thumbnailUrl!,
-                              height: AppConstants.bookCoverHeight,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) =>
-                                  _buildPlaceholder(),
-                              errorWidget: (context, url, error) =>
-                                  _buildErrorWidget(),
-                            ),
-                          )
-                        : _buildErrorWidget(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: AppConstants.largeSpacing),
-              // Book details
-              Expanded(
-                child: Column(
+      child: GestureDetector(
+        onTap: () => _navigateToDetails(context),
+        child: Card(
+          margin: const EdgeInsets.symmetric(
+            horizontal: AppConstants.cardMargin,
+            vertical: AppConstants.cardVerticalMargin,
+          ),
+          elevation: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top row with book cover and details
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      book.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: AppConstants.titleFontSize,
-                        color: Colors.white,
-                      ),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: AppConstants.mediumSpacing),
-                    Text(
-                      book.authors,
-                      style: TextStyle(
-                        color: Colors.grey[400],
-                        fontSize: AppConstants.subtitleFontSize,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: AppConstants.smallSpacing),
-                    if (book.pageCount != null) ...[
-                      Text(
-                        '${book.pageCount} pages',
-                        style: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: AppConstants.bodyFontSize,
+                    // Book cover with Hero animation
+                    Hero(
+                      tag: 'book_cover_${book.id}',
+                      child: Container(
+                        height: AppConstants.bookCoverHeight,
+                        width: AppConstants.bookCoverWidth,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.borderRadius,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
+                        child: book.thumbnailUrl != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.borderRadius,
+                                ),
+                                child: CachedNetworkImage(
+                                  imageUrl: book.thumbnailUrl!,
+                                  height: AppConstants.bookCoverHeight,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) =>
+                                      _buildPlaceholder(),
+                                  errorWidget: (context, url, error) =>
+                                      _buildErrorWidget(),
+                                ),
+                              )
+                            : _buildErrorWidget(),
                       ),
-                      const SizedBox(height: AppConstants.smallSpacing),
-                    ],
-                    // Reading progress section
-                    if (book.hasReadingProgress) ...[
-                      _buildProgressSection(),
-                      const SizedBox(height: AppConstants.smallSpacing),
-                    ],
-                    // Action buttons
-                    _buildActionButtons(),
+                    ),
+                    const SizedBox(width: AppConstants.largeSpacing),
+                    // Book details
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            book.title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: AppConstants.titleFontSize,
+                              color: Colors.white,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: AppConstants.mediumSpacing),
+                          Text(
+                            book.authors,
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontSize: AppConstants.subtitleFontSize,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: AppConstants.largeSpacing),
+                          // Reading progress section
+                          if (book.hasReadingProgress) ...[
+                            _buildProgressSection(),
+                          ],
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-              ),
-            ],
+                // Reading timer - full width
+                const SizedBox(height: AppConstants.largeSpacing),
+                GestureDetector(
+                  onTap: () {}, // Prevent tap from bubbling up to card
+                  child: ReadingTimer(
+                    bookId: book.id!,
+                    bookTitle: book.title,
+                    book: book,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -247,79 +242,6 @@ class BookCard extends StatelessWidget {
               ),
           ],
         ),
-        if (book.daysReading > 0) ...[
-          const SizedBox(height: 2),
-          Text(
-            '${book.daysReading} days reading',
-            style: TextStyle(color: Colors.grey[500], fontSize: 11),
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildActionButtons() {
-    return Row(
-      children: [
-        if (book.isCompleted) ...[
-          // Completed indicator
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.green.withOpacity(0.5)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.check_circle, size: 16, color: Colors.green),
-                const SizedBox(width: 4),
-                Text(
-                  'Completed',
-                  style: TextStyle(
-                    color: Colors.green[700],
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ] else ...[
-          // Update progress button (for all non-completed books)
-          ElevatedButton.icon(
-            onPressed: onUpdateProgress,
-            icon: const Icon(Icons.edit, size: 16),
-            label: Text(book.hasReadingProgress ? 'Update' : 'Start Reading'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: book.hasReadingProgress
-                  ? Colors.orange
-                  : Colors.blue,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              textStyle: const TextStyle(fontSize: 12),
-            ),
-          ),
-          if (book.hasReadingProgress) ...[
-            const SizedBox(width: 8),
-            // Complete button (only for books with progress)
-            ElevatedButton.icon(
-              onPressed: onCompleteReading,
-              icon: const Icon(Icons.check, size: 16),
-              label: const Text('Complete'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                textStyle: const TextStyle(fontSize: 12),
-              ),
-            ),
-          ],
-        ],
       ],
     );
   }
@@ -330,21 +252,18 @@ class BookCard extends StatelessWidget {
         pageBuilder: (context, animation, secondaryAnimation) =>
             BookDetailsScreen(book: book),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          const begin = Offset(1.0, 0.0);
-          const end = Offset.zero;
-          const curve = Curves.easeInOutCubic;
+          // Simple fade in effect
+          var fadeTween = Tween<double>(
+            begin: 0.0,
+            end: 1.0,
+          ).chain(CurveTween(curve: Curves.easeInOut));
 
-          var tween = Tween(
-            begin: begin,
-            end: end,
-          ).chain(CurveTween(curve: curve));
-
-          return SlideTransition(
-            position: animation.drive(tween),
+          return FadeTransition(
+            opacity: animation.drive(fadeTween),
             child: child,
           );
         },
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 200),
       ),
     );
   }

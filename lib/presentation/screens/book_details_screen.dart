@@ -27,13 +27,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        title: Text(
-          'Book Details',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -66,10 +59,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
 
             // Reading statistics
             _buildReadingStats(context),
-            const SizedBox(height: 24),
-
-            // Action buttons
-            _buildActionButtons(context),
           ],
         ),
       ),
@@ -430,6 +419,54 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 ),
             ],
           ),
+          const SizedBox(height: 16),
+
+          // Action buttons
+          Consumer<BookProvider>(
+            builder: (context, bookProvider, child) {
+              return Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () =>
+                          _showProgressModal(context, bookProvider),
+                      icon: const Icon(Icons.edit),
+                      label: Text(
+                        widget.book.hasReadingProgress
+                            ? 'Update Progress'
+                            : 'Start Reading',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  if (widget.book.hasReadingProgress &&
+                      !widget.book.isCompleted)
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          bookProvider.completeReading(widget.book.id!);
+                          Navigator.of(context).pop();
+                        },
+                        icon: const Icon(Icons.check),
+                        label: const Text('Complete'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
         ],
       ),
     );
@@ -557,50 +594,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildActionButtons(BuildContext context) {
-    return Consumer<BookProvider>(
-      builder: (context, bookProvider, child) {
-        return Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () => _showProgressModal(context, bookProvider),
-                icon: const Icon(Icons.edit),
-                label: Text(
-                  widget.book.hasReadingProgress
-                      ? 'Update Progress'
-                      : 'Start Reading',
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            if (widget.book.hasReadingProgress && !widget.book.isCompleted)
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    bookProvider.completeReading(widget.book.id!);
-                    Navigator.of(context).pop();
-                  },
-                  icon: const Icon(Icons.check),
-                  label: const Text('Complete'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
     );
   }
 
