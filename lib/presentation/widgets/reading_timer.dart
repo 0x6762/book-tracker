@@ -37,144 +37,119 @@ class ReadingTimer extends StatelessWidget {
           });
         }
 
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceVariant,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isCurrentBook
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.outline.withOpacity(0.3),
-              width: isCurrentBook ? 2 : 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Timer info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          timeText.isNotEmpty ? timeText : 'Start reading',
-                          style: Theme.of(context).textTheme.headlineSmall
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: isCurrentBook
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                      ],
+        return AnimatedSize(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          child: hasTimer
+              ? Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceVariant,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.grey.withOpacity(0.3),
+                      width: 1,
                     ),
                   ),
-
-                  // Timer controls
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Column(
                     children: [
-                      if (hasTimer && isRunning) ...[
-                        // Stop button
-                        IconButton(
-                          onPressed: () => bookProvider.stopTimer(),
-                          icon: const Icon(Icons.stop),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.errorContainer,
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.onErrorContainer,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Timer info
+                          Expanded(
+                            child: Text(
+                              timeText,
+                              style: Theme.of(context).textTheme.displaySmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: isCurrentBook
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        // Pause button
-                        IconButton(
-                          onPressed: () => bookProvider.pauseTimer(),
-                          icon: const Icon(Icons.pause),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primaryContainer,
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.onPrimaryContainer,
+
+                          // Timer controls
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Stop button
+                              IconButton(
+                                onPressed: () => bookProvider.stopTimer(),
+                                icon: const Icon(Icons.stop),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Colors.grey.withOpacity(0.2),
+                                  foregroundColor: Colors.red,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // Pause/Resume button
+                              IconButton(
+                                onPressed: isRunning
+                                    ? () => bookProvider.pauseTimer()
+                                    : () => bookProvider.resumeTimer(),
+                                icon: Icon(
+                                  isRunning ? Icons.pause : Icons.play_arrow,
+                                ),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.primary,
+                                  foregroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ] else if (hasTimer && !isRunning) ...[
-                        // Stop button
-                        IconButton(
-                          onPressed: () => bookProvider.stopTimer(),
-                          icon: const Icon(Icons.stop),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.errorContainer,
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.onErrorContainer,
+                        ],
+                      ),
+
+                      // Progress bar
+                      const SizedBox(height: 12),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: bookProvider.totalSeconds > 0
+                              ? (bookProvider.totalSeconds -
+                                        bookProvider.remainingSeconds) /
+                                    bookProvider.totalSeconds
+                              : 0.0,
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.outline.withOpacity(0.2),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Theme.of(context).colorScheme.primary,
                           ),
+                          minHeight: 8,
                         ),
-                        const SizedBox(width: 8),
-                        // Resume button
-                        IconButton(
-                          onPressed: () => bookProvider.resumeTimer(),
-                          icon: const Icon(Icons.play_arrow),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primary,
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.onPrimary,
-                          ),
-                        ),
-                      ] else ...[
-                        // Set timer button
-                        IconButton(
-                          onPressed: () => _showTimerBottomSheet(context),
-                          icon: const Icon(Icons.play_arrow),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primary,
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.onPrimary,
-                          ),
-                        ),
-                      ],
+                      ),
                     ],
                   ),
-                ],
-              ),
-
-              // Progress bar
-              if (hasTimer) ...[
-                const SizedBox(height: 12),
-                LinearProgressIndicator(
-                  value: bookProvider.totalSeconds > 0
-                      ? (bookProvider.totalSeconds -
-                                bookProvider.remainingSeconds) /
-                            bookProvider.totalSeconds
-                      : 0.0,
-                  backgroundColor: Theme.of(
-                    context,
-                  ).colorScheme.outline.withOpacity(0.2),
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).colorScheme.primary,
+                )
+              : SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showTimerBottomSheet(context),
+                    icon: const Icon(Icons.play_arrow, size: 18),
+                    label: const Text('Start Reading'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
                   ),
                 ),
-              ],
-            ],
-          ),
         );
       },
     );
