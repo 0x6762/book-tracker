@@ -5,7 +5,7 @@ class AppComponentThemes {
   // AppBar theme
   static AppBarTheme appBarTheme(ColorScheme colorScheme) {
     return AppBarTheme(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: Colors.transparent,
       foregroundColor: colorScheme.onSurface,
       elevation: 0,
       centerTitle: false,

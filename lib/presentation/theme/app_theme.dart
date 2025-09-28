@@ -32,6 +32,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: AppColorSchemes.dark,
+      scaffoldBackgroundColor: const Color(0xFF19141B), // Dark background
       textTheme: _buildTextTheme(AppColorSchemes.dark),
       appBarTheme: AppComponentThemes.appBarTheme(AppColorSchemes.dark),
       cardTheme: AppComponentThemes.cardTheme(AppColorSchemes.dark),
