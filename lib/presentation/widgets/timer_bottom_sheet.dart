@@ -482,6 +482,7 @@ class _TimerBottomSheetState extends State<TimerBottomSheet> {
               child: ElevatedButton.icon(
                 onPressed: () {
                   bookProvider.setTimer(widget.book.id!, _selectedMinutes);
+                  bookProvider.startTimer(widget.book.id!); // Auto-start the timer
                   Navigator.of(context).pop();
                 },
                 icon: const Icon(Icons.timer),

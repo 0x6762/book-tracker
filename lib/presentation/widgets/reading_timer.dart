@@ -109,6 +109,20 @@ class ReadingTimer extends StatelessWidget {
                           ),
                         ),
                       ] else if (hasTimer && isRunning) ...[
+                        // Stop button
+                        IconButton(
+                          onPressed: () => bookProvider.stopTimer(),
+                          icon: const Icon(Icons.stop),
+                          style: IconButton.styleFrom(
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.errorContainer,
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.onErrorContainer,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         // Pause button
                         IconButton(
                           onPressed: () => bookProvider.pauseTimer(),
@@ -122,7 +136,7 @@ class ReadingTimer extends StatelessWidget {
                             ).colorScheme.onPrimaryContainer,
                           ),
                         ),
-                        const SizedBox(width: 8),
+                      ] else if (hasTimer && !isRunning) ...[
                         // Stop button
                         IconButton(
                           onPressed: () => bookProvider.stopTimer(),
@@ -136,7 +150,7 @@ class ReadingTimer extends StatelessWidget {
                             ).colorScheme.onErrorContainer,
                           ),
                         ),
-                      ] else if (hasTimer && !isRunning) ...[
+                        const SizedBox(width: 8),
                         // Resume button
                         IconButton(
                           onPressed: () => bookProvider.resumeTimer(),
@@ -150,25 +164,11 @@ class ReadingTimer extends StatelessWidget {
                             ).colorScheme.onPrimary,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        // Stop button
-                        IconButton(
-                          onPressed: () => bookProvider.stopTimer(),
-                          icon: const Icon(Icons.stop),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.errorContainer,
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.onErrorContainer,
-                          ),
-                        ),
                       ] else ...[
                         // Set timer button
                         IconButton(
                           onPressed: () => _showTimerBottomSheet(context),
-                          icon: const Icon(Icons.timer),
+                          icon: const Icon(Icons.play_arrow),
                           style: IconButton.styleFrom(
                             backgroundColor: Theme.of(
                               context,

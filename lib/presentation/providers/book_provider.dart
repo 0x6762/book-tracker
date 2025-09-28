@@ -208,6 +208,18 @@ class BookProvider with ChangeNotifier {
   }
 
   void stopTimer() {
+    // Add elapsed time to book before stopping
+    if (_currentBookId != null && _totalSeconds > 0) {
+      final elapsedSeconds = _totalSeconds - _remainingSeconds;
+      final elapsedMinutes = elapsedSeconds ~/ 60;
+      if (elapsedMinutes > 0) {
+        _database.addReadingTime(_currentBookId!, elapsedMinutes);
+        print(
+          '📚 Added $elapsedMinutes minutes to book $_currentBookId (stopped early)',
+        );
+      }
+    }
+
     _timer?.cancel();
     _timer = null;
     _isTimerRunning = false;
