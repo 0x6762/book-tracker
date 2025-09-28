@@ -248,9 +248,21 @@ class BookProvider with ChangeNotifier {
   void _showTimerCompletedNotification() {
     // This will be handled by the UI to show a notification
     print('⏰ Reading session completed!');
+    // Add reading time to the book's total
+    _addReadingTimeToBook();
     // Trigger page update modal after timer completion
     _shouldShowPageUpdateModal = true;
     notifyListeners();
+  }
+
+  void _addReadingTimeToBook() {
+    if (_currentBookId != null && _totalSeconds > 0) {
+      final sessionMinutes = _totalSeconds ~/ 60;
+      if (sessionMinutes > 0) {
+        _database.addReadingTime(_currentBookId!, sessionMinutes);
+        print('📚 Added $sessionMinutes minutes to book $_currentBookId');
+      }
+    }
   }
 
   // Flag to trigger page update modal

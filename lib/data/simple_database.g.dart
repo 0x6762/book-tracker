@@ -146,6 +146,18 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _totalReadingTimeMinutesMeta =
+      const VerificationMeta('totalReadingTimeMinutes');
+  @override
+  late final GeneratedColumn<int> totalReadingTimeMinutes =
+      GeneratedColumn<int>(
+        'total_reading_time_minutes',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -160,6 +172,7 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     startDate,
     endDate,
     isCompleted,
+    totalReadingTimeMinutes,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -266,6 +279,15 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         ),
       );
     }
+    if (data.containsKey('total_reading_time_minutes')) {
+      context.handle(
+        _totalReadingTimeMinutesMeta,
+        totalReadingTimeMinutes.isAcceptableOrUnknown(
+          data['total_reading_time_minutes']!,
+          _totalReadingTimeMinutesMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -323,6 +345,10 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.bool,
         data['${effectivePrefix}is_completed'],
       )!,
+      totalReadingTimeMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_reading_time_minutes'],
+      )!,
     );
   }
 
@@ -345,6 +371,7 @@ class Book extends DataClass implements Insertable<Book> {
   final DateTime? startDate;
   final DateTime? endDate;
   final bool isCompleted;
+  final int totalReadingTimeMinutes;
   const Book({
     required this.id,
     required this.googleBooksId,
@@ -358,6 +385,7 @@ class Book extends DataClass implements Insertable<Book> {
     this.startDate,
     this.endDate,
     required this.isCompleted,
+    required this.totalReadingTimeMinutes,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -386,6 +414,7 @@ class Book extends DataClass implements Insertable<Book> {
       map['end_date'] = Variable<DateTime>(endDate);
     }
     map['is_completed'] = Variable<bool>(isCompleted);
+    map['total_reading_time_minutes'] = Variable<int>(totalReadingTimeMinutes);
     return map;
   }
 
@@ -415,6 +444,7 @@ class Book extends DataClass implements Insertable<Book> {
           ? const Value.absent()
           : Value(endDate),
       isCompleted: Value(isCompleted),
+      totalReadingTimeMinutes: Value(totalReadingTimeMinutes),
     );
   }
 
@@ -436,6 +466,9 @@ class Book extends DataClass implements Insertable<Book> {
       startDate: serializer.fromJson<DateTime?>(json['startDate']),
       endDate: serializer.fromJson<DateTime?>(json['endDate']),
       isCompleted: serializer.fromJson<bool>(json['isCompleted']),
+      totalReadingTimeMinutes: serializer.fromJson<int>(
+        json['totalReadingTimeMinutes'],
+      ),
     );
   }
   @override
@@ -454,6 +487,9 @@ class Book extends DataClass implements Insertable<Book> {
       'startDate': serializer.toJson<DateTime?>(startDate),
       'endDate': serializer.toJson<DateTime?>(endDate),
       'isCompleted': serializer.toJson<bool>(isCompleted),
+      'totalReadingTimeMinutes': serializer.toJson<int>(
+        totalReadingTimeMinutes,
+      ),
     };
   }
 
@@ -470,6 +506,7 @@ class Book extends DataClass implements Insertable<Book> {
     Value<DateTime?> startDate = const Value.absent(),
     Value<DateTime?> endDate = const Value.absent(),
     bool? isCompleted,
+    int? totalReadingTimeMinutes,
   }) => Book(
     id: id ?? this.id,
     googleBooksId: googleBooksId ?? this.googleBooksId,
@@ -485,6 +522,8 @@ class Book extends DataClass implements Insertable<Book> {
     startDate: startDate.present ? startDate.value : this.startDate,
     endDate: endDate.present ? endDate.value : this.endDate,
     isCompleted: isCompleted ?? this.isCompleted,
+    totalReadingTimeMinutes:
+        totalReadingTimeMinutes ?? this.totalReadingTimeMinutes,
   );
   Book copyWithCompanion(BooksCompanion data) {
     return Book(
@@ -512,6 +551,9 @@ class Book extends DataClass implements Insertable<Book> {
       isCompleted: data.isCompleted.present
           ? data.isCompleted.value
           : this.isCompleted,
+      totalReadingTimeMinutes: data.totalReadingTimeMinutes.present
+          ? data.totalReadingTimeMinutes.value
+          : this.totalReadingTimeMinutes,
     );
   }
 
@@ -529,7 +571,8 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('currentPage: $currentPage, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
-          ..write('isCompleted: $isCompleted')
+          ..write('isCompleted: $isCompleted, ')
+          ..write('totalReadingTimeMinutes: $totalReadingTimeMinutes')
           ..write(')'))
         .toString();
   }
@@ -548,6 +591,7 @@ class Book extends DataClass implements Insertable<Book> {
     startDate,
     endDate,
     isCompleted,
+    totalReadingTimeMinutes,
   );
   @override
   bool operator ==(Object other) =>
@@ -564,7 +608,8 @@ class Book extends DataClass implements Insertable<Book> {
           other.currentPage == this.currentPage &&
           other.startDate == this.startDate &&
           other.endDate == this.endDate &&
-          other.isCompleted == this.isCompleted);
+          other.isCompleted == this.isCompleted &&
+          other.totalReadingTimeMinutes == this.totalReadingTimeMinutes);
 }
 
 class BooksCompanion extends UpdateCompanion<Book> {
@@ -580,6 +625,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<DateTime?> startDate;
   final Value<DateTime?> endDate;
   final Value<bool> isCompleted;
+  final Value<int> totalReadingTimeMinutes;
   const BooksCompanion({
     this.id = const Value.absent(),
     this.googleBooksId = const Value.absent(),
@@ -593,6 +639,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.startDate = const Value.absent(),
     this.endDate = const Value.absent(),
     this.isCompleted = const Value.absent(),
+    this.totalReadingTimeMinutes = const Value.absent(),
   });
   BooksCompanion.insert({
     this.id = const Value.absent(),
@@ -607,6 +654,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.startDate = const Value.absent(),
     this.endDate = const Value.absent(),
     this.isCompleted = const Value.absent(),
+    this.totalReadingTimeMinutes = const Value.absent(),
   }) : googleBooksId = Value(googleBooksId),
        title = Value(title),
        authors = Value(authors);
@@ -623,6 +671,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<DateTime>? startDate,
     Expression<DateTime>? endDate,
     Expression<bool>? isCompleted,
+    Expression<int>? totalReadingTimeMinutes,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -637,6 +686,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
       if (startDate != null) 'start_date': startDate,
       if (endDate != null) 'end_date': endDate,
       if (isCompleted != null) 'is_completed': isCompleted,
+      if (totalReadingTimeMinutes != null)
+        'total_reading_time_minutes': totalReadingTimeMinutes,
     });
   }
 
@@ -653,6 +704,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<DateTime?>? startDate,
     Value<DateTime?>? endDate,
     Value<bool>? isCompleted,
+    Value<int>? totalReadingTimeMinutes,
   }) {
     return BooksCompanion(
       id: id ?? this.id,
@@ -667,6 +719,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       isCompleted: isCompleted ?? this.isCompleted,
+      totalReadingTimeMinutes:
+          totalReadingTimeMinutes ?? this.totalReadingTimeMinutes,
     );
   }
 
@@ -709,6 +763,11 @@ class BooksCompanion extends UpdateCompanion<Book> {
     if (isCompleted.present) {
       map['is_completed'] = Variable<bool>(isCompleted.value);
     }
+    if (totalReadingTimeMinutes.present) {
+      map['total_reading_time_minutes'] = Variable<int>(
+        totalReadingTimeMinutes.value,
+      );
+    }
     return map;
   }
 
@@ -726,7 +785,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('currentPage: $currentPage, ')
           ..write('startDate: $startDate, ')
           ..write('endDate: $endDate, ')
-          ..write('isCompleted: $isCompleted')
+          ..write('isCompleted: $isCompleted, ')
+          ..write('totalReadingTimeMinutes: $totalReadingTimeMinutes')
           ..write(')'))
         .toString();
   }
@@ -757,6 +817,7 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<DateTime?> startDate,
       Value<DateTime?> endDate,
       Value<bool> isCompleted,
+      Value<int> totalReadingTimeMinutes,
     });
 typedef $$BooksTableUpdateCompanionBuilder =
     BooksCompanion Function({
@@ -772,6 +833,7 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<DateTime?> startDate,
       Value<DateTime?> endDate,
       Value<bool> isCompleted,
+      Value<int> totalReadingTimeMinutes,
     });
 
 class $$BooksTableFilterComposer
@@ -840,6 +902,11 @@ class $$BooksTableFilterComposer
 
   ColumnFilters<bool> get isCompleted => $composableBuilder(
     column: $table.isCompleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalReadingTimeMinutes => $composableBuilder(
+    column: $table.totalReadingTimeMinutes,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -912,6 +979,11 @@ class $$BooksTableOrderingComposer
     column: $table.isCompleted,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<int> get totalReadingTimeMinutes => $composableBuilder(
+    column: $table.totalReadingTimeMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$BooksTableAnnotationComposer
@@ -970,6 +1042,11 @@ class $$BooksTableAnnotationComposer
     column: $table.isCompleted,
     builder: (column) => column,
   );
+
+  GeneratedColumn<int> get totalReadingTimeMinutes => $composableBuilder(
+    column: $table.totalReadingTimeMinutes,
+    builder: (column) => column,
+  );
 }
 
 class $$BooksTableTableManager
@@ -1012,6 +1089,7 @@ class $$BooksTableTableManager
                 Value<DateTime?> startDate = const Value.absent(),
                 Value<DateTime?> endDate = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
+                Value<int> totalReadingTimeMinutes = const Value.absent(),
               }) => BooksCompanion(
                 id: id,
                 googleBooksId: googleBooksId,
@@ -1025,6 +1103,7 @@ class $$BooksTableTableManager
                 startDate: startDate,
                 endDate: endDate,
                 isCompleted: isCompleted,
+                totalReadingTimeMinutes: totalReadingTimeMinutes,
               ),
           createCompanionCallback:
               ({
@@ -1040,6 +1119,7 @@ class $$BooksTableTableManager
                 Value<DateTime?> startDate = const Value.absent(),
                 Value<DateTime?> endDate = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
+                Value<int> totalReadingTimeMinutes = const Value.absent(),
               }) => BooksCompanion.insert(
                 id: id,
                 googleBooksId: googleBooksId,
@@ -1053,6 +1133,7 @@ class $$BooksTableTableManager
                 startDate: startDate,
                 endDate: endDate,
                 isCompleted: isCompleted,
+                totalReadingTimeMinutes: totalReadingTimeMinutes,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

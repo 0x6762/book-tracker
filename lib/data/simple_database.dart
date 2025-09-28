@@ -24,6 +24,10 @@ class Books extends Table {
   DateTimeColumn get startDate => dateTime().nullable()();
   DateTimeColumn get endDate => dateTime().nullable()();
   BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
+
+  // Reading time tracking
+  IntColumn get totalReadingTimeMinutes =>
+      integer().withDefault(const Constant(0))();
 }
 
 @DriftDatabase(tables: [Books])
@@ -31,7 +35,20 @@ class SimpleDatabase extends _$SimpleDatabase {
   SimpleDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (Migrator m) async {
+      await m.createAll();
+    },
+    onUpgrade: (Migrator m, int from, int to) async {
+      if (from < 2) {
+        // Add totalReadingTimeMinutes column
+        await m.addColumn(books, books.totalReadingTimeMinutes);
+      }
+    },
+  );
 
   // Simple methods - no complex joins needed
   Future<List<Book>> getAllBooks() => select(books).get();
@@ -73,6 +90,19 @@ class SimpleDatabase extends _$SimpleDatabase {
       ),
     );
   }
+
+  // Add reading time to book's total
+  Future<void> addReadingTime(int bookId, int minutes) async {
+    final book = await (select(
+      books,
+    )..where((tbl) => tbl.id.equals(bookId))).getSingleOrNull();
+    if (book != null) {
+      final newTotalTime = book.totalReadingTimeMinutes + minutes;
+      await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
+        BooksCompanion(totalReadingTimeMinutes: Value(newTotalTime)),
+      );
+    }
+  }
 }
 
 LazyDatabase _openConnection() {
@@ -112,6 +142,7 @@ extension BookToEntity on Book {
               startDate: startDate!,
               endDate: endDate,
               isCompleted: isCompleted,
+              totalReadingTimeMinutes: totalReadingTimeMinutes,
             )
           : null,
     );

@@ -5,6 +5,7 @@ class ReadingProgress {
   final DateTime startDate;
   final DateTime? endDate;
   final bool isCompleted;
+  final int totalReadingTimeMinutes;
 
   const ReadingProgress({
     this.id,
@@ -13,6 +14,7 @@ class ReadingProgress {
     required this.startDate,
     this.endDate,
     this.isCompleted = false,
+    this.totalReadingTimeMinutes = 0,
   });
 
   // Calculate progress percentage
@@ -27,6 +29,20 @@ class ReadingProgress {
     return end.difference(startDate).inDays + 1;
   }
 
+  // Format reading time as human-readable string
+  String getFormattedReadingTime() {
+    if (totalReadingTimeMinutes == 0) return 'No reading time';
+
+    final hours = totalReadingTimeMinutes ~/ 60;
+    final minutes = totalReadingTimeMinutes % 60;
+
+    if (hours > 0) {
+      return minutes > 0 ? '${hours}h ${minutes}m' : '${hours}h';
+    } else {
+      return '${minutes}m';
+    }
+  }
+
   // Create a copy with updated values
   ReadingProgress copyWith({
     int? id,
@@ -35,6 +51,7 @@ class ReadingProgress {
     DateTime? startDate,
     DateTime? endDate,
     bool? isCompleted,
+    int? totalReadingTimeMinutes,
   }) {
     return ReadingProgress(
       id: id ?? this.id,
@@ -43,6 +60,8 @@ class ReadingProgress {
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       isCompleted: isCompleted ?? this.isCompleted,
+      totalReadingTimeMinutes:
+          totalReadingTimeMinutes ?? this.totalReadingTimeMinutes,
     );
   }
 

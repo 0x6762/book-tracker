@@ -154,6 +154,17 @@ class _ProgressUpdateModalState extends State<ProgressUpdateModal> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
+          if (widget.book.readingProgress?.totalReadingTimeMinutes != null &&
+              widget.book.readingProgress!.totalReadingTimeMinutes > 0) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Total reading time: ${widget.book.readingProgress!.getFormattedReadingTime()}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           // Page input
           TextField(

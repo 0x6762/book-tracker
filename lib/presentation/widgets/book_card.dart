@@ -248,9 +248,20 @@ class BookCard extends StatelessWidget {
         ),
         if (book.daysReading > 0) ...[
           const SizedBox(height: 2),
-          Text(
-            '${book.daysReading} days reading',
-            style: TextStyle(color: Colors.grey[500], fontSize: 11),
+          Row(
+            children: [
+              Text(
+                '${book.daysReading} days reading',
+                style: TextStyle(color: Colors.grey[500], fontSize: 11),
+              ),
+              if (progress.totalReadingTimeMinutes > 0) ...[
+                const SizedBox(width: 8),
+                Text(
+                  '• ${progress.getFormattedReadingTime()}',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                ),
+              ],
+            ],
           ),
         ],
       ],
