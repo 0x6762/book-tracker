@@ -4,7 +4,7 @@ import '../../domain/entities/book.dart';
 import '../../domain/entities/reading_progress.dart';
 import '../constants/app_constants.dart';
 import '../widgets/reading_timer.dart';
-import '../widgets/progress_update_modal.dart';
+import '../widgets/progress_update_bottom_sheet.dart';
 import '../providers/book_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -598,19 +598,15 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   }
 
   void _showProgressModal(BuildContext context, BookProvider bookProvider) {
-    showDialog(
+    showProgressUpdateBottomSheet(
       context: context,
-      builder: (context) => ProgressUpdateModal(
-        book: widget.book,
-        onUpdateProgress: (currentPage) {
-          bookProvider.updateProgress(widget.book.id!, currentPage);
-          Navigator.of(context).pop();
-        },
-        onCompleteReading: () {
-          bookProvider.completeReading(widget.book.id!);
-          Navigator.of(context).pop();
-        },
-      ),
+      book: widget.book,
+      onUpdateProgress: (currentPage) {
+        bookProvider.updateProgress(widget.book.id!, currentPage);
+      },
+      onCompleteReading: () {
+        bookProvider.completeReading(widget.book.id!);
+      },
     );
   }
 

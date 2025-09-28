@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/book_provider.dart';
 import 'timer_bottom_sheet.dart';
-import 'progress_update_modal.dart';
+import 'progress_update_bottom_sheet.dart';
 import '../../domain/entities/book.dart';
 
 class ReadingTimer extends StatelessWidget {
@@ -190,20 +190,16 @@ class ReadingTimer extends StatelessWidget {
   }
 
   void _showPageUpdateModal(BuildContext context, BookProvider bookProvider) {
-    showDialog(
+    showProgressUpdateBottomSheet(
       context: context,
-      builder: (context) => ProgressUpdateModal(
-        book: book,
-        isFromTimerCompletion: true,
-        onUpdateProgress: (currentPage) {
-          bookProvider.updateProgress(book.id!, currentPage);
-          Navigator.of(context).pop();
-        },
-        onCompleteReading: () {
-          bookProvider.completeReading(book.id!);
-          Navigator.of(context).pop();
-        },
-      ),
+      book: book,
+      isFromTimerCompletion: true,
+      onUpdateProgress: (currentPage) {
+        bookProvider.updateProgress(book.id!, currentPage);
+      },
+      onCompleteReading: () {
+        bookProvider.completeReading(book.id!);
+      },
     );
   }
 }

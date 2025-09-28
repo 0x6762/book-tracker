@@ -1,0 +1,192 @@
+import 'package:flutter/material.dart';
+import '../../domain/entities/book.dart';
+
+class ProgressUpdateBottomSheet extends StatefulWidget {
+  final BookEntity book;
+  final Function(int currentPage) onUpdateProgress;
+  final VoidCallback? onCompleteReading;
+  final bool isFromTimerCompletion;
+
+  const ProgressUpdateBottomSheet({
+    super.key,
+    required this.book,
+    required this.onUpdateProgress,
+    this.onCompleteReading,
+    this.isFromTimerCompletion = false,
+  });
+
+  @override
+  State<ProgressUpdateBottomSheet> createState() =>
+      _ProgressUpdateBottomSheetState();
+}
+
+class _ProgressUpdateBottomSheetState extends State<ProgressUpdateBottomSheet> {
+  late TextEditingController _pageController;
+  late int _currentPage;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentPage = widget.book.readingProgress?.currentPage ?? 1;
+    _pageController = TextEditingController(text: _currentPage.toString());
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _updateProgress() {
+    final newPage = int.tryParse(_pageController.text);
+    if (newPage != null && newPage > 0) {
+      setState(() {
+        _currentPage = newPage;
+      });
+      widget.onUpdateProgress(newPage);
+      Navigator.of(context).pop();
+    }
+  }
+
+  void _completeReading() {
+    widget.onCompleteReading?.call();
+    Navigator.of(context).pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Handle bar
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurfaceVariant.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Title section
+          if (widget.isFromTimerCompletion) ...[
+            Text(
+              'Update your progress',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (widget.book.readingProgress?.totalReadingTimeMinutes != null &&
+                widget.book.readingProgress!.totalReadingTimeMinutes > 0) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Total reading time: ${widget.book.readingProgress!.getFormattedReadingTime()}',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
+          ] else ...[
+            Text(
+              'Update Progress',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ],
+
+          const SizedBox(height: 24),
+
+          // Page input
+          TextField(
+            controller: _pageController,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Current Page',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              final page = int.tryParse(value);
+              if (page != null && page > 0) {
+                setState(() {
+                  _currentPage = page;
+                });
+              }
+            },
+          ),
+
+          if (widget.book.pageCount != null) ...[
+            const SizedBox(height: 16),
+            Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: Text(
+                '$_currentPage of ${widget.book.pageCount} pages',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+
+          const SizedBox(height: 32),
+
+          // Action button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _updateProgress,
+              child: const Text('Update'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(56),
+                ),
+              ),
+            ),
+          ),
+
+          // Add bottom padding for safe area
+          SizedBox(height: MediaQuery.of(context).padding.bottom),
+        ],
+      ),
+    );
+  }
+}
+
+// Helper function to show the bottom sheet
+void showProgressUpdateBottomSheet({
+  required BuildContext context,
+  required BookEntity book,
+  required Function(int currentPage) onUpdateProgress,
+  VoidCallback? onCompleteReading,
+  bool isFromTimerCompletion = false,
+}) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) => ProgressUpdateBottomSheet(
+      book: book,
+      onUpdateProgress: onUpdateProgress,
+      onCompleteReading: onCompleteReading,
+      isFromTimerCompletion: isFromTimerCompletion,
+    ),
+  );
+}

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/book_provider.dart';
 import '../../domain/entities/book.dart';
-import 'progress_update_modal.dart';
+import 'progress_update_bottom_sheet.dart';
 
 class TimerBottomSheet extends StatefulWidget {
   final BookEntity book;
@@ -517,20 +517,16 @@ class _TimerBottomSheetState extends State<TimerBottomSheet> {
   }
 
   void _showProgressModal(BuildContext context, BookProvider bookProvider) {
-    showDialog(
+    showProgressUpdateBottomSheet(
       context: context,
-      builder: (context) => ProgressUpdateModal(
-        book: widget.book,
-        isFromTimerCompletion: true,
-        onUpdateProgress: (currentPage) {
-          bookProvider.updateProgress(widget.book.id!, currentPage);
-          Navigator.of(context).pop();
-        },
-        onCompleteReading: () {
-          bookProvider.completeReading(widget.book.id!);
-          Navigator.of(context).pop();
-        },
-      ),
+      book: widget.book,
+      isFromTimerCompletion: true,
+      onUpdateProgress: (currentPage) {
+        bookProvider.updateProgress(widget.book.id!, currentPage);
+      },
+      onCompleteReading: () {
+        bookProvider.completeReading(widget.book.id!);
+      },
     );
   }
 }
