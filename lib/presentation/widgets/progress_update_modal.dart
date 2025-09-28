@@ -118,8 +118,13 @@ class _ProgressUpdateModalState extends State<ProgressUpdateModal> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
         ),
-        ElevatedButton(onPressed: _updateProgress, child: const Text('Update')),
-        if (widget.book.isCurrentlyReading)
+        ElevatedButton(
+          onPressed: _updateProgress,
+          child: Text(
+            widget.book.hasReadingProgress ? 'Update' : 'Start Reading',
+          ),
+        ),
+        if (widget.book.hasReadingProgress && !widget.book.isCompleted)
           ElevatedButton(
             onPressed: _completeReading,
             style: ElevatedButton.styleFrom(

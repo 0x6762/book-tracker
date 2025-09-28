@@ -148,15 +148,18 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
 
     if (bookProvider.error != null) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Error: ${bookProvider.error}'),
-            ElevatedButton(
-              onPressed: () => bookProvider.loadBooks(),
-              child: const Text('Retry'),
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Error: ${bookProvider.error}'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => bookProvider.loadBooks(),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -179,9 +182,6 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
           book: book,
           onDelete: () {
             context.read<BookProvider>().deleteBook(book.id!);
-          },
-          onStartReading: () {
-            context.read<BookProvider>().startReading(book.id!);
           },
           onUpdateProgress: () {
             _showProgressModal(context, book, bookProvider);

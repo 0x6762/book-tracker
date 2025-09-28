@@ -4,13 +4,11 @@ import '../../data/datasources/google_books_api_service.dart';
 import '../../data/repositories/books_repository_impl.dart';
 import '../../domain/entities/book.dart';
 import '../../domain/repositories/books_repository.dart';
-import '../../domain/usecases/start_reading_usecase.dart';
 import '../../domain/usecases/update_progress_usecase.dart';
 import '../../domain/usecases/complete_reading_usecase.dart';
 
 class BookProvider with ChangeNotifier {
   final BooksRepository _repository;
-  late final StartReadingUseCase _startReadingUseCase;
   late final UpdateProgressUseCase _updateProgressUseCase;
   late final CompleteReadingUseCase _completeReadingUseCase;
   static const int _minQueryLength = 3;
@@ -34,7 +32,6 @@ class BookProvider with ChangeNotifier {
             database: AppDatabase(),
             apiService: GoogleBooksApiService(),
           ) {
-    _startReadingUseCase = StartReadingUseCase(_repository);
     _updateProgressUseCase = UpdateProgressUseCase(_repository);
     _completeReadingUseCase = CompleteReadingUseCase(_repository);
   }
@@ -53,6 +50,18 @@ class BookProvider with ChangeNotifier {
 
   Future<void> addBook(BookEntity book) async {
     try {
+      // Check if book already exists
+      final existingBooks = await _repository.getAllBooks();
+      final bookExists = existingBooks.any(
+        (existingBook) => existingBook.googleBooksId == book.googleBooksId,
+      );
+
+      if (bookExists) {
+        _error = 'Book already exists in your library';
+        notifyListeners();
+        return;
+      }
+
       await _repository.addBook(book);
       await loadBooks(); // Refresh the list
     } catch (e) {
@@ -117,15 +126,6 @@ class BookProvider with ChangeNotifier {
   }
 
   // Reading progress methods
-  Future<void> startReading(int bookId) async {
-    try {
-      await _startReadingUseCase(bookId);
-      await _refreshBooks();
-    } catch (e) {
-      _error = 'Failed to start reading: $e';
-      notifyListeners();
-    }
-  }
 
   Future<void> updateProgress(int bookId, int currentPage) async {
     try {
@@ -156,5 +156,10 @@ class BookProvider with ChangeNotifier {
       _error = 'Failed to refresh books: $e';
       notifyListeners();
     }
+  }
+
+  void clearError() {
+    _error = null;
+    notifyListeners();
   }
 }

@@ -6,7 +6,6 @@ import '../../domain/entities/book.dart';
 class BookCard extends StatelessWidget {
   final BookEntity book;
   final VoidCallback? onDelete;
-  final VoidCallback? onStartReading;
   final VoidCallback? onUpdateProgress;
   final VoidCallback? onCompleteReading;
 
@@ -14,7 +13,6 @@ class BookCard extends StatelessWidget {
     super.key,
     required this.book,
     this.onDelete,
-    this.onStartReading,
     this.onUpdateProgress,
     this.onCompleteReading,
   });
@@ -254,46 +252,7 @@ class BookCard extends StatelessWidget {
   Widget _buildActionButtons() {
     return Row(
       children: [
-        if (!book.hasReadingProgress) ...[
-          // Start reading button
-          ElevatedButton.icon(
-            onPressed: onStartReading,
-            icon: const Icon(Icons.play_arrow, size: 16),
-            label: const Text('Start Reading'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              textStyle: const TextStyle(fontSize: 12),
-            ),
-          ),
-        ] else if (book.isCurrentlyReading) ...[
-          // Update progress button
-          ElevatedButton.icon(
-            onPressed: onUpdateProgress,
-            icon: const Icon(Icons.edit, size: 16),
-            label: const Text('Update'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              textStyle: const TextStyle(fontSize: 12),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Complete button
-          ElevatedButton.icon(
-            onPressed: onCompleteReading,
-            icon: const Icon(Icons.check, size: 16),
-            label: const Text('Complete'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              textStyle: const TextStyle(fontSize: 12),
-            ),
-          ),
-        ] else if (book.isCompleted) ...[
+        if (book.isCompleted) ...[
           // Completed indicator
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -318,6 +277,39 @@ class BookCard extends StatelessWidget {
               ],
             ),
           ),
+        ] else ...[
+          // Update progress button (for all non-completed books)
+          ElevatedButton.icon(
+            onPressed: onUpdateProgress,
+            icon: const Icon(Icons.edit, size: 16),
+            label: Text(book.hasReadingProgress ? 'Update' : 'Start Reading'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: book.hasReadingProgress
+                  ? Colors.orange
+                  : Colors.blue,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              textStyle: const TextStyle(fontSize: 12),
+            ),
+          ),
+          if (book.hasReadingProgress) ...[
+            const SizedBox(width: 8),
+            // Complete button (only for books with progress)
+            ElevatedButton.icon(
+              onPressed: onCompleteReading,
+              icon: const Icon(Icons.check, size: 16),
+              label: const Text('Complete'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                textStyle: const TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
         ],
       ],
     );

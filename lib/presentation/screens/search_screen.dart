@@ -114,10 +114,24 @@ class _SearchScreenState extends State<SearchScreen>
                           final book = bookProvider.searchResults[index];
                           return SearchResultCard(
                             book: book,
-                            onAdd: () {
-                              context.read<BookProvider>().addBook(book);
-                              // Navigate back to main screen after adding book
-                              widget.onBack();
+                            onAdd: () async {
+                              final bookProvider = context.read<BookProvider>();
+                              await bookProvider.addBook(book);
+
+                              if (bookProvider.error != null) {
+                                // Show error message
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(bookProvider.error!),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                // Clear the error after showing it
+                                bookProvider.clearError();
+                              } else {
+                                // Navigate back to main screen after adding book
+                                widget.onBack();
+                              }
                             },
                           );
                         },

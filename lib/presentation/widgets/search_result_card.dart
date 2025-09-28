@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../providers/book_provider.dart';
 import '../constants/app_constants.dart';
 import '../../domain/entities/book.dart';
 
@@ -77,16 +75,7 @@ class SearchResultCard extends StatelessWidget {
               ),
             ),
             // Add button
-            IconButton(
-              icon: const Icon(Icons.add),
-              onPressed:
-                  onAdd ??
-                  () {
-                    context.read<BookProvider>().addBook(book);
-                    // Navigate back to main screen after adding book
-                    Navigator.of(context).pop();
-                  },
-            ),
+            IconButton(icon: const Icon(Icons.add), onPressed: onAdd),
           ],
         ),
       ),
