@@ -5,12 +5,14 @@ class ProgressUpdateModal extends StatefulWidget {
   final BookEntity book;
   final Function(int currentPage) onUpdateProgress;
   final VoidCallback? onCompleteReading;
+  final bool isFromTimerCompletion;
 
   const ProgressUpdateModal({
     super.key,
     required this.book,
     required this.onUpdateProgress,
     this.onCompleteReading,
+    this.isFromTimerCompletion = false,
   });
 
   @override
@@ -57,11 +59,70 @@ class _ProgressUpdateModalState extends State<ProgressUpdateModal> {
         : 0.0;
 
     return AlertDialog(
-      title: Text(widget.book.title),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (widget.isFromTimerCompletion) ...[
+            Row(
+              children: [
+                const Icon(Icons.timer, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Reading Session Complete!',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+          ],
+          Text(
+            widget.book.title,
+            style: widget.isFromTimerCompletion
+                ? Theme.of(context).textTheme.bodyLarge
+                : Theme.of(context).textTheme.titleLarge,
+          ),
+        ],
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (widget.isFromTimerCompletion) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.primaryContainer.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'How many pages did you read during this session?',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           // Progress bar
           Container(
             width: double.infinity,

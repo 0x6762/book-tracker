@@ -131,7 +131,11 @@ class BookCard extends StatelessWidget {
                     _buildActionButtons(),
                     const SizedBox(height: AppConstants.smallSpacing),
                     // Reading timer
-                    ReadingTimer(bookId: book.id!, bookTitle: book.title),
+                    ReadingTimer(
+                      bookId: book.id!,
+                      bookTitle: book.title,
+                      book: book,
+                    ),
                   ],
                 ),
               ),

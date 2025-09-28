@@ -248,6 +248,18 @@ class BookProvider with ChangeNotifier {
   void _showTimerCompletedNotification() {
     // This will be handled by the UI to show a notification
     print('⏰ Reading session completed!');
+    // Trigger page update modal after timer completion
+    _shouldShowPageUpdateModal = true;
+    notifyListeners();
+  }
+
+  // Flag to trigger page update modal
+  bool _shouldShowPageUpdateModal = false;
+  bool get shouldShowPageUpdateModal => _shouldShowPageUpdateModal;
+
+  void clearPageUpdateModalFlag() {
+    _shouldShowPageUpdateModal = false;
+    notifyListeners();
   }
 
   @override

@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/book_provider.dart';
 import 'timer_duration_picker.dart';
+import 'progress_update_modal.dart';
+import '../../domain/entities/book.dart';
 
 class ReadingTimer extends StatelessWidget {
   final int bookId;
   final String bookTitle;
+  final BookEntity book;
 
   const ReadingTimer({
     super.key,
     required this.bookId,
     required this.bookTitle,
+    required this.book,
   });
 
   @override
@@ -22,6 +26,14 @@ class ReadingTimer extends StatelessWidget {
         final isCompleted = bookProvider.isTimerCompleted && isCurrentBook;
         final timeText = bookProvider.formattedTime;
         final hasTimer = bookProvider.totalSeconds > 0 && isCurrentBook;
+
+        // Check if we should show page update modal
+        if (bookProvider.shouldShowPageUpdateModal && isCurrentBook) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            bookProvider.clearPageUpdateModalFlag();
+            _showPageUpdateModal(context, bookProvider);
+          });
+        }
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -203,6 +215,24 @@ class ReadingTimer extends StatelessWidget {
       builder: (context) => TimerDurationPicker(
         onDurationSelected: (minutes) {
           bookProvider.setTimer(bookId, minutes);
+        },
+      ),
+    );
+  }
+
+  void _showPageUpdateModal(BuildContext context, BookProvider bookProvider) {
+    showDialog(
+      context: context,
+      builder: (context) => ProgressUpdateModal(
+        book: book,
+        isFromTimerCompletion: true,
+        onUpdateProgress: (currentPage) {
+          bookProvider.updateProgress(book.id!, currentPage);
+          Navigator.of(context).pop();
+        },
+        onCompleteReading: () {
+          bookProvider.completeReading(book.id!);
+          Navigator.of(context).pop();
         },
       ),
     );
