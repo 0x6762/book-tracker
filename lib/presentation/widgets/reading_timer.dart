@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/book_provider.dart';
-import 'timer_duration_picker.dart';
+import 'timer_bottom_sheet.dart';
 import 'progress_update_modal.dart';
 import '../../domain/entities/book.dart';
 
@@ -167,8 +167,7 @@ class ReadingTimer extends StatelessWidget {
                       ] else ...[
                         // Set timer button
                         IconButton(
-                          onPressed: () =>
-                              _showDurationPicker(context, bookProvider),
+                          onPressed: () => _showTimerBottomSheet(context),
                           icon: const Icon(Icons.timer),
                           style: IconButton.styleFrom(
                             backgroundColor: Theme.of(
@@ -209,14 +208,12 @@ class ReadingTimer extends StatelessWidget {
     );
   }
 
-  void _showDurationPicker(BuildContext context, BookProvider bookProvider) {
-    showDialog(
+  void _showTimerBottomSheet(BuildContext context) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => TimerDurationPicker(
-        onDurationSelected: (minutes) {
-          bookProvider.setTimer(bookId, minutes);
-        },
-      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => TimerBottomSheet(book: book),
     );
   }
 

@@ -172,7 +172,8 @@ class BookProvider with ChangeNotifier {
     stopTimer(); // Stop any existing timer
 
     _currentBookId = bookId;
-    _totalSeconds = minutes * 60;
+    // Special case: 0 minutes = 5 seconds for testing
+    _totalSeconds = minutes == 0 ? 5 : minutes * 60;
     _remainingSeconds = _totalSeconds;
     _isTimerRunning = false;
     notifyListeners();
