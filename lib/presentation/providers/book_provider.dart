@@ -208,6 +208,11 @@ class BookProvider with ChangeNotifier {
   }
 
   void stopTimer() {
+    // Prevent multiple calls
+    if (_currentBookId == null && _totalSeconds == 0) {
+      return;
+    }
+
     // Add elapsed time to book before stopping
     if (_currentBookId != null && _totalSeconds > 0) {
       final elapsedSeconds = _totalSeconds - _remainingSeconds;
@@ -218,14 +223,14 @@ class BookProvider with ChangeNotifier {
           '📚 Added $elapsedMinutes minutes to book $_currentBookId (stopped early)',
         );
       }
+      // Always trigger page update modal for stopped timer (even if 0 minutes)
+      _shouldShowPageUpdateModal = true;
     }
 
     _timer?.cancel();
     _timer = null;
     _isTimerRunning = false;
-    _currentBookId = null;
-    _remainingSeconds = 0;
-    _totalSeconds = 0;
+    // Keep timer values until modal is dismissed
     notifyListeners();
   }
 
@@ -284,6 +289,13 @@ class BookProvider with ChangeNotifier {
 
   void clearPageUpdateModalFlag() {
     _shouldShowPageUpdateModal = false;
+    notifyListeners();
+  }
+
+  void clearCurrentBook() {
+    _currentBookId = null;
+    _remainingSeconds = 0;
+    _totalSeconds = 0;
     notifyListeners();
   }
 

@@ -24,7 +24,7 @@ class ReadingTimer extends StatelessWidget {
         final isCurrentBook = bookProvider.currentBookId == bookId;
         final isRunning = bookProvider.isTimerRunning && isCurrentBook;
         final isCompleted = bookProvider.isTimerCompleted && isCurrentBook;
-        final timeText = bookProvider.formattedTime;
+        final timeText = isCurrentBook ? bookProvider.formattedTime : '';
         final hasTimer = bookProvider.totalSeconds > 0 && isCurrentBook;
 
         // Check if we should show page update modal
@@ -32,15 +32,15 @@ class ReadingTimer extends StatelessWidget {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             bookProvider.clearPageUpdateModalFlag();
             _showPageUpdateModal(context, bookProvider);
+            // Clear the current book after showing modal
+            bookProvider.clearCurrentBook();
           });
         }
 
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: isCompleted
-                ? Theme.of(context).colorScheme.primaryContainer
-                : Theme.of(context).colorScheme.surfaceVariant,
+            color: Theme.of(context).colorScheme.surfaceVariant,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
               color: isCurrentBook
@@ -61,21 +61,7 @@ class ReadingTimer extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          isCompleted ? 'Reading Complete!' : 'Reading Timer',
-                          style: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(
-                                color: isCompleted
-                                    ? Theme.of(
-                                        context,
-                                      ).colorScheme.onPrimaryContainer
-                                    : Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          isCompleted ? '🎉 Well done!' : timeText,
+                          timeText.isNotEmpty ? timeText : 'Start reading',
                           style: Theme.of(context).textTheme.headlineSmall
                               ?.copyWith(
                                 fontWeight: FontWeight.bold,
@@ -94,21 +80,7 @@ class ReadingTimer extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (isCompleted) ...[
-                        // Reset button
-                        IconButton(
-                          onPressed: () => bookProvider.stopTimer(),
-                          icon: const Icon(Icons.refresh),
-                          style: IconButton.styleFrom(
-                            backgroundColor: Theme.of(
-                              context,
-                            ).colorScheme.primary,
-                            foregroundColor: Theme.of(
-                              context,
-                            ).colorScheme.onPrimary,
-                          ),
-                        ),
-                      ] else if (hasTimer && isRunning) ...[
+                      if (hasTimer && isRunning) ...[
                         // Stop button
                         IconButton(
                           onPressed: () => bookProvider.stopTimer(),
@@ -185,7 +157,7 @@ class ReadingTimer extends StatelessWidget {
               ),
 
               // Progress bar
-              if (hasTimer && !isCompleted) ...[
+              if (hasTimer) ...[
                 const SizedBox(height: 12),
                 LinearProgressIndicator(
                   value: bookProvider.totalSeconds > 0
