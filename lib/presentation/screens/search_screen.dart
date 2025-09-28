@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../simple_book_provider.dart';
+import '../providers/book_provider.dart';
 import '../widgets/search_result_card.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/search_input.dart';
@@ -77,7 +77,7 @@ class _SearchScreenState extends State<SearchScreen>
                 ),
                 // Search Results
                 Expanded(
-                  child: Consumer<SimpleBookProvider>(
+                  child: Consumer<BookProvider>(
                     builder: (context, bookProvider, child) {
                       if (bookProvider.isSearching) {
                         return const Center(
@@ -116,7 +116,7 @@ class _SearchScreenState extends State<SearchScreen>
                             book: book,
                             onAdd: () async {
                               final bookProvider = context
-                                  .read<SimpleBookProvider>();
+                                  .read<BookProvider>();
                               await bookProvider.addBook(book);
 
                               if (bookProvider.error != null) {

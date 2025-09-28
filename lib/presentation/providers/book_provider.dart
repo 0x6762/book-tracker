@@ -1,17 +1,11 @@
 import 'package:flutter/foundation.dart';
-import '../../data/database/app_database.dart';
+import '../../data/simple_database.dart';
 import '../../data/datasources/google_books_api_service.dart';
-import '../../data/repositories/books_repository_impl.dart';
 import '../../domain/entities/book.dart';
-import '../../domain/repositories/books_repository.dart';
-import '../../domain/usecases/update_progress_usecase.dart';
-import '../../domain/usecases/complete_reading_usecase.dart';
 
 class BookProvider with ChangeNotifier {
-  final BooksRepository _repository;
-  late final UpdateProgressUseCase _updateProgressUseCase;
-  late final CompleteReadingUseCase _completeReadingUseCase;
-  static const int _minQueryLength = 3;
+  final SimpleDatabase _database = SimpleDatabase();
+  final GoogleBooksApiService _apiService = GoogleBooksApiService();
 
   List<BookEntity> _books = [];
   List<BookEntity> _searchResults = [];
@@ -25,23 +19,22 @@ class BookProvider with ChangeNotifier {
   bool get isSearching => _isSearching;
   String? get error => _error;
 
-  BookProvider({BooksRepository? repository})
-    : _repository =
-          repository ??
-          BooksRepositoryImpl(
-            database: AppDatabase(),
-            apiService: GoogleBooksApiService(),
-          ) {
-    _updateProgressUseCase = UpdateProgressUseCase(_repository);
-    _completeReadingUseCase = CompleteReadingUseCase(_repository);
-  }
-
   Future<void> loadBooks() async {
     _setLoading(true);
     try {
-      _books = await _repository.getAllBooks();
+      print('🔄 Loading books...');
+      final stopwatch = Stopwatch()..start();
+
+      final dbBooks = await _database.getAllBooks();
+      _books = dbBooks.map((book) => book.toEntity()).toList();
+
+      stopwatch.stop();
+      print(
+        '📚 Loaded ${_books.length} books in ${stopwatch.elapsedMilliseconds}ms',
+      );
       _error = null;
     } catch (e) {
+      print('❌ Error loading books: $e');
       _error = 'Failed to load books: $e';
     } finally {
       _setLoading(false);
@@ -50,17 +43,16 @@ class BookProvider with ChangeNotifier {
 
   Future<void> addBook(BookEntity book) async {
     try {
-      // Check if book already exists (efficient check)
-      final bookExists = await _repository.bookExists(book.googleBooksId);
-
-      if (bookExists) {
+      // Check if book already exists
+      final exists = await _database.bookExists(book.googleBooksId);
+      if (exists) {
         _error = 'Book already exists in your library';
         notifyListeners();
         return;
       }
 
-      await _repository.addBook(book);
-      await loadBooks(); // Refresh the list
+      await _database.insertBook(book.toCompanion());
+      await loadBooks(); // Refresh list
     } catch (e) {
       _error = 'Failed to add book: $e';
       notifyListeners();
@@ -69,41 +61,62 @@ class BookProvider with ChangeNotifier {
 
   Future<void> deleteBook(int id) async {
     try {
-      await _repository.deleteBook(id);
-      await loadBooks(); // Refresh the list
+      await _database.deleteBook(id);
+      await loadBooks(); // Refresh list
     } catch (e) {
       _error = 'Failed to delete book: $e';
       notifyListeners();
     }
   }
 
-  void searchBooks(String query) {
-    final trimmedQuery = query.trim();
+  Future<void> updateProgress(int bookId, int currentPage) async {
+    try {
+      // Check if book has reading progress
+      final book = _books.firstWhere((b) => b.id == bookId);
 
-    // Clear results immediately if query is empty
-    if (trimmedQuery.isEmpty) {
-      _searchResults = [];
-      _isSearching = false;
+      if (book.readingProgress == null) {
+        // Start reading
+        await _database.startReading(bookId, currentPage);
+      } else {
+        // Update progress
+        await _database.updateProgress(bookId, currentPage);
+      }
+
+      await loadBooks(); // Refresh list
+    } catch (e) {
+      _error = 'Failed to update progress: $e';
       notifyListeners();
-      return;
     }
-
-    // Don't search if query is too short
-    if (trimmedQuery.length < _minQueryLength) {
-      _searchResults = [];
-      _isSearching = false;
-      notifyListeners();
-      return;
-    }
-
-    // Perform search immediately (no debouncing needed)
-    _performSearch(trimmedQuery);
   }
 
-  Future<void> _performSearch(String query) async {
+  Future<void> completeReading(int bookId) async {
+    try {
+      await _database.completeReading(bookId);
+      await loadBooks(); // Refresh list
+    } catch (e) {
+      _error = 'Failed to complete reading: $e';
+      notifyListeners();
+    }
+  }
+
+  Future<void> searchBooks(String query) async {
+    if (query.trim().isEmpty) {
+      _searchResults = [];
+      _isSearching = false;
+      notifyListeners();
+      return;
+    }
+
+    if (query.trim().length < 3) {
+      _searchResults = [];
+      _isSearching = false;
+      notifyListeners();
+      return;
+    }
+
     _setSearching(true);
     try {
-      _searchResults = await _repository.searchBooks(query);
+      _searchResults = await _apiService.searchBooks(query);
       _error = null;
     } catch (e) {
       _error = 'Failed to search books: $e';
@@ -120,39 +133,6 @@ class BookProvider with ChangeNotifier {
   void _setSearching(bool searching) {
     _isSearching = searching;
     notifyListeners();
-  }
-
-  // Reading progress methods
-
-  Future<void> updateProgress(int bookId, int currentPage) async {
-    try {
-      await _updateProgressUseCase(bookId, currentPage);
-      await _refreshBooks();
-    } catch (e) {
-      _error = 'Failed to update progress: $e';
-      notifyListeners();
-    }
-  }
-
-  Future<void> completeReading(int bookId) async {
-    try {
-      await _completeReadingUseCase(bookId);
-      await _refreshBooks();
-    } catch (e) {
-      _error = 'Failed to complete reading: $e';
-      notifyListeners();
-    }
-  }
-
-  Future<void> _refreshBooks() async {
-    try {
-      _books = await _repository.getAllBooks();
-      _error = null;
-      notifyListeners();
-    } catch (e) {
-      _error = 'Failed to refresh books: $e';
-      notifyListeners();
-    }
   }
 
   void clearError() {
