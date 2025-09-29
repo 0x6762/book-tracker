@@ -22,11 +22,23 @@ class _BookCardState extends State<BookCard>
   late Animation<Offset> _slideAnimation;
   Color? _bookAccentColor;
 
+  // Constants
+  static const double _cardBorderRadius = 28.0;
+  static const double _imageScale = 1.01;
+  static const double _gradientHeight = 300.0;
+  static const Duration _animationDelay = Duration(milliseconds: 300);
+  static const Duration _colorExtractionDelay = Duration(
+    milliseconds: 800,
+  ); // Increased for better timing
+  static const Duration _animationDuration = Duration(milliseconds: 400);
+  static const double _progressBarHeight = 8.0;
+  static const double _progressBarRadius = 56.0;
+
   @override
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 400),
+      duration: _animationDuration,
       vsync: this,
     );
     _slideAnimation =
@@ -42,7 +54,7 @@ class _BookCardState extends State<BookCard>
 
     // Extract color after image has time to load and display
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(const Duration(milliseconds: 500), _extractBookColor);
+      Future.delayed(_colorExtractionDelay, _extractBookColor);
     });
   }
 
@@ -68,7 +80,7 @@ class _BookCardState extends State<BookCard>
   void _startAnimation() {
     _animationController.reset();
     // Shorter delay to start after Hero animation begins but before it completes
-    Future.delayed(const Duration(milliseconds: 300), () {
+    Future.delayed(_animationDelay, () {
       if (mounted) {
         _animationController.forward();
       }
@@ -79,12 +91,9 @@ class _BookCardState extends State<BookCard>
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Only restart animation if we're coming back from navigation
-    // This is a more targeted approach
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _animationController.status == AnimationStatus.dismissed) {
-        _startAnimation();
-      }
-    });
+    if (mounted && _animationController.status == AnimationStatus.dismissed) {
+      _startAnimation();
+    }
   }
 
   @override
@@ -95,6 +104,9 @@ class _BookCardState extends State<BookCard>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Column(
       mainAxisSize: MainAxisSize.max,
       children: [
@@ -110,135 +122,110 @@ class _BookCardState extends State<BookCard>
                     vertical: AppConstants.cardVerticalMargin,
                   ),
               elevation: 2,
-              color: Theme.of(context).colorScheme.surface,
+              color: colorScheme.surface,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
+                borderRadius: BorderRadius.circular(_cardBorderRadius),
               ),
               clipBehavior: Clip.hardEdge,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(28),
-                clipBehavior: Clip.hardEdge,
-                child: Stack(
-                  children: [
-                    // Solid background to avoid white seams before/around image
-                    Positioned.fill(
-                      child: Container(
-                        color: Theme.of(context).colorScheme.surface,
-                      ),
-                    ),
-                    // Full cover background with fixed aspect ratio
-                    Positioned.fill(
-                      child: Hero(
-                        tag: 'book_cover_${widget.book.id}',
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(28),
-                          clipBehavior: Clip.hardEdge,
-                          child: widget.book.thumbnailUrl != null
-                              ? Transform.scale(
-                                  scale: 1.01,
-                                  alignment: Alignment.center,
-                                  child: CachedNetworkImage(
-                                    imageUrl: widget.book.thumbnailUrl!,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    alignment: Alignment.center,
-                                    filterQuality: FilterQuality.high,
-                                    memCacheWidth: 600,
-                                    memCacheHeight: 900,
-                                    imageBuilder: (context, imageProvider) {
-                                      // Just return the image - no color extraction here
-                                      return Image(
-                                        image: imageProvider,
-                                        fit: BoxFit.cover,
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                      );
-                                    },
-                                    placeholder: (context, url) =>
-                                        _buildPlaceholder(),
-                                    errorWidget: (context, url, error) =>
-                                        _buildErrorWidget(),
-                                  ),
-                                )
-                              : _buildErrorWidget(),
-                        ),
-                      ),
-                    ),
-
-                    // Gradient overlay at bottom for readability
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: Container(
-                        height: 300, // Gradient overlay
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Theme.of(
-                                context,
-                              ).colorScheme.surface.withOpacity(0.8),
-                              Theme.of(context).colorScheme.surface,
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Content overlaid on gradient with slide animation
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: AnimatedBuilder(
-                        animation: _slideAnimation,
-                        builder: (context, child) {
-                          return SlideTransition(
-                            position: _slideAnimation,
-                            child: Padding(
-                              padding: const EdgeInsets.all(24),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // Book title and authors
-                                  Text(
-                                    widget.book.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    widget.book.authors,
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 14,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  if (widget.book.hasReadingProgress) ...[
-                                    const SizedBox(height: 16),
-                                    _buildProgressSection(),
-                                  ],
-                                ],
+              child: Stack(
+                children: [
+                  // Solid background to avoid white seams before/around image
+                  Positioned.fill(child: Container(color: colorScheme.surface)),
+                  // Full cover background with fixed aspect ratio
+                  Positioned.fill(
+                    child: Hero(
+                      tag: 'book_cover_${widget.book.id}',
+                      child: widget.book.thumbnailUrl != null
+                          ? Transform.scale(
+                              scale: _imageScale,
+                              alignment: Alignment.center,
+                              child: CachedNetworkImage(
+                                imageUrl: widget.book.thumbnailUrl!,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                alignment: Alignment.center,
+                                filterQuality: FilterQuality.high,
+                                memCacheWidth: 600,
+                                memCacheHeight: 900,
+                                placeholder: (context, url) =>
+                                    _buildPlaceholder(),
+                                errorWidget: (context, url, error) =>
+                                    _buildErrorWidget(),
                               ),
-                            ),
-                          );
-                        },
+                            )
+                          : _buildErrorWidget(),
+                    ),
+                  ),
+
+                  // Gradient overlay at bottom for readability
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      height: _gradientHeight,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            colorScheme.surface.withOpacity(0.8),
+                            colorScheme.surface,
+                          ],
+                        ),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+
+                  // Content overlaid on gradient with slide animation
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: AnimatedBuilder(
+                      animation: _slideAnimation,
+                      builder: (context, child) {
+                        return SlideTransition(
+                          position: _slideAnimation,
+                          child: Padding(
+                            padding: const EdgeInsets.all(24),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Book title and authors
+                                Text(
+                                  widget.book.title,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  widget.book.authors,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white70,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if (widget.book.hasReadingProgress) ...[
+                                  const SizedBox(height: 16),
+                                  _buildProgressSection(),
+                                ],
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -259,7 +246,7 @@ class _BookCardState extends State<BookCard>
 
   Widget _buildPlaceholder() {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(_cardBorderRadius),
       child: Container(
         decoration: BoxDecoration(color: Colors.grey[200]),
         child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
@@ -269,7 +256,7 @@ class _BookCardState extends State<BookCard>
 
   Widget _buildErrorWidget() {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(_cardBorderRadius),
       child: Container(
         decoration: BoxDecoration(color: Colors.grey[300]),
         child: Icon(
@@ -284,6 +271,7 @@ class _BookCardState extends State<BookCard>
   Widget _buildProgressSection() {
     final progress = widget.book.readingProgress!;
     final progressPercentage = widget.book.progressPercentage;
+    final theme = Theme.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -291,21 +279,18 @@ class _BookCardState extends State<BookCard>
         // Progress bar
         Container(
           width: double.infinity,
-          height: 8,
+          height: _progressBarHeight,
           decoration: BoxDecoration(
             color: Colors.grey[200]?.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(56),
+            borderRadius: BorderRadius.circular(_progressBarRadius),
           ),
           child: FractionallySizedBox(
             alignment: Alignment.centerLeft,
             widthFactor: progressPercentage / 100,
             child: Container(
               decoration: BoxDecoration(
-                color: widget.book.isCompleted
-                    ? Colors.green
-                    : (_bookAccentColor ??
-                          Theme.of(context).colorScheme.primary),
-                borderRadius: BorderRadius.circular(56),
+                color: _getProgressBarColor(),
+                borderRadius: BorderRadius.circular(_progressBarRadius),
               ),
             ),
           ),
@@ -317,21 +302,29 @@ class _BookCardState extends State<BookCard>
           children: [
             Text(
               '${progressPercentage.toStringAsFixed(1)}% complete',
-              style: TextStyle(
+              style: theme.textTheme.bodySmall?.copyWith(
                 color: Colors.grey[400],
-                fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
             ),
             if (widget.book.pageCount != null)
               Text(
                 '${progress.currentPage}/${widget.book.pageCount}',
-                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[400],
+                ),
               ),
           ],
         ),
       ],
     );
+  }
+
+  Color _getProgressBarColor() {
+    if (widget.book.isCompleted) {
+      return Colors.green;
+    }
+    return _bookAccentColor ?? Theme.of(context).colorScheme.primary;
   }
 
   void _navigateToDetails(BuildContext context) {
