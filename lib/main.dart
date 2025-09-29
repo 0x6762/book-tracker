@@ -56,6 +56,7 @@ class BookTrackerHomePage extends StatefulWidget {
 
 class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -79,9 +80,37 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     });
   }
 
+  void _scrollToNewBook(BookProvider bookProvider) {
+    if (bookProvider.lastAddedBookId != null) {
+      // Find the index of the newly added book
+      final bookIndex = bookProvider.books.indexWhere(
+        (book) => book.googleBooksId == bookProvider.lastAddedBookId,
+      );
+
+      if (bookIndex != -1) {
+        // Calculate scroll position
+        final screenWidth = MediaQuery.of(context).size.width;
+        final cardWidth = screenWidth * 0.90;
+        final spacing = 16.0;
+        final scrollPosition = bookIndex * (cardWidth + spacing);
+
+        // Scroll to the new book
+        _scrollController.animateTo(
+          scrollPosition,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+
+        // Clear the last added book ID after scrolling
+        bookProvider.clearLastAddedBookId();
+      }
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -120,6 +149,13 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
   Widget build(BuildContext context) {
     return Consumer<BookProvider>(
       builder: (context, bookProvider, child) {
+        // Check if we need to scroll to a newly added book
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _scrollToNewBook(bookProvider);
+          }
+        });
+
         // Show app bar only when there are books or when searching
         final showAppBar =
             bookProvider.books.isNotEmpty || bookProvider.isSearching;
@@ -179,7 +215,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
             style: TextStyle(
               fontSize: AppConstants.emptyStateTitleSize,
               fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
           const SizedBox(height: AppConstants.mediumSpacing),
@@ -238,6 +274,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     }
 
     return SingleChildScrollView(
+      controller: _scrollController,
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: SingleChildScrollView(
