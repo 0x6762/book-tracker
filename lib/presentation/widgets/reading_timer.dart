@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/book_provider.dart';
-import 'progress_update_bottom_sheet.dart';
 import '../../domain/entities/book.dart';
 
 class ReadingTimer extends StatefulWidget {
@@ -26,6 +26,24 @@ class _ReadingTimerState extends State<ReadingTimer>
   int _selectedMinutes = 20;
   bool _wasSelectedByButton = false;
   final List<int> _presetMinutes = [5, 10, 15, 20, 30, 60, 120, 0];
+  late TextEditingController _pageController;
+  int? _inlineCurrentPage;
+  bool _forceProgressUpdate = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _inlineCurrentPage = widget.book.readingProgress?.currentPage ?? 1;
+    _pageController = TextEditingController(
+      text: (_inlineCurrentPage ?? 1).toString(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,13 +68,14 @@ class _ReadingTimerState extends State<ReadingTimer>
         if (bookProvider.shouldShowPageUpdateModal && isCurrentBook) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             bookProvider.clearPageUpdateModalFlag();
-            _showPageUpdateModal(context, bookProvider);
-            bookProvider.clearCurrentBook();
+            setState(() {
+              _forceProgressUpdate = true;
+            });
           });
         }
 
         Widget childContent;
-        if (isCompleted) {
+        if (isCompleted || _forceProgressUpdate) {
           childContent = _buildCompletedState(context, bookProvider);
         } else if (hasTimer) {
           childContent = _buildActiveTimerState(
@@ -199,10 +218,10 @@ class _ReadingTimerState extends State<ReadingTimer>
     return Container(
       key: const ValueKey('setup'),
       margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(12),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(28),
       ),
       child: Column(
         children: [
@@ -217,7 +236,7 @@ class _ReadingTimerState extends State<ReadingTimer>
               color: Theme.of(context).colorScheme.primary,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: Theme.of(context).colorScheme.primary,
@@ -243,25 +262,8 @@ class _ReadingTimerState extends State<ReadingTimer>
               },
             ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '5m',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              Text(
-                '120m',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
+
+          const SizedBox(height: 16),
           SizedBox(
             height: 40,
             child: ListView.separated(
@@ -319,20 +321,28 @@ class _ReadingTimerState extends State<ReadingTimer>
               },
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 32),
           Row(
             children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () {
-                    setState(() {
-                      _showSetup = false;
-                    });
-                  },
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+              IconButton(
+                onPressed: () {
+                  setState(() {
+                    _showSetup = false;
+                  });
+                },
+                icon: const Icon(Icons.arrow_back),
+                style: IconButton.styleFrom(
+                  padding: const EdgeInsets.all(16),
+                  backgroundColor: Theme.of(context).colorScheme.surface,
+                  foregroundColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(56),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
-                  child: const Text('Cancel'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -348,11 +358,13 @@ class _ReadingTimerState extends State<ReadingTimer>
                       _showSetup = false;
                     });
                   },
-                  icon: const Icon(Icons.timer),
-                  label: const Text('Start Timer'),
+
+                  label: const Text('Start Session'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    backgroundColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    foregroundColor: Theme.of(context).colorScheme.onSurface,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(56),
@@ -368,80 +380,114 @@ class _ReadingTimerState extends State<ReadingTimer>
   }
 
   Widget _buildCompletedState(BuildContext context, BookProvider bookProvider) {
-    return Column(
+    final pageCount = widget.book.pageCount;
+    return Container(
       key: const ValueKey('completed'),
-      children: [
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(
-            children: [
-              Icon(
-                Icons.check_circle,
-                size: 48,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Reading Session Complete!',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Great job! Time to update your progress.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        Row(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  bookProvider.stopTimer();
-                },
-                icon: const Icon(Icons.close),
-                label: const Text('Close'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                  foregroundColor: Theme.of(
-                    context,
-                  ).colorScheme.onSurfaceVariant,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
+            Text(
+              'Session finished.',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  bookProvider.stopTimer();
-                  _showProgressModal(context, bookProvider);
-                },
-                icon: const Icon(Icons.edit),
-                label: const Text('Update Progress'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+            const SizedBox(height: 8),
+            Text(
+              'Great job! Now let\'s update your progress.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 24),
+            TextField(
+              controller: _pageController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(
+                  6,
+                ), // Max 6 digits for page numbers
+              ],
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(28),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(28),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(28),
+                  borderSide: BorderSide.none,
+                ),
+                suffixText: pageCount != null ? 'of $pageCount' : null,
+                suffixStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
                 ),
               ),
+              onChanged: (value) {
+                final page = int.tryParse(value);
+                if (page != null && page > 0) {
+                  setState(() {
+                    _inlineCurrentPage = page;
+                  });
+                }
+              },
+            ),
+            if (pageCount != null) ...[],
+            const SizedBox(height: 40),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final newPage = int.tryParse(_pageController.text);
+                      if (newPage != null && newPage > 0) {
+                        bookProvider.updateProgress(widget.book.id!, newPage);
+                        bookProvider.stopTimer();
+                        bookProvider.clearPageUpdateModalFlag();
+                        bookProvider.clearCurrentBook();
+                        setState(() {
+                          _forceProgressUpdate = false;
+                        });
+                      }
+                    },
+
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                      foregroundColor: Theme.of(context).colorScheme.onSurface,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(56),
+                      ),
+                    ),
+                    label: const Text('Update Progress'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-      ],
+      ),
     );
   }
 
@@ -455,31 +501,5 @@ class _ReadingTimerState extends State<ReadingTimer>
     }
   }
 
-  void _showPageUpdateModal(BuildContext context, BookProvider bookProvider) {
-    showProgressUpdateBottomSheet(
-      context: context,
-      book: widget.book,
-      isFromTimerCompletion: true,
-      onUpdateProgress: (currentPage) {
-        bookProvider.updateProgress(widget.book.id!, currentPage);
-      },
-      onCompleteReading: () {
-        bookProvider.completeReading(widget.book.id!);
-      },
-    );
-  }
-
-  void _showProgressModal(BuildContext context, BookProvider bookProvider) {
-    showProgressUpdateBottomSheet(
-      context: context,
-      book: widget.book,
-      isFromTimerCompletion: true,
-      onUpdateProgress: (currentPage) {
-        bookProvider.updateProgress(widget.book.id!, currentPage);
-      },
-      onCompleteReading: () {
-        bookProvider.completeReading(widget.book.id!);
-      },
-    );
-  }
+  // Modal helpers removed; inline progress UI is used instead.
 }

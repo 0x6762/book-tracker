@@ -186,38 +186,40 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: bookProvider.books.asMap().entries.map((entry) {
-              final index = entry.key;
-              final book = entry.value;
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: bookProvider.books.asMap().entries.map((entry) {
+                final index = entry.key;
+                final book = entry.value;
 
-              // Calculate dynamic width based on screen width
-              final screenWidth = MediaQuery.of(context).size.width;
-              final cardWidth = screenWidth * 0.90; // 85% of screen width
+                // Calculate dynamic width based on screen width
+                final screenWidth = MediaQuery.of(context).size.width;
+                final cardWidth = screenWidth * 0.90; // 85% of screen width
 
-              return Row(
-                children: [
-                  Container(
-                    width: cardWidth,
-                    height:
-                        cardWidth *
-                        1.6, // Realistic book aspect ratio (like 6" x 9")
-                    child: BookCard(
-                      book: book,
-                      margin: EdgeInsets.zero, // Remove internal card margins
+                return Row(
+                  children: [
+                    Container(
+                      width: cardWidth,
+                      height:
+                          cardWidth *
+                          1.6, // Realistic book aspect ratio (like 6" x 9")
+                      child: BookCard(
+                        book: book,
+                        margin: EdgeInsets.zero, // Remove internal card margins
+                      ),
                     ),
-                  ),
-                  // Add spacing only between cards, not after the last one
-                  if (index < bookProvider.books.length - 1)
-                    const SizedBox(width: 16),
-                ],
-              );
-            }).toList(),
-          ),
-        ],
+                    // Add spacing only between cards, not after the last one
+                    if (index < bookProvider.books.length - 1)
+                      const SizedBox(width: 16),
+                  ],
+                );
+              }).toList(),
+            ),
+          ],
+        ),
       ),
     );
   }
