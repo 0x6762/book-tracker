@@ -16,8 +16,10 @@ class BookProvider with ChangeNotifier {
 
   List<BookEntity> _books = [];
   List<BookEntity> _searchResults = [];
-  bool _isLoading = false;
+  bool _isLoading =
+      true; // Start with loading true to prevent empty state flash
   bool _isSearching = false;
+  bool _isAddingBook = false;
   String? _error;
 
   // Timer state
@@ -35,6 +37,7 @@ class BookProvider with ChangeNotifier {
   List<BookEntity> get searchResults => _searchResults;
   bool get isLoading => _isLoading;
   bool get isSearching => _isSearching;
+  bool get isAddingBook => _isAddingBook;
   String? get error => _error;
 
   // Timer getters
@@ -79,6 +82,7 @@ class BookProvider with ChangeNotifier {
   }
 
   Future<void> addBook(BookEntity book) async {
+    _setAddingBook(true);
     try {
       // Check if book already exists
       final exists = await _database.bookExists(book.googleBooksId);
@@ -94,6 +98,8 @@ class BookProvider with ChangeNotifier {
     } catch (e) {
       _error = 'Failed to add book: $e';
       notifyListeners();
+    } finally {
+      _setAddingBook(false);
     }
   }
 
@@ -176,6 +182,11 @@ class BookProvider with ChangeNotifier {
 
   void _setSearching(bool searching) {
     _isSearching = searching;
+    notifyListeners();
+  }
+
+  void _setAddingBook(bool adding) {
+    _isAddingBook = adding;
     notifyListeners();
   }
 

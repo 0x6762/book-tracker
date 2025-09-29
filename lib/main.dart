@@ -176,25 +176,49 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
 
     if (bookProvider.books.isEmpty) {
       return const EmptyState(
-        title: 'Your Library is Empty',
+        title: 'Welcome to Readr',
         subtitle:
-            'Search for books above and add them to your personal collection',
-        actionText: 'Start by searching for a book',
+            'Search for books above and add and start tracking your reading progress.',
         icon: Icons.menu_book,
       );
     }
 
-    return ListView.builder(
-      itemCount: bookProvider.books.length,
-      itemBuilder: (context, index) {
-        final book = bookProvider.books[index];
-        return BookCard(
-          book: book,
-          onDelete: () {
-            context.read<BookProvider>().deleteBook(book.id!);
-          },
-        );
-      },
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: bookProvider.books.asMap().entries.map((entry) {
+              final index = entry.key;
+              final book = entry.value;
+
+              // Calculate dynamic width based on screen width
+              final screenWidth = MediaQuery.of(context).size.width;
+              final cardWidth = screenWidth * 0.90; // 85% of screen width
+
+              return Row(
+                children: [
+                  Container(
+                    width: cardWidth,
+                    height:
+                        cardWidth *
+                        1.6, // Realistic book aspect ratio (like 6" x 9")
+                    child: BookCard(
+                      book: book,
+                      margin: EdgeInsets.zero, // Remove internal card margins
+                    ),
+                  ),
+                  // Add spacing only between cards, not after the last one
+                  if (index < bookProvider.books.length - 1)
+                    const SizedBox(width: 16),
+                ],
+              );
+            }).toList(),
+          ),
+        ],
+      ),
     );
   }
 }

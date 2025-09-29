@@ -57,7 +57,7 @@ class AppColorSchemes {
   static const Color searchBarBackground = Color(
     0xFFA7A2A9,
   ); // Light gray from your palette
-  static const Color searchBarBackgroundDark = Color(0xFF34363C); // Surface 2
+  static const Color searchBarBackgroundDark = Color(0xFF232427); // Surface 2
   static const Color emptyStateIcon = Color(
     0xFF575A5E,
   ); // Medium gray from your palette

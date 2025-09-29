@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../constants/app_constants.dart';
+import '../providers/book_provider.dart';
 import '../../domain/entities/book.dart';
 
 class SearchResultCard extends StatelessWidget {
@@ -75,7 +77,24 @@ class SearchResultCard extends StatelessWidget {
               ),
             ),
             // Add button
-            IconButton(icon: const Icon(Icons.add), onPressed: onAdd),
+            Consumer<BookProvider>(
+              builder: (context, bookProvider, child) {
+                final isAdding = bookProvider.isAddingBook;
+                return IconButton(
+                  icon: isAdding
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.add),
+                  onPressed: isAdding ? null : onAdd,
+                );
+              },
+            ),
           ],
         ),
       ),

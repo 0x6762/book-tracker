@@ -17,40 +17,43 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppConstants.emptyStatePadding),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
+            const SizedBox(height: 60), // Add some top spacing
             Container(
               padding: const EdgeInsets.all(AppConstants.extraLargeSpacing),
               decoration: BoxDecoration(
-                color: AppConstants.emptyStateBlue.withOpacity(0.3),
+                color: theme.colorScheme.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 icon,
                 size: AppConstants.largeBookIconSize,
-                color: AppConstants.emptyStateBlue,
+                color: theme.colorScheme.primary,
               ),
             ),
             const SizedBox(height: AppConstants.extraLargeSpacing),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: AppConstants.emptyStateTitleSize,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: AppConstants.mediumSpacing),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: AppConstants.emptyStateBodySize,
-                color: Colors.grey,
+                color: theme.colorScheme.onSurfaceVariant,
                 height: 1.5,
               ),
             ),
@@ -62,7 +65,7 @@ class EmptyState extends StatelessWidget {
                   vertical: AppConstants.mediumSpacing,
                 ),
                 decoration: BoxDecoration(
-                  color: AppConstants.emptyStateBlue.withOpacity(0.3),
+                  color: theme.colorScheme.primary.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -70,14 +73,14 @@ class EmptyState extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.search,
-                      color: AppConstants.emptyStateBlue,
+                      color: theme.colorScheme.primary,
                       size: 20,
                     ),
                     const SizedBox(width: AppConstants.mediumSpacing),
                     Text(
                       actionText!,
                       style: TextStyle(
-                        color: AppConstants.emptyStateBlue,
+                        color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
