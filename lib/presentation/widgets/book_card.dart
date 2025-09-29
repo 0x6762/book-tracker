@@ -40,14 +40,22 @@ class _BookCardState extends State<BookCard>
     // Start the slide animation after a short delay
     _startAnimation();
 
-    // Extract color from book cover
-    _extractBookColor();
+    // Extract color after image has time to load and display
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future.delayed(const Duration(milliseconds: 500), _extractBookColor);
+    });
   }
 
   void _extractBookColor() async {
-    if (widget.book.thumbnailUrl != null) {
-      final color = await ColorExtractor.extractColorFromImage(
+    // Skip extraction for completed books; use green bar already
+    if (widget.book.isCompleted) return;
+    if (widget.book.thumbnailUrl != null && widget.book.id != null) {
+      final theme = Theme.of(context);
+      final color = await ColorExtractor.extractColorForBook(
+        widget.book.id!,
         widget.book.thumbnailUrl,
+        blendAnchor: theme.colorScheme.primary,
+        contrastAgainstSurface: theme.colorScheme.surface,
       );
       if (mounted) {
         setState(() {
@@ -102,27 +110,56 @@ class _BookCardState extends State<BookCard>
                     vertical: AppConstants.cardVerticalMargin,
                   ),
               elevation: 2,
+              color: Theme.of(context).colorScheme.surface,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(28),
               ),
+              clipBehavior: Clip.hardEdge,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(28),
+                clipBehavior: Clip.hardEdge,
                 child: Stack(
                   children: [
-                    // Full cover background
+                    // Solid background to avoid white seams before/around image
+                    Positioned.fill(
+                      child: Container(
+                        color: Theme.of(context).colorScheme.surface,
+                      ),
+                    ),
+                    // Full cover background with fixed aspect ratio
                     Positioned.fill(
                       child: Hero(
                         tag: 'book_cover_${widget.book.id}',
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(28),
+                          clipBehavior: Clip.hardEdge,
                           child: widget.book.thumbnailUrl != null
-                              ? CachedNetworkImage(
-                                  imageUrl: widget.book.thumbnailUrl!,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) =>
-                                      _buildPlaceholder(),
-                                  errorWidget: (context, url, error) =>
-                                      _buildErrorWidget(),
+                              ? Transform.scale(
+                                  scale: 1.01,
+                                  alignment: Alignment.center,
+                                  child: CachedNetworkImage(
+                                    imageUrl: widget.book.thumbnailUrl!,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    alignment: Alignment.center,
+                                    filterQuality: FilterQuality.high,
+                                    memCacheWidth: 600,
+                                    memCacheHeight: 900,
+                                    imageBuilder: (context, imageProvider) {
+                                      // Just return the image - no color extraction here
+                                      return Image(
+                                        image: imageProvider,
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                        height: double.infinity,
+                                      );
+                                    },
+                                    placeholder: (context, url) =>
+                                        _buildPlaceholder(),
+                                    errorWidget: (context, url, error) =>
+                                        _buildErrorWidget(),
+                                  ),
                                 )
                               : _buildErrorWidget(),
                         ),
@@ -135,7 +172,7 @@ class _BookCardState extends State<BookCard>
                       left: 0,
                       right: 0,
                       child: Container(
-                        height: 200, // Bigger gradient overlay
+                        height: 300, // Gradient overlay
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
@@ -145,9 +182,7 @@ class _BookCardState extends State<BookCard>
                               Theme.of(
                                 context,
                               ).colorScheme.surface.withOpacity(0.8),
-                              Theme.of(
-                                context,
-                              ).colorScheme.surface.withOpacity(1),
+                              Theme.of(context).colorScheme.surface,
                             ],
                           ),
                         ),
@@ -191,10 +226,8 @@ class _BookCardState extends State<BookCard>
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 16),
-
-                                  // Reading progress section
                                   if (widget.book.hasReadingProgress) ...[
+                                    const SizedBox(height: 16),
                                     _buildProgressSection(),
                                   ],
                                 ],
@@ -260,7 +293,7 @@ class _BookCardState extends State<BookCard>
           width: double.infinity,
           height: 8,
           decoration: BoxDecoration(
-            color: Colors.grey[700],
+            color: Colors.grey[200]?.withOpacity(0.1),
             borderRadius: BorderRadius.circular(56),
           ),
           child: FractionallySizedBox(
@@ -271,7 +304,7 @@ class _BookCardState extends State<BookCard>
                 color: widget.book.isCompleted
                     ? Colors.green
                     : (_bookAccentColor ??
-                          ColorExtractor.getFallbackColor(widget.book.title)),
+                          Theme.of(context).colorScheme.primary),
                 borderRadius: BorderRadius.circular(56),
               ),
             ),

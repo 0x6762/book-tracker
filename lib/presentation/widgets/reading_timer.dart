@@ -115,7 +115,7 @@ class _ReadingTimerState extends State<ReadingTimer>
               _showSetup = true;
             });
           },
-          icon: const Icon(Icons.play_arrow, size: 18),
+
           label: Text(
             widget.book.hasReadingProgress
                 ? 'Continue Reading'
@@ -451,7 +451,6 @@ class _ReadingTimerState extends State<ReadingTimer>
                 }
               },
             ),
-            if (pageCount != null) ...[],
             const SizedBox(height: 40),
             Row(
               children: [

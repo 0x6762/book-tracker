@@ -6,6 +6,7 @@ import 'package:timezone/timezone.dart' as tz;
 import '../../data/simple_database.dart';
 import '../../data/datasources/google_books_api_service.dart';
 import '../../domain/entities/book.dart';
+import '../utils/color_extractor.dart';
 
 class BookProvider with ChangeNotifier {
   final SimpleDatabase _database = SimpleDatabase();
@@ -13,6 +14,11 @@ class BookProvider with ChangeNotifier {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
+
+  BookProvider() {
+    // Initialize ColorExtractor with database reference
+    ColorExtractor.initializeDatabase(_database);
+  }
 
   List<BookEntity> _books = [];
   List<BookEntity> _searchResults = [];

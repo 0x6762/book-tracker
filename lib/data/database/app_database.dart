@@ -29,6 +29,16 @@ class ReadingProgress extends Table {
   BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
 }
 
+// Book colors table for caching extracted accent colors
+class BookColors extends Table {
+  IntColumn get bookId => integer().references(Books, #id)();
+  IntColumn get accentColor => integer().nullable()();
+  DateTimeColumn get extractedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {bookId};
+}
+
 // Data class for books with their reading progress
 class BookWithProgress {
   final Book book;
@@ -37,12 +47,12 @@ class BookWithProgress {
   BookWithProgress({required this.book, this.progress});
 }
 
-@DriftDatabase(tables: [Books, ReadingProgress])
+@DriftDatabase(tables: [Books, ReadingProgress, BookColors])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3; // Increment to force fresh migration
+  int get schemaVersion => 4; // Increment to force fresh migration
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -53,6 +63,10 @@ class AppDatabase extends _$AppDatabase {
       if (from < 2) {
         // Add ReadingProgress table
         await m.createTable(readingProgress);
+      }
+      if (from < 4) {
+        // Add BookColors table
+        await m.createTable(bookColors);
       }
     },
   );
@@ -105,6 +119,17 @@ class AppDatabase extends _$AppDatabase {
 
   Future<int> deleteReadingProgress(int id) =>
       (delete(readingProgress)..where((tbl) => tbl.id.equals(id))).go();
+
+  // Book colors DAO methods
+  Future<BookColor?> getBookColor(int bookId) => (select(
+    bookColors,
+  )..where((tbl) => tbl.bookId.equals(bookId))).getSingleOrNull();
+
+  Future<int> insertOrUpdateBookColor(BookColorsCompanion color) =>
+      into(bookColors).insertOnConflictUpdate(color);
+
+  Future<int> deleteBookColor(int bookId) =>
+      (delete(bookColors)..where((tbl) => tbl.bookId.equals(bookId))).go();
 
   // Check if book exists by googleBooksId (more efficient than loading all books)
   Future<bool> bookExists(String googleBooksId) async {

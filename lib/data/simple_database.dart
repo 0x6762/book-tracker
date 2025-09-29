@@ -34,12 +34,22 @@ class Books extends Table {
   IntColumn get ratingsCount => integer().nullable()();
 }
 
-@DriftDatabase(tables: [Books])
+// Book colors table for caching extracted accent colors
+class BookColors extends Table {
+  IntColumn get bookId => integer().references(Books, #id)();
+  IntColumn get accentColor => integer().nullable()();
+  DateTimeColumn get extractedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {bookId};
+}
+
+@DriftDatabase(tables: [Books, BookColors])
 class SimpleDatabase extends _$SimpleDatabase {
   SimpleDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -55,6 +65,10 @@ class SimpleDatabase extends _$SimpleDatabase {
         // Add rating columns
         await m.addColumn(books, books.averageRating);
         await m.addColumn(books, books.ratingsCount);
+      }
+      if (from < 4) {
+        // Add BookColors table
+        await m.createTable(bookColors);
       }
     },
   );
@@ -112,6 +126,17 @@ class SimpleDatabase extends _$SimpleDatabase {
       );
     }
   }
+
+  // Book colors DAO methods
+  Future<BookColor?> getBookColor(int bookId) => (select(
+    bookColors,
+  )..where((tbl) => tbl.bookId.equals(bookId))).getSingleOrNull();
+
+  Future<int> insertOrUpdateBookColor(BookColorsCompanion color) =>
+      into(bookColors).insertOnConflictUpdate(color);
+
+  Future<int> deleteBookColor(int bookId) =>
+      (delete(bookColors)..where((tbl) => tbl.bookId.equals(bookId))).go();
 }
 
 LazyDatabase _openConnection() {

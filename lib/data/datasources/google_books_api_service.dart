@@ -159,10 +159,11 @@ class GoogleBooksApiService {
     // Remove edge=curl for cleaner images
     optimizedUrl = optimizedUrl.replaceAll('&edge=curl', '');
 
-    // Add fife parameter to request larger image width
+    // Add fife parameter to request appropriate image width
     // This is a documented way to get higher resolution images
     if (!optimizedUrl.contains('&fife=')) {
-      optimizedUrl += '&fife=w800'; // Request 800px width for high quality
+      optimizedUrl +=
+          '&fife=w600'; // Request 600px width for optimal quality/size balance
     }
 
     return optimizedUrl;
@@ -202,17 +203,17 @@ class GoogleBooksApiService {
   String _optimizeSearchImageUrl(String url) {
     // Light optimization for search results
     String optimizedUrl = url;
-    
+
     // Set zoom to 0 for better quality
     if (optimizedUrl.contains('zoom=')) {
       optimizedUrl = optimizedUrl.replaceAll(RegExp(r'zoom=\d+'), 'zoom=0');
     } else {
       optimizedUrl += optimizedUrl.contains('?') ? '&zoom=0' : '?zoom=0';
     }
-    
+
     // Remove edge=curl for cleaner images
     optimizedUrl = optimizedUrl.replaceAll('&edge=curl', '');
-    
+
     return optimizedUrl;
   }
 
