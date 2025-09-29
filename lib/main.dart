@@ -5,7 +5,7 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'presentation/providers/book_provider.dart';
 import 'presentation/widgets/search_input.dart';
 import 'presentation/widgets/book_card.dart';
-import 'presentation/widgets/empty_state.dart';
+import 'presentation/widgets/book_cover_carousel.dart';
 import 'presentation/screens/search_screen.dart';
 import 'presentation/constants/app_constants.dart';
 import 'presentation/theme/app_theme.dart';
@@ -118,32 +118,91 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          AppConstants.appName,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: Column(
+    return Consumer<BookProvider>(
+      builder: (context, bookProvider, child) {
+        // Show app bar only when there are books or when searching
+        final showAppBar =
+            bookProvider.books.isNotEmpty || bookProvider.isSearching;
+
+        return Scaffold(
+          appBar: showAppBar
+              ? AppBar(
+                  title: Text(
+                    AppConstants.appName,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+              : null,
+          body: showAppBar
+              ? Column(
+                  children: [
+                    // Search Bar with Hero Animation
+                    Hero(
+                      tag: 'search_bar',
+                      child: SearchInput(
+                        controller: _searchController,
+                        onTap: _navigateToSearch,
+                        isSearchMode: false,
+                      ),
+                    ),
+                    // Content
+                    Expanded(child: _buildBookList(bookProvider)),
+                  ],
+                )
+              : _buildEmptyStateWithSearch(bookProvider),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyStateWithSearch(BookProvider bookProvider) {
+    return SingleChildScrollView(
+      child: Column(
         children: [
-          // Search Bar with Hero Animation
-          Hero(
-            tag: 'search_bar',
-            child: SearchInput(
-              controller: _searchController,
-              onTap: _navigateToSearch,
-              isSearchMode: false,
+          // Add some top spacing
+          const SizedBox(height: 120),
+
+          // Book cover carousel at the top
+          const BookCoverCarousel(height: 200, width: 140, scrollSpeed: 30.0),
+
+          const SizedBox(height: 32),
+
+          // Title and subtitle
+          Text(
+            'Welcome to Readr',
+            style: TextStyle(
+              fontSize: AppConstants.emptyStateTitleSize,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
-          // Content
-          Expanded(
-            child: Consumer<BookProvider>(
-              builder: (context, bookProvider, child) {
-                return _buildBookList(bookProvider);
-              },
+          const SizedBox(height: AppConstants.mediumSpacing),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              'Search for books and start tracking your reading progress.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: AppConstants.emptyStateBodySize,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
+            ),
+          ),
+
+          // Search bar positioned below text
+          const SizedBox(height: 40),
+          Hero(
+            tag: 'search_bar',
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SearchInput(
+                controller: _searchController,
+                onTap: _navigateToSearch,
+                isSearchMode: false,
+              ),
             ),
           ),
         ],
@@ -171,15 +230,6 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
             ],
           ),
         ),
-      );
-    }
-
-    if (bookProvider.books.isEmpty) {
-      return const EmptyState(
-        title: 'Welcome to Readr',
-        subtitle:
-            'Search for books above and add and start tracking your reading progress.',
-        icon: Icons.menu_book,
       );
     }
 
