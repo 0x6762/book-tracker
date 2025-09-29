@@ -6,6 +6,7 @@ class BookCoverCarousel extends StatefulWidget {
   final double width;
   final double spacing;
   final double scrollSpeed; // pixels per second
+  final double opacity; // opacity for the carousel
 
   const BookCoverCarousel({
     super.key,
@@ -13,6 +14,7 @@ class BookCoverCarousel extends StatefulWidget {
     required this.width,
     this.spacing = 16.0,
     this.scrollSpeed = 50.0, // 50 pixels per second
+    this.opacity = 1.0,
   });
 
   @override
@@ -86,18 +88,21 @@ class _BookCoverCarouselState extends State<BookCoverCarousel>
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: widget.height,
-      child: AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics:
-                const NeverScrollableScrollPhysics(), // Disable user scrolling
-            child: Row(children: _buildInfiniteBookCovers()),
-          );
-        },
+    return Opacity(
+      opacity: widget.opacity,
+      child: SizedBox(
+        height: widget.height,
+        child: AnimatedBuilder(
+          animation: _animation,
+          builder: (context, child) {
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics:
+                  const NeverScrollableScrollPhysics(), // Disable user scrolling
+              child: Row(children: _buildInfiniteBookCovers()),
+            );
+          },
+        ),
       ),
     );
   }

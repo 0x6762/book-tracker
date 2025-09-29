@@ -161,13 +161,17 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     return SingleChildScrollView(
       child: Column(
         children: [
-          // Add some top spacing
-          const SizedBox(height: 120),
-
+          // 30% from top spacing
+          SizedBox(height: MediaQuery.of(context).size.height * 0.1),
           // Book cover carousel at the top
-          const BookCoverCarousel(height: 200, width: 140, scrollSpeed: 30.0),
+          const BookCoverCarousel(
+            height: 250,
+            width: 180,
+            scrollSpeed: 20.0,
+            opacity: 0.6,
+          ),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 56),
 
           // Title and subtitle
           Text(
@@ -182,7 +186,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 32),
             child: Text(
-              'Search for books and start tracking your reading progress.',
+              'Add books to your reading list and start tracking your reading progress.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: AppConstants.emptyStateBodySize,
@@ -193,7 +197,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
           ),
 
           // Search bar positioned below text
-          const SizedBox(height: 40),
+          const SizedBox(height: 32),
           Hero(
             tag: 'search_bar',
             child: Padding(

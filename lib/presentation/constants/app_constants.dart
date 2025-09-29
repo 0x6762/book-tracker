@@ -27,7 +27,7 @@ class AppConstants {
   static const double titleFontSize = 18.0;
   static const double subtitleFontSize = 16.0;
   static const double bodyFontSize = 14.0;
-  static const double emptyStateTitleSize = 24.0;
+  static const double emptyStateTitleSize = 28.0;
   static const double emptyStateBodySize = 16.0;
 
   // Spacing
