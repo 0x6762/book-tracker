@@ -60,6 +60,8 @@ dependencies:
   
   # Image Loading
   cached_network_image: ^3.3.0
+  # Color extraction from images
+  palette_generator: ^0.3.3+3
 
 dev_dependencies:
   flutter_test:

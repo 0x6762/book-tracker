@@ -59,6 +59,11 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
 
             // Reading statistics
             _buildReadingStats(context),
+            const SizedBox(height: 32),
+
+            // Delete book button
+            _buildDeleteButton(context),
+            const SizedBox(height: 16),
           ],
         ),
       ),
@@ -630,5 +635,65 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     final hours = progress.totalReadingTimeMinutes / 60;
     final pagesPerHour = (progress.currentPage / hours).round();
     return '$pagesPerHour';
+  }
+
+  Widget _buildDeleteButton(BuildContext context) {
+    return Consumer<BookProvider>(
+      builder: (context, bookProvider, child) {
+        return SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => _showDeleteConfirmation(context, bookProvider),
+            icon: const Icon(Icons.delete_outline, color: Colors.red),
+            label: const Text(
+              'Remove from Library',
+              style: TextStyle(color: Colors.red),
+            ),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(color: Colors.red),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showDeleteConfirmation(
+    BuildContext context,
+    BookProvider bookProvider,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Remove Book'),
+          content: Text(
+            'Are you sure you want to remove "${widget.book.title}" from your library?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Remove'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      await bookProvider.deleteBook(widget.book.id!);
+      if (mounted) {
+        Navigator.of(context).pop(); // Go back to main screen
+      }
+    }
   }
 }

@@ -81,7 +81,12 @@ class _SearchInputState extends State<SearchInput>
           child: Opacity(
             opacity: _opacityAnimation.value,
             child: Container(
-              padding: const EdgeInsets.all(AppConstants.searchBarPadding),
+              padding: const EdgeInsets.only(
+                top: 8.0, // Reduced top padding
+                left: AppConstants.searchBarPadding,
+                right: AppConstants.searchBarPadding,
+                bottom: AppConstants.searchBarPadding,
+              ),
               child: widget.isSearchMode ? _buildSearchMode() : _buildTapMode(),
             ),
           ),
@@ -107,7 +112,7 @@ class _SearchInputState extends State<SearchInput>
           ),
           decoration: InputDecoration(
             hintText: 'Search for books...',
-            hintStyle: theme.textTheme.bodyLarge?.copyWith(
+            hintStyle: theme.textTheme.bodyMedium?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
             prefixIcon: Icon(
@@ -137,8 +142,8 @@ class _SearchInputState extends State<SearchInput>
               borderSide: BorderSide.none,
             ),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 16,
+              horizontal: 24,
+              vertical: 12,
             ),
           ),
         ),
@@ -194,19 +199,6 @@ class _SearchInputState extends State<SearchInput>
           ),
           suffixIcon: Consumer<BookProvider>(
             builder: (context, bookProvider, child) {
-              if (bookProvider.isSearching) {
-                return Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: theme.colorScheme.primary,
-                    ),
-                  ),
-                );
-              }
               if (widget.controller.text.isNotEmpty) {
                 return IconButton(
                   icon: Icon(

@@ -116,9 +116,25 @@ class _ProgressUpdateBottomSheetState extends State<ProgressUpdateBottomSheet> {
           TextField(
             controller: _pageController,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Current Page',
-              border: OutlineInputBorder(),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
             ),
             onChanged: (value) {
               final page = int.tryParse(value);

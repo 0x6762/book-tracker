@@ -38,22 +38,18 @@ class ReadingTimer extends StatelessWidget {
         }
 
         return AnimatedSize(
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
           child: hasTimer
               ? Container(
-                  margin: const EdgeInsets.only(top: 8),
+                  margin: const EdgeInsets.only(top: 16),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                    horizontal: 24,
+                    vertical: 24,
                   ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surfaceVariant,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.grey.withOpacity(0.3),
-                      width: 1,
-                    ),
+                    borderRadius: BorderRadius.circular(28),
                   ),
                   child: Column(
                     children: [
@@ -86,7 +82,7 @@ class ReadingTimer extends StatelessWidget {
                                 icon: const Icon(Icons.stop),
                                 style: IconButton.styleFrom(
                                   backgroundColor: Colors.grey.withOpacity(0.2),
-                                  foregroundColor: Colors.red,
+                                  foregroundColor: const Color(0xFFDD4B41),
                                 ),
                               ),
                               const SizedBox(width: 8),
@@ -134,18 +130,27 @@ class ReadingTimer extends StatelessWidget {
                     ],
                   ),
                 )
-              : SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _showTimerBottomSheet(context),
-                    icon: const Icon(Icons.play_arrow, size: 18),
-                    label: const Text('Start Reading'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+              : Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showTimerBottomSheet(context),
+                      icon: const Icon(Icons.play_arrow, size: 18),
+                      label: Text(
+                        book.hasReadingProgress
+                            ? 'Continue Reading'
+                            : 'Start Reading',
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.surface,
+                        foregroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onSurface,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(56),
+                        ),
                       ),
                     ),
                   ),

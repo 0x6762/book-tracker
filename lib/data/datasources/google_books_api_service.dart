@@ -118,30 +118,123 @@ class GoogleBooksApiService {
   }
 
   String? _getBestImageUrl(Map<String, dynamic> imageLinks) {
-    // Try large resolution first for user's collection, fallback to smaller ones
+    // Official Google Books API image sizes (in pixels):
+    // extraLarge: ~1280px, large: ~800px, medium: ~575px, small: ~300px
+    // thumbnail: ~128px, smallThumbnail: ~80px
+
     String? originalUrl =
+        imageLinks['extraLarge'] ??
         imageLinks['large'] ??
         imageLinks['medium'] ??
+        imageLinks['small'] ??
         imageLinks['thumbnail'] ??
-        imageLinks['smallThumbnail'] ??
-        imageLinks['extraLarge'];
+        imageLinks['smallThumbnail'];
 
-    // Return the raw URL without optimization
+    if (originalUrl != null) {
+      // Optimize the URL to get the biggest possible image
+      String optimizedUrl = _optimizeImageUrl(originalUrl);
+      return optimizedUrl;
+    }
+
     return originalUrl;
+  }
+
+  String _optimizeImageUrl(String url) {
+    // Based on Google Books API documentation and community best practices
+    String optimizedUrl = url;
+
+    // Remove width and height parameters that limit image size
+    optimizedUrl = optimizedUrl.replaceAll(RegExp(r'&w=\d+'), '');
+    optimizedUrl = optimizedUrl.replaceAll(RegExp(r'&h=\d+'), '');
+
+    // Set zoom to 0 for maximum resolution (not 5!)
+    // According to docs: zoom=0 gives highest resolution, zoom=1 is default
+    if (optimizedUrl.contains('zoom=')) {
+      optimizedUrl = optimizedUrl.replaceAll(RegExp(r'zoom=\d+'), 'zoom=0');
+    } else {
+      // Add zoom=0 if not present
+      optimizedUrl += optimizedUrl.contains('?') ? '&zoom=0' : '?zoom=0';
+    }
+
+    // Remove edge=curl for cleaner images
+    optimizedUrl = optimizedUrl.replaceAll('&edge=curl', '');
+
+    // Add fife parameter to request larger image width
+    // This is a documented way to get higher resolution images
+    if (!optimizedUrl.contains('&fife=')) {
+      optimizedUrl += '&fife=w800'; // Request 800px width for high quality
+    }
+
+    return optimizedUrl;
   }
 
   String? _getOptimizedImageUrl(
     Map<String, dynamic> imageLinks, {
     bool isForSearch = false,
   }) {
-    // Both search and collection now use the same large priority
-    return _getBestImageUrl(imageLinks);
+    if (isForSearch) {
+      // For search results, use medium size for performance
+      // Search results are smaller and don't need high resolution
+      return _getSearchImageUrl(imageLinks);
+    } else {
+      // For user collection, use highest quality available
+      return _getBestImageUrl(imageLinks);
+    }
   }
 
-  /// Upgrades a book's image quality (now just returns the original since both use large)
+  String? _getSearchImageUrl(Map<String, dynamic> imageLinks) {
+    // For search results, prioritize medium size for performance
+    // Official Google Books API image sizes: medium ~575px
+    String? originalUrl =
+        imageLinks['medium'] ??
+        imageLinks['small'] ??
+        imageLinks['thumbnail'] ??
+        imageLinks['smallThumbnail'];
+
+    if (originalUrl != null) {
+      // Light optimization for search results
+      return _optimizeSearchImageUrl(originalUrl);
+    }
+
+    return originalUrl;
+  }
+
+  String _optimizeSearchImageUrl(String url) {
+    // Light optimization for search results
+    String optimizedUrl = url;
+    
+    // Set zoom to 0 for better quality
+    if (optimizedUrl.contains('zoom=')) {
+      optimizedUrl = optimizedUrl.replaceAll(RegExp(r'zoom=\d+'), 'zoom=0');
+    } else {
+      optimizedUrl += optimizedUrl.contains('?') ? '&zoom=0' : '?zoom=0';
+    }
+    
+    // Remove edge=curl for cleaner images
+    optimizedUrl = optimizedUrl.replaceAll('&edge=curl', '');
+    
+    return optimizedUrl;
+  }
+
+  /// Upgrades a book's image quality using URL optimization
   BookEntity upgradeBookImageQuality(BookEntity book) {
-    // Since both search and collection now use the same large priority,
-    // no upgrade is needed - just return the original book
+    // Apply URL optimization to get the highest quality image
+    if (book.thumbnailUrl != null) {
+      final optimizedUrl = _optimizeImageUrl(book.thumbnailUrl!);
+      return BookEntity(
+        id: book.id,
+        googleBooksId: book.googleBooksId,
+        title: book.title,
+        authors: book.authors,
+        description: book.description,
+        thumbnailUrl: optimizedUrl,
+        publishedDate: book.publishedDate,
+        pageCount: book.pageCount,
+        readingProgress: book.readingProgress,
+        averageRating: book.averageRating,
+        ratingsCount: book.ratingsCount,
+      );
+    }
     return book;
   }
 }

@@ -4,201 +4,253 @@ import '../constants/app_constants.dart';
 import '../../domain/entities/book.dart';
 import 'reading_timer.dart';
 import '../screens/book_details_screen.dart';
+import '../utils/color_extractor.dart';
 
-class BookCard extends StatelessWidget {
+class BookCard extends StatefulWidget {
   final BookEntity book;
-  final VoidCallback? onDelete;
+  final EdgeInsetsGeometry? margin;
 
-  const BookCard({super.key, required this.book, this.onDelete});
+  const BookCard({super.key, required this.book, this.margin});
+
+  @override
+  State<BookCard> createState() => _BookCardState();
+}
+
+class _BookCardState extends State<BookCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<Offset> _slideAnimation;
+  Color? _bookAccentColor;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _slideAnimation =
+        Tween<Offset>(
+          begin: const Offset(0, 0.1), // Start 10% down (more subtle)
+          end: Offset.zero, // End at normal position
+        ).animate(
+          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+        );
+
+    // Start the slide animation after a short delay
+    _startAnimation();
+
+    // Extract color from book cover
+    _extractBookColor();
+  }
+
+  void _extractBookColor() async {
+    if (widget.book.thumbnailUrl != null) {
+      final color = await ColorExtractor.extractColorFromImage(
+        widget.book.thumbnailUrl,
+      );
+      if (mounted) {
+        setState(() {
+          _bookAccentColor = color;
+        });
+      }
+    }
+  }
+
+  void _startAnimation() {
+    _animationController.reset();
+    // Shorter delay to start after Hero animation begins but before it completes
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _animationController.forward();
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Only restart animation if we're coming back from navigation
+    // This is a more targeted approach
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _animationController.status == AnimationStatus.dismissed) {
+        _startAnimation();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Dismissible(
-      key: Key('book_${book.id}'),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.symmetric(
-          horizontal: AppConstants.cardMargin,
-          vertical: AppConstants.cardVerticalMargin,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-        ),
-        child: const Icon(Icons.delete, color: Colors.white, size: 30),
-      ),
-      confirmDismiss: (direction) async {
-        return await _showDeleteConfirmation(context);
-      },
-      onDismissed: (direction) {
-        onDelete?.call();
-      },
-      child: GestureDetector(
-        onTap: () => _navigateToDetails(context),
-        child: Card(
-          margin: const EdgeInsets.symmetric(
-            horizontal: AppConstants.cardMargin,
-            vertical: AppConstants.cardVerticalMargin,
-          ),
-          elevation: 2,
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Top row with book cover and details
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      mainAxisSize: MainAxisSize.max,
+      children: [
+        // Book card without timer
+        Expanded(
+          child: GestureDetector(
+            onTap: () => _navigateToDetails(context),
+            child: Card(
+              margin:
+                  widget.margin ??
+                  const EdgeInsets.symmetric(
+                    horizontal: AppConstants.cardMargin,
+                    vertical: AppConstants.cardVerticalMargin,
+                  ),
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: Stack(
                   children: [
-                    // Book cover with Hero animation
-                    Hero(
-                      tag: 'book_cover_${book.id}',
-                      child: Container(
-                        height: AppConstants.bookCoverHeight,
-                        width: AppConstants.bookCoverWidth,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(
-                            AppConstants.borderRadius,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: book.thumbnailUrl != null
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(
-                                  AppConstants.borderRadius,
-                                ),
-                                child: CachedNetworkImage(
-                                  imageUrl: book.thumbnailUrl!,
-                                  height: AppConstants.bookCoverHeight,
+                    // Full cover background
+                    Positioned.fill(
+                      child: Hero(
+                        tag: 'book_cover_${widget.book.id}',
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(28),
+                          child: widget.book.thumbnailUrl != null
+                              ? CachedNetworkImage(
+                                  imageUrl: widget.book.thumbnailUrl!,
                                   fit: BoxFit.cover,
                                   placeholder: (context, url) =>
                                       _buildPlaceholder(),
                                   errorWidget: (context, url, error) =>
                                       _buildErrorWidget(),
-                                ),
-                              )
-                            : _buildErrorWidget(),
+                                )
+                              : _buildErrorWidget(),
+                        ),
                       ),
                     ),
-                    const SizedBox(width: AppConstants.largeSpacing),
-                    // Book details
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            book.title,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: AppConstants.titleFontSize,
-                              color: Colors.white,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+
+                    // Gradient overlay at bottom for readability
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        height: 200, // Bigger gradient overlay
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Theme.of(
+                                context,
+                              ).colorScheme.surface.withOpacity(0.8),
+                              Theme.of(
+                                context,
+                              ).colorScheme.surface.withOpacity(1),
+                            ],
                           ),
-                          const SizedBox(height: AppConstants.mediumSpacing),
-                          Text(
-                            book.authors,
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: AppConstants.subtitleFontSize,
+                        ),
+                      ),
+                    ),
+
+                    // Content overlaid on gradient with slide animation
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: AnimatedBuilder(
+                        animation: _slideAnimation,
+                        builder: (context, child) {
+                          return SlideTransition(
+                            position: _slideAnimation,
+                            child: Padding(
+                              padding: const EdgeInsets.all(24),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Book title and authors
+                                  Text(
+                                    widget.book.title,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    widget.book.authors,
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 16),
+
+                                  // Reading progress section
+                                  if (widget.book.hasReadingProgress) ...[
+                                    _buildProgressSection(),
+                                  ],
+                                ],
+                              ),
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: AppConstants.largeSpacing),
-                          // Reading progress section
-                          if (book.hasReadingProgress) ...[
-                            _buildProgressSection(),
-                          ],
-                        ],
+                          );
+                        },
                       ),
                     ),
                   ],
                 ),
-                // Reading timer - full width
-                const SizedBox(height: AppConstants.largeSpacing),
-                GestureDetector(
-                  onTap: () {}, // Prevent tap from bubbling up to card
-                  child: ReadingTimer(
-                    bookId: book.id!,
-                    bookTitle: book.title,
-                    book: book,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
+        ),
+
+        // Timer box below the card
+        GestureDetector(
+          onTap: () {}, // Prevent tap from bubbling up to card
+          child: ReadingTimer(
+            bookId: widget.book.id!,
+            bookTitle: widget.book.title,
+            book: widget.book,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: Container(
+        decoration: BoxDecoration(color: Colors.grey[200]),
+        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: Container(
+        decoration: BoxDecoration(color: Colors.grey[300]),
+        child: Icon(
+          Icons.book,
+          size: AppConstants.bookIconSize,
+          color: Colors.grey,
         ),
       ),
     );
   }
 
-  Future<bool> _showDeleteConfirmation(BuildContext context) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Delete Book'),
-              content: Text(
-                'Are you sure you want to remove "${book.title}" from your library?',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(true),
-                  style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  child: const Text('Delete'),
-                ),
-              ],
-            );
-          },
-        ) ??
-        false;
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      height: AppConstants.bookCoverHeight,
-      width: AppConstants.bookCoverWidth,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-      ),
-      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-    );
-  }
-
-  Widget _buildErrorWidget() {
-    return Container(
-      height: AppConstants.bookCoverHeight,
-      width: AppConstants.bookCoverWidth,
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-      ),
-      child: Icon(
-        Icons.book,
-        size: AppConstants.bookIconSize,
-        color: Colors.grey,
-      ),
-    );
-  }
-
   Widget _buildProgressSection() {
-    final progress = book.readingProgress!;
-    final progressPercentage = book.progressPercentage;
+    final progress = widget.book.readingProgress!;
+    final progressPercentage = widget.book.progressPercentage;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,23 +258,26 @@ class BookCard extends StatelessWidget {
         // Progress bar
         Container(
           width: double.infinity,
-          height: 6,
+          height: 8,
           decoration: BoxDecoration(
             color: Colors.grey[700],
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(56),
           ),
           child: FractionallySizedBox(
             alignment: Alignment.centerLeft,
             widthFactor: progressPercentage / 100,
             child: Container(
               decoration: BoxDecoration(
-                color: book.isCompleted ? Colors.green : Colors.blue,
-                borderRadius: BorderRadius.circular(3),
+                color: widget.book.isCompleted
+                    ? Colors.green
+                    : (_bookAccentColor ??
+                          ColorExtractor.getFallbackColor(widget.book.title)),
+                borderRadius: BorderRadius.circular(56),
               ),
             ),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
         // Progress text
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -235,9 +290,9 @@ class BookCard extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            if (book.pageCount != null)
+            if (widget.book.pageCount != null)
               Text(
-                '${progress.currentPage}/${book.pageCount}',
+                '${progress.currentPage}/${widget.book.pageCount}',
                 style: TextStyle(color: Colors.grey[400], fontSize: 12),
               ),
           ],
@@ -250,7 +305,7 @@ class BookCard extends StatelessWidget {
     Navigator.of(context).push(
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) =>
-            BookDetailsScreen(book: book),
+            BookDetailsScreen(book: widget.book),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           // Simple fade in effect
           var fadeTween = Tween<double>(
