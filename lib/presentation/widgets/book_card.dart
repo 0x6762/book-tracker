@@ -16,11 +16,13 @@ class BookCard extends StatefulWidget {
   State<BookCard> createState() => _BookCardState();
 }
 
-class _BookCardState extends State<BookCard>
-    with SingleTickerProviderStateMixin {
+class _BookCardState extends State<BookCard> with TickerProviderStateMixin {
   late AnimationController _animationController;
+  late AnimationController _gradientAnimationController;
   late Animation<Offset> _slideAnimation;
+  late Animation<double> _gradientFadeAnimation;
   Color? _bookAccentColor;
+  bool _isNavigating = false;
 
   // Constants
   static const double _cardBorderRadius = 28.0;
@@ -30,7 +32,8 @@ class _BookCardState extends State<BookCard>
   static const Duration _colorExtractionDelay = Duration(
     milliseconds: 800,
   ); // Increased for better timing
-  static const Duration _animationDuration = Duration(milliseconds: 400);
+  static const Duration _animationDuration = Duration(milliseconds: 200);
+  static const Duration _gradientFadeDuration = Duration(milliseconds: 500);
   static const double _progressBarHeight = 8.0;
   static const double _progressBarRadius = 56.0;
 
@@ -41,15 +44,27 @@ class _BookCardState extends State<BookCard>
       duration: _animationDuration,
       vsync: this,
     );
+    _gradientAnimationController = AnimationController(
+      duration: _gradientFadeDuration,
+      vsync: this,
+    );
+
     _slideAnimation =
         Tween<Offset>(
-          begin: const Offset(0, 0.1), // Start 10% down (more subtle)
+          begin: const Offset(0, 0.2), // Start 10% down (more subtle)
           end: Offset.zero, // End at normal position
         ).animate(
           CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
         );
 
-    // Start the slide animation after a short delay
+    _gradientFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _gradientAnimationController,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    // Start the animations after a short delay
     _startAnimation();
 
     // Extract color after image has time to load and display
@@ -79,7 +94,16 @@ class _BookCardState extends State<BookCard>
 
   void _startAnimation() {
     _animationController.reset();
-    // Shorter delay to start after Hero animation begins but before it completes
+    _gradientAnimationController.reset();
+
+    // Start gradient fade after a small delay to ensure smooth appearance
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _gradientAnimationController.forward();
+      }
+    });
+
+    // Start slide animation after Hero animation begins
     Future.delayed(_animationDelay, () {
       if (mounted) {
         _animationController.forward();
@@ -99,6 +123,7 @@ class _BookCardState extends State<BookCard>
   @override
   void dispose() {
     _animationController.dispose();
+    _gradientAnimationController.dispose();
     super.dispose();
   }
 
@@ -135,51 +160,65 @@ class _BookCardState extends State<BookCard>
                   Positioned.fill(
                     child: Hero(
                       tag: 'book_cover_${widget.book.id}',
-                      child: widget.book.thumbnailUrl != null
-                          ? Transform.scale(
-                              scale: _imageScale,
-                              alignment: Alignment.center,
-                              child: CachedNetworkImage(
-                                imageUrl: widget.book.thumbnailUrl!,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
+                      child: Material(
+                        elevation: 0,
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(_cardBorderRadius),
+                        clipBehavior: Clip.antiAlias,
+                        child: widget.book.thumbnailUrl != null
+                            ? Transform.scale(
+                                scale: _imageScale,
                                 alignment: Alignment.center,
-                                filterQuality: FilterQuality.high,
-                                memCacheWidth: 600,
-                                memCacheHeight: 900,
-                                placeholder: (context, url) =>
-                                    _buildPlaceholder(),
-                                errorWidget: (context, url, error) =>
-                                    _buildErrorWidget(),
-                              ),
-                            )
-                          : _buildErrorWidget(),
-                    ),
-                  ),
-
-                  // Gradient overlay at bottom for readability
-                  Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Container(
-                      height: _gradientHeight,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            colorScheme.surface.withOpacity(0.8),
-                            colorScheme.surface,
-                          ],
-                        ),
+                                child: CachedNetworkImage(
+                                  imageUrl: widget.book.thumbnailUrl!,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  alignment: Alignment.center,
+                                  filterQuality: FilterQuality.high,
+                                  memCacheWidth: 600,
+                                  memCacheHeight: 900,
+                                  placeholder: (context, url) =>
+                                      _buildPlaceholder(),
+                                  errorWidget: (context, url, error) =>
+                                      _buildErrorWidget(),
+                                ),
+                              )
+                            : _buildErrorWidget(),
                       ),
                     ),
                   ),
 
-                  // Content overlaid on gradient with slide animation
+                  // Gradient overlay that fades in
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: AnimatedBuilder(
+                      animation: _gradientFadeAnimation,
+                      builder: (context, child) {
+                        return FadeTransition(
+                          opacity: _gradientFadeAnimation,
+                          child: Container(
+                            height: _gradientHeight,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  colorScheme.surface.withOpacity(0.8),
+                                  colorScheme.surface,
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // Content that slides in
                   Positioned(
                     bottom: 0,
                     left: 0,
@@ -328,24 +367,40 @@ class _BookCardState extends State<BookCard>
   }
 
   void _navigateToDetails(BuildContext context) {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            BookDetailsScreen(book: widget.book),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // Simple fade in effect
-          var fadeTween = Tween<double>(
-            begin: 0.0,
-            end: 1.0,
-          ).chain(CurveTween(curve: Curves.easeInOut));
+    setState(() {
+      _isNavigating = true;
+    });
 
-          return FadeTransition(
-            opacity: animation.drive(fadeTween),
-            child: child,
-          );
-        },
-        transitionDuration: const Duration(milliseconds: 200),
-      ),
-    );
+    Navigator.of(context)
+        .push(
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) =>
+                BookDetailsScreen(book: widget.book),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+                  // Simple fade in effect
+                  var fadeTween = Tween<double>(
+                    begin: 0.0,
+                    end: 1.0,
+                  ).chain(CurveTween(curve: Curves.easeInOut));
+
+                  return FadeTransition(
+                    opacity: animation.drive(fadeTween),
+                    child: child,
+                  );
+                },
+            transitionDuration: const Duration(milliseconds: 200),
+          ),
+        )
+        .then((_) {
+          // Reset navigation state when returning
+          if (mounted) {
+            setState(() {
+              _isNavigating = false;
+            });
+            // Restart animation when returning from navigation
+            _startAnimation();
+          }
+        });
   }
 }
