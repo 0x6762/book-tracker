@@ -236,6 +236,9 @@ class BookProvider with ChangeNotifier {
     _isTimerRunning = true;
     _currentBookId = bookId;
 
+    // Show timer start notification
+    _showTimerStartNotification();
+
     // Schedule notification for timer completion
     _scheduleTimerNotification(_totalSeconds);
 
@@ -264,6 +267,9 @@ class BookProvider with ChangeNotifier {
 
     // Cancel notification
     _cancelTimerNotification();
+    
+    // Clear the "timer is running" notification
+    _notifications.cancel(777);
 
     // Add elapsed time to book before stopping
     if (_currentBookId != null && _totalSeconds > 0) {
@@ -291,6 +297,10 @@ class BookProvider with ChangeNotifier {
       _timer?.cancel();
       _timer = null;
       _isTimerRunning = false;
+      
+      // Clear the "timer is running" notification when paused
+      _notifications.cancel(777);
+      
       notifyListeners();
     }
   }
@@ -298,6 +308,10 @@ class BookProvider with ChangeNotifier {
   void resumeTimer() {
     if (!_isTimerRunning && _currentBookId != null && _remainingSeconds > 0) {
       _isTimerRunning = true;
+
+      // Show timer start notification when resuming
+      _showTimerStartNotification();
+
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (_remainingSeconds > 0) {
           _remainingSeconds--;
@@ -324,7 +338,11 @@ class BookProvider with ChangeNotifier {
     _addReadingTimeToBook();
     // Trigger page update modal after timer completion
     _shouldShowPageUpdateModal = true;
-    // Also show a completion notification
+    
+    // Clear the "timer is running" notification first
+    _notifications.cancel(777);
+    
+    // Then show the completion notification
     _showCompletionNotification();
     notifyListeners();
   }
@@ -384,7 +402,7 @@ class BookProvider with ChangeNotifier {
               channelDescription: 'Notifications for reading timer',
               importance: Importance.high,
               priority: Priority.high,
-              icon: '@mipmap/launcher_icon',
+              icon: '@drawable/ic_stat_name',
             ),
             iOS: DarwinNotificationDetails(
               presentAlert: true,
@@ -481,7 +499,7 @@ class BookProvider with ChangeNotifier {
   // Initialize notifications
   Future<void> initializeNotifications() async {
     const androidSettings = AndroidInitializationSettings(
-      '@mipmap/launcher_icon',
+      '@drawable/ic_stat_name',
     );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -566,7 +584,7 @@ class BookProvider with ChangeNotifier {
             channelDescription: 'Test notifications',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@mipmap/launcher_icon',
+            icon: '@drawable/ic_stat_name',
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -603,7 +621,7 @@ class BookProvider with ChangeNotifier {
             importance: Importance.low,
             priority: Priority.low,
             silent: true,
-            icon: '@mipmap/launcher_icon',
+            icon: '@drawable/ic_stat_name',
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: false,
@@ -631,7 +649,7 @@ class BookProvider with ChangeNotifier {
             channelDescription: 'Notifications for reading timer completion',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@mipmap/launcher_icon',
+            icon: '@drawable/ic_stat_name',
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
