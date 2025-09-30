@@ -115,8 +115,7 @@ class _SearchScreenState extends State<SearchScreen>
                           return SearchResultCard(
                             book: book,
                             onAdd: () async {
-                              final bookProvider = context
-                                  .read<BookProvider>();
+                              final bookProvider = context.read<BookProvider>();
                               await bookProvider.addBook(book);
 
                               if (bookProvider.error != null) {

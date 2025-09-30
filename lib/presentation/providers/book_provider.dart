@@ -6,6 +6,7 @@ import 'package:timezone/timezone.dart' as tz;
 import '../../data/simple_database.dart';
 import '../../data/datasources/google_books_api_service.dart';
 import '../../domain/entities/book.dart';
+import '../utils/color_extractor.dart';
 
 class BookProvider with ChangeNotifier {
   final SimpleDatabase _database = SimpleDatabase();
@@ -14,6 +15,11 @@ class BookProvider with ChangeNotifier {
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
+  BookProvider() {
+    // Initialize ColorExtractor with database reference
+    ColorExtractor.initializeDatabase(_database);
+  }
+
   List<BookEntity> _books = [];
   List<BookEntity> _searchResults = [];
   bool _isLoading =
@@ -21,6 +27,7 @@ class BookProvider with ChangeNotifier {
   bool _isSearching = false;
   bool _isAddingBook = false;
   String? _error;
+  String? _lastAddedBookId; // Track the last added book's Google Books ID
 
   // Timer state
   Timer? _timer;
@@ -39,6 +46,7 @@ class BookProvider with ChangeNotifier {
   bool get isSearching => _isSearching;
   bool get isAddingBook => _isAddingBook;
   String? get error => _error;
+  String? get lastAddedBookId => _lastAddedBookId;
 
   // Timer getters
   int get remainingSeconds => _remainingSeconds;
@@ -94,6 +102,7 @@ class BookProvider with ChangeNotifier {
 
       // No upgrade needed since both search and collection use large
       await _database.insertBook(book.toCompanion());
+      _lastAddedBookId = book.googleBooksId; // Track the added book
       await loadBooks(); // Refresh list
     } catch (e) {
       _error = 'Failed to add book: $e';
@@ -192,6 +201,11 @@ class BookProvider with ChangeNotifier {
 
   void clearError() {
     _error = null;
+    notifyListeners();
+  }
+
+  void clearLastAddedBookId() {
+    _lastAddedBookId = null;
     notifyListeners();
   }
 

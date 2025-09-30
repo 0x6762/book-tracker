@@ -112,7 +112,7 @@ class _SearchInputState extends State<SearchInput>
           ),
           decoration: InputDecoration(
             hintText: 'Search for books...',
-            hintStyle: theme.textTheme.bodyMedium?.copyWith(
+            hintStyle: theme.textTheme.bodyLarge?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
             prefixIcon: Icon(
@@ -142,7 +142,7 @@ class _SearchInputState extends State<SearchInput>
               borderSide: BorderSide.none,
             ),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 24,
+              horizontal: 20,
               vertical: 12,
             ),
           ),
@@ -191,7 +191,7 @@ class _SearchInputState extends State<SearchInput>
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(customTheme.borderRadius * 4.5),
-            borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+            borderSide: BorderSide.none,
           ),
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,

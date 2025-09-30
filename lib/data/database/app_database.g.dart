@@ -943,6 +943,273 @@ class ReadingProgressCompanion extends UpdateCompanion<ReadingProgressData> {
   }
 }
 
+class $BookColorsTable extends BookColors
+    with TableInfo<$BookColorsTable, BookColor> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $BookColorsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<int> bookId = GeneratedColumn<int>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES books (id)',
+    ),
+  );
+  static const VerificationMeta _accentColorMeta = const VerificationMeta(
+    'accentColor',
+  );
+  @override
+  late final GeneratedColumn<int> accentColor = GeneratedColumn<int>(
+    'accent_color',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _extractedAtMeta = const VerificationMeta(
+    'extractedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> extractedAt = GeneratedColumn<DateTime>(
+    'extracted_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [bookId, accentColor, extractedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'book_colors';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<BookColor> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    }
+    if (data.containsKey('accent_color')) {
+      context.handle(
+        _accentColorMeta,
+        accentColor.isAcceptableOrUnknown(
+          data['accent_color']!,
+          _accentColorMeta,
+        ),
+      );
+    }
+    if (data.containsKey('extracted_at')) {
+      context.handle(
+        _extractedAtMeta,
+        extractedAt.isAcceptableOrUnknown(
+          data['extracted_at']!,
+          _extractedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_extractedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {bookId};
+  @override
+  BookColor map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return BookColor(
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}book_id'],
+      )!,
+      accentColor: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}accent_color'],
+      ),
+      extractedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}extracted_at'],
+      )!,
+    );
+  }
+
+  @override
+  $BookColorsTable createAlias(String alias) {
+    return $BookColorsTable(attachedDatabase, alias);
+  }
+}
+
+class BookColor extends DataClass implements Insertable<BookColor> {
+  final int bookId;
+  final int? accentColor;
+  final DateTime extractedAt;
+  const BookColor({
+    required this.bookId,
+    this.accentColor,
+    required this.extractedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['book_id'] = Variable<int>(bookId);
+    if (!nullToAbsent || accentColor != null) {
+      map['accent_color'] = Variable<int>(accentColor);
+    }
+    map['extracted_at'] = Variable<DateTime>(extractedAt);
+    return map;
+  }
+
+  BookColorsCompanion toCompanion(bool nullToAbsent) {
+    return BookColorsCompanion(
+      bookId: Value(bookId),
+      accentColor: accentColor == null && nullToAbsent
+          ? const Value.absent()
+          : Value(accentColor),
+      extractedAt: Value(extractedAt),
+    );
+  }
+
+  factory BookColor.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return BookColor(
+      bookId: serializer.fromJson<int>(json['bookId']),
+      accentColor: serializer.fromJson<int?>(json['accentColor']),
+      extractedAt: serializer.fromJson<DateTime>(json['extractedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'bookId': serializer.toJson<int>(bookId),
+      'accentColor': serializer.toJson<int?>(accentColor),
+      'extractedAt': serializer.toJson<DateTime>(extractedAt),
+    };
+  }
+
+  BookColor copyWith({
+    int? bookId,
+    Value<int?> accentColor = const Value.absent(),
+    DateTime? extractedAt,
+  }) => BookColor(
+    bookId: bookId ?? this.bookId,
+    accentColor: accentColor.present ? accentColor.value : this.accentColor,
+    extractedAt: extractedAt ?? this.extractedAt,
+  );
+  BookColor copyWithCompanion(BookColorsCompanion data) {
+    return BookColor(
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      accentColor: data.accentColor.present
+          ? data.accentColor.value
+          : this.accentColor,
+      extractedAt: data.extractedAt.present
+          ? data.extractedAt.value
+          : this.extractedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BookColor(')
+          ..write('bookId: $bookId, ')
+          ..write('accentColor: $accentColor, ')
+          ..write('extractedAt: $extractedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(bookId, accentColor, extractedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is BookColor &&
+          other.bookId == this.bookId &&
+          other.accentColor == this.accentColor &&
+          other.extractedAt == this.extractedAt);
+}
+
+class BookColorsCompanion extends UpdateCompanion<BookColor> {
+  final Value<int> bookId;
+  final Value<int?> accentColor;
+  final Value<DateTime> extractedAt;
+  const BookColorsCompanion({
+    this.bookId = const Value.absent(),
+    this.accentColor = const Value.absent(),
+    this.extractedAt = const Value.absent(),
+  });
+  BookColorsCompanion.insert({
+    this.bookId = const Value.absent(),
+    this.accentColor = const Value.absent(),
+    required DateTime extractedAt,
+  }) : extractedAt = Value(extractedAt);
+  static Insertable<BookColor> custom({
+    Expression<int>? bookId,
+    Expression<int>? accentColor,
+    Expression<DateTime>? extractedAt,
+  }) {
+    return RawValuesInsertable({
+      if (bookId != null) 'book_id': bookId,
+      if (accentColor != null) 'accent_color': accentColor,
+      if (extractedAt != null) 'extracted_at': extractedAt,
+    });
+  }
+
+  BookColorsCompanion copyWith({
+    Value<int>? bookId,
+    Value<int?>? accentColor,
+    Value<DateTime>? extractedAt,
+  }) {
+    return BookColorsCompanion(
+      bookId: bookId ?? this.bookId,
+      accentColor: accentColor ?? this.accentColor,
+      extractedAt: extractedAt ?? this.extractedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (bookId.present) {
+      map['book_id'] = Variable<int>(bookId.value);
+    }
+    if (accentColor.present) {
+      map['accent_color'] = Variable<int>(accentColor.value);
+    }
+    if (extractedAt.present) {
+      map['extracted_at'] = Variable<DateTime>(extractedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('BookColorsCompanion(')
+          ..write('bookId: $bookId, ')
+          ..write('accentColor: $accentColor, ')
+          ..write('extractedAt: $extractedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -950,11 +1217,16 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ReadingProgressTable readingProgress = $ReadingProgressTable(
     this,
   );
+  late final $BookColorsTable bookColors = $BookColorsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [books, readingProgress];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    books,
+    readingProgress,
+    bookColors,
+  ];
 }
 
 typedef $$BooksTableCreateCompanionBuilder =
@@ -999,6 +1271,24 @@ final class $$BooksTableReferences
     final cache = $_typedResult.readTableOrNull(
       _readingProgressRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$BookColorsTable, List<BookColor>>
+  _bookColorsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.bookColors,
+    aliasName: $_aliasNameGenerator(db.books.id, db.bookColors.bookId),
+  );
+
+  $$BookColorsTableProcessedTableManager get bookColorsRefs {
+    final manager = $$BookColorsTableTableManager(
+      $_db,
+      $_db.bookColors,
+    ).filter((f) => f.bookId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_bookColorsRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -1069,6 +1359,31 @@ class $$BooksTableFilterComposer extends Composer<_$AppDatabase, $BooksTable> {
           }) => $$ReadingProgressTableFilterComposer(
             $db: $db,
             $table: $db.readingProgress,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> bookColorsRefs(
+    Expression<bool> Function($$BookColorsTableFilterComposer f) f,
+  ) {
+    final $$BookColorsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.bookColors,
+      getReferencedColumn: (t) => t.bookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BookColorsTableFilterComposer(
+            $db: $db,
+            $table: $db.bookColors,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -1194,6 +1509,31 @@ class $$BooksTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> bookColorsRefs<T extends Object>(
+    Expression<T> Function($$BookColorsTableAnnotationComposer a) f,
+  ) {
+    final $$BookColorsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.bookColors,
+      getReferencedColumn: (t) => t.bookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BookColorsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.bookColors,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$BooksTableTableManager
@@ -1209,7 +1549,10 @@ class $$BooksTableTableManager
           $$BooksTableUpdateCompanionBuilder,
           (Book, $$BooksTableReferences),
           Book,
-          PrefetchHooks Function({bool readingProgressRefs})
+          PrefetchHooks Function({
+            bool readingProgressRefs,
+            bool bookColorsRefs,
+          })
         > {
   $$BooksTableTableManager(_$AppDatabase db, $BooksTable table)
     : super(
@@ -1268,37 +1611,59 @@ class $$BooksTableTableManager
                     (e.readTable(table), $$BooksTableReferences(db, table, e)),
               )
               .toList(),
-          prefetchHooksCallback: ({readingProgressRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (readingProgressRefs) db.readingProgress,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (readingProgressRefs)
-                    await $_getPrefetchedData<
-                      Book,
-                      $BooksTable,
-                      ReadingProgressData
-                    >(
-                      currentTable: table,
-                      referencedTable: $$BooksTableReferences
-                          ._readingProgressRefsTable(db),
-                      managerFromTypedResult: (p0) => $$BooksTableReferences(
-                        db,
-                        table,
-                        p0,
-                      ).readingProgressRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.bookId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({readingProgressRefs = false, bookColorsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (readingProgressRefs) db.readingProgress,
+                    if (bookColorsRefs) db.bookColors,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (readingProgressRefs)
+                        await $_getPrefetchedData<
+                          Book,
+                          $BooksTable,
+                          ReadingProgressData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BooksTableReferences
+                              ._readingProgressRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BooksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).readingProgressRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.bookId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (bookColorsRefs)
+                        await $_getPrefetchedData<Book, $BooksTable, BookColor>(
+                          currentTable: table,
+                          referencedTable: $$BooksTableReferences
+                              ._bookColorsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BooksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).bookColorsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.bookId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -1315,7 +1680,7 @@ typedef $$BooksTableProcessedTableManager =
       $$BooksTableUpdateCompanionBuilder,
       (Book, $$BooksTableReferences),
       Book,
-      PrefetchHooks Function({bool readingProgressRefs})
+      PrefetchHooks Function({bool readingProgressRefs, bool bookColorsRefs})
     >;
 typedef $$ReadingProgressTableCreateCompanionBuilder =
     ReadingProgressCompanion Function({
@@ -1665,6 +2030,284 @@ typedef $$ReadingProgressTableProcessedTableManager =
       ReadingProgressData,
       PrefetchHooks Function({bool bookId})
     >;
+typedef $$BookColorsTableCreateCompanionBuilder =
+    BookColorsCompanion Function({
+      Value<int> bookId,
+      Value<int?> accentColor,
+      required DateTime extractedAt,
+    });
+typedef $$BookColorsTableUpdateCompanionBuilder =
+    BookColorsCompanion Function({
+      Value<int> bookId,
+      Value<int?> accentColor,
+      Value<DateTime> extractedAt,
+    });
+
+final class $$BookColorsTableReferences
+    extends BaseReferences<_$AppDatabase, $BookColorsTable, BookColor> {
+  $$BookColorsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $BooksTable _bookIdTable(_$AppDatabase db) => db.books.createAlias(
+    $_aliasNameGenerator(db.bookColors.bookId, db.books.id),
+  );
+
+  $$BooksTableProcessedTableManager get bookId {
+    final $_column = $_itemColumn<int>('book_id')!;
+
+    final manager = $$BooksTableTableManager(
+      $_db,
+      $_db.books,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bookIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$BookColorsTableFilterComposer
+    extends Composer<_$AppDatabase, $BookColorsTable> {
+  $$BookColorsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get accentColor => $composableBuilder(
+    column: $table.accentColor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get extractedAt => $composableBuilder(
+    column: $table.extractedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$BooksTableFilterComposer get bookId {
+    final $$BooksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableFilterComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BookColorsTableOrderingComposer
+    extends Composer<_$AppDatabase, $BookColorsTable> {
+  $$BookColorsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get accentColor => $composableBuilder(
+    column: $table.accentColor,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get extractedAt => $composableBuilder(
+    column: $table.extractedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$BooksTableOrderingComposer get bookId {
+    final $$BooksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableOrderingComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BookColorsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $BookColorsTable> {
+  $$BookColorsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get accentColor => $composableBuilder(
+    column: $table.accentColor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get extractedAt => $composableBuilder(
+    column: $table.extractedAt,
+    builder: (column) => column,
+  );
+
+  $$BooksTableAnnotationComposer get bookId {
+    final $$BooksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$BookColorsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $BookColorsTable,
+          BookColor,
+          $$BookColorsTableFilterComposer,
+          $$BookColorsTableOrderingComposer,
+          $$BookColorsTableAnnotationComposer,
+          $$BookColorsTableCreateCompanionBuilder,
+          $$BookColorsTableUpdateCompanionBuilder,
+          (BookColor, $$BookColorsTableReferences),
+          BookColor,
+          PrefetchHooks Function({bool bookId})
+        > {
+  $$BookColorsTableTableManager(_$AppDatabase db, $BookColorsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$BookColorsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$BookColorsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$BookColorsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> bookId = const Value.absent(),
+                Value<int?> accentColor = const Value.absent(),
+                Value<DateTime> extractedAt = const Value.absent(),
+              }) => BookColorsCompanion(
+                bookId: bookId,
+                accentColor: accentColor,
+                extractedAt: extractedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> bookId = const Value.absent(),
+                Value<int?> accentColor = const Value.absent(),
+                required DateTime extractedAt,
+              }) => BookColorsCompanion.insert(
+                bookId: bookId,
+                accentColor: accentColor,
+                extractedAt: extractedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$BookColorsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({bookId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (bookId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.bookId,
+                                referencedTable: $$BookColorsTableReferences
+                                    ._bookIdTable(db),
+                                referencedColumn: $$BookColorsTableReferences
+                                    ._bookIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$BookColorsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $BookColorsTable,
+      BookColor,
+      $$BookColorsTableFilterComposer,
+      $$BookColorsTableOrderingComposer,
+      $$BookColorsTableAnnotationComposer,
+      $$BookColorsTableCreateCompanionBuilder,
+      $$BookColorsTableUpdateCompanionBuilder,
+      (BookColor, $$BookColorsTableReferences),
+      BookColor,
+      PrefetchHooks Function({bool bookId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -1673,4 +2316,6 @@ class $AppDatabaseManager {
       $$BooksTableTableManager(_db, _db.books);
   $$ReadingProgressTableTableManager get readingProgress =>
       $$ReadingProgressTableTableManager(_db, _db.readingProgress);
+  $$BookColorsTableTableManager get bookColors =>
+      $$BookColorsTableTableManager(_db, _db.bookColors);
 }

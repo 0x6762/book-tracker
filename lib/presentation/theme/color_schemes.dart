@@ -39,7 +39,7 @@ class AppColorSchemes {
     onSurface: Color(0xFFF2F2F2), // Light text
     surfaceContainerHighest: Color(0xFF34363C), // Surface 2
     onSurfaceVariant: Color(0xFFA7A2A9), // Light gray from your palette
-    outline: Color(0xFF575A5E), // Medium gray from your palette
+    outline: Color(0xFF34363C), // Medium gray from your palette
     shadow: Color(0xFF000000),
     scrim: Color(0xFF000000),
     inverseSurface: Color(0xFFF2F2F2), // Light text

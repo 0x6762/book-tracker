@@ -5,7 +5,7 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'presentation/providers/book_provider.dart';
 import 'presentation/widgets/search_input.dart';
 import 'presentation/widgets/book_card.dart';
-import 'presentation/widgets/empty_state.dart';
+import 'presentation/widgets/book_cover_carousel.dart';
 import 'presentation/screens/search_screen.dart';
 import 'presentation/constants/app_constants.dart';
 import 'presentation/theme/app_theme.dart';
@@ -56,6 +56,7 @@ class BookTrackerHomePage extends StatefulWidget {
 
 class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -79,9 +80,37 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     });
   }
 
+  void _scrollToNewBook(BookProvider bookProvider) {
+    if (bookProvider.lastAddedBookId != null) {
+      // Find the index of the newly added book
+      final bookIndex = bookProvider.books.indexWhere(
+        (book) => book.googleBooksId == bookProvider.lastAddedBookId,
+      );
+
+      if (bookIndex != -1) {
+        // Calculate scroll position
+        final screenWidth = MediaQuery.of(context).size.width;
+        final cardWidth = screenWidth * 0.90;
+        final spacing = 16.0;
+        final scrollPosition = bookIndex * (cardWidth + spacing);
+
+        // Scroll to the new book
+        _scrollController.animateTo(
+          scrollPosition,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+
+        // Clear the last added book ID after scrolling
+        bookProvider.clearLastAddedBookId();
+      }
+    }
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -118,32 +147,102 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          AppConstants.appName,
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: Column(
+    return Consumer<BookProvider>(
+      builder: (context, bookProvider, child) {
+        // Check if we need to scroll to a newly added book
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _scrollToNewBook(bookProvider);
+          }
+        });
+
+        // Show app bar only when there are books or when searching
+        final showAppBar =
+            bookProvider.books.isNotEmpty || bookProvider.isSearching;
+
+        return Scaffold(
+          appBar: showAppBar
+              ? AppBar(
+                  title: Text(
+                    AppConstants.appName,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+              : null,
+          body: showAppBar
+              ? Column(
+                  children: [
+                    // Search Bar with Hero Animation
+                    Hero(
+                      tag: 'search_bar',
+                      child: SearchInput(
+                        controller: _searchController,
+                        onTap: _navigateToSearch,
+                        isSearchMode: false,
+                      ),
+                    ),
+                    // Content
+                    Expanded(child: _buildBookList(bookProvider)),
+                  ],
+                )
+              : _buildEmptyStateWithSearch(bookProvider),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmptyStateWithSearch(BookProvider bookProvider) {
+    return SingleChildScrollView(
+      child: Column(
         children: [
-          // Search Bar with Hero Animation
-          Hero(
-            tag: 'search_bar',
-            child: SearchInput(
-              controller: _searchController,
-              onTap: _navigateToSearch,
-              isSearchMode: false,
+          // 30% from top spacing
+          SizedBox(height: MediaQuery.of(context).size.height * 0.1),
+          // Book cover carousel at the top
+          const BookCoverCarousel(
+            height: 250,
+            width: 180,
+            scrollSpeed: 20.0,
+            opacity: 0.6,
+          ),
+
+          const SizedBox(height: 56),
+
+          // Title and subtitle
+          Text(
+            'Welcome to Readr',
+            style: TextStyle(
+              fontSize: AppConstants.emptyStateTitleSize,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-          // Content
-          Expanded(
-            child: Consumer<BookProvider>(
-              builder: (context, bookProvider, child) {
-                return _buildBookList(bookProvider);
-              },
+          const SizedBox(height: AppConstants.mediumSpacing),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              'Add books to your reading list and start tracking your reading progress.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: AppConstants.emptyStateBodySize,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 1.5,
+              ),
+            ),
+          ),
+
+          // Search bar positioned below text
+          const SizedBox(height: 32),
+          Hero(
+            tag: 'search_bar',
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: SearchInput(
+                controller: _searchController,
+                onTap: _navigateToSearch,
+                isSearchMode: false,
+              ),
             ),
           ),
         ],
@@ -174,50 +273,44 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
       );
     }
 
-    if (bookProvider.books.isEmpty) {
-      return const EmptyState(
-        title: 'Welcome to Readr',
-        subtitle:
-            'Search for books above and add and start tracking your reading progress.',
-        icon: Icons.menu_book,
-      );
-    }
-
     return SingleChildScrollView(
+      controller: _scrollController,
       scrollDirection: Axis.horizontal,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: bookProvider.books.asMap().entries.map((entry) {
-              final index = entry.key;
-              final book = entry.value;
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: bookProvider.books.asMap().entries.map((entry) {
+                final index = entry.key;
+                final book = entry.value;
 
-              // Calculate dynamic width based on screen width
-              final screenWidth = MediaQuery.of(context).size.width;
-              final cardWidth = screenWidth * 0.90; // 85% of screen width
+                // Calculate dynamic width based on screen width
+                final screenWidth = MediaQuery.of(context).size.width;
+                final cardWidth = screenWidth * 0.90; // 85% of screen width
 
-              return Row(
-                children: [
-                  Container(
-                    width: cardWidth,
-                    height:
-                        cardWidth *
-                        1.6, // Realistic book aspect ratio (like 6" x 9")
-                    child: BookCard(
-                      book: book,
-                      margin: EdgeInsets.zero, // Remove internal card margins
+                return Row(
+                  children: [
+                    Container(
+                      width: cardWidth,
+                      height:
+                          cardWidth *
+                          1.6, // Realistic book aspect ratio (like 6" x 9")
+                      child: BookCard(
+                        book: book,
+                        margin: EdgeInsets.zero, // Remove internal card margins
+                      ),
                     ),
-                  ),
-                  // Add spacing only between cards, not after the last one
-                  if (index < bookProvider.books.length - 1)
-                    const SizedBox(width: 16),
-                ],
-              );
-            }).toList(),
-          ),
-        ],
+                    // Add spacing only between cards, not after the last one
+                    if (index < bookProvider.books.length - 1)
+                      const SizedBox(width: 16),
+                  ],
+                );
+              }).toList(),
+            ),
+          ],
+        ),
       ),
     );
   }

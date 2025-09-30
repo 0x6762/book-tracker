@@ -74,21 +74,14 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     return Center(
       child: Hero(
         tag: 'book_cover_${widget.book.id}',
-        child: Container(
-          height: 280,
-          width: 200,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 12,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+        child: Material(
+          elevation: 8,
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(28),
+          clipBehavior: Clip.antiAlias,
+          child: Container(
+            height: 280,
+            width: 200,
             child: widget.book.thumbnailUrl != null
                 ? CachedNetworkImage(
                     imageUrl: widget.book.thumbnailUrl!,
