@@ -1,4 +1,6 @@
 import 'reading_progress.dart';
+import 'package:drift/drift.dart';
+import '../../data/simple_database.dart';
 
 class BookEntity {
   final int? id;
@@ -72,5 +74,57 @@ class BookEntity {
   String get fullRatingText {
     if (!hasRating) return 'No rating';
     return '$formattedRating ${formattedRatingCount}';
+  }
+
+  // Create a copy with updated fields
+  BookEntity copyWith({
+    int? id,
+    String? googleBooksId,
+    String? title,
+    String? authors,
+    String? description,
+    String? thumbnailUrl,
+    String? publishedDate,
+    int? pageCount,
+    ReadingProgress? readingProgress,
+    double? averageRating,
+    int? ratingsCount,
+  }) {
+    return BookEntity(
+      id: id ?? this.id,
+      googleBooksId: googleBooksId ?? this.googleBooksId,
+      title: title ?? this.title,
+      authors: authors ?? this.authors,
+      description: description ?? this.description,
+      thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+      publishedDate: publishedDate ?? this.publishedDate,
+      pageCount: pageCount ?? this.pageCount,
+      readingProgress: readingProgress ?? this.readingProgress,
+      averageRating: averageRating ?? this.averageRating,
+      ratingsCount: ratingsCount ?? this.ratingsCount,
+    );
+  }
+
+  // Convert to database companion
+  BooksCompanion toCompanion() {
+    return BooksCompanion(
+      id: id != null ? Value(id!) : const Value.absent(),
+      googleBooksId: Value(googleBooksId),
+      title: Value(title),
+      authors: Value(authors),
+      description: Value(description),
+      thumbnailUrl: Value(thumbnailUrl),
+      publishedDate: Value(publishedDate),
+      pageCount: Value(pageCount),
+      currentPage: Value(readingProgress?.currentPage ?? 0),
+      startDate: Value(readingProgress?.startDate),
+      endDate: Value(readingProgress?.endDate),
+      isCompleted: Value(readingProgress?.isCompleted ?? false),
+      totalReadingTimeMinutes: const Value(
+        0,
+      ), // This will be updated separately
+      averageRating: Value(averageRating),
+      ratingsCount: Value(ratingsCount),
+    );
   }
 }

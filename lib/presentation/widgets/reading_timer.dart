@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/book_provider.dart';
+import '../../services/timer_service.dart';
 import '../../domain/entities/book.dart';
 
 class ReadingTimer extends StatefulWidget {
@@ -47,27 +48,30 @@ class _ReadingTimerState extends State<ReadingTimer>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<BookProvider>(
-      builder: (context, bookProvider, child) {
-        final isCurrentBook = bookProvider.currentBookId == widget.bookId;
-        final isRunning = bookProvider.isTimerRunning && isCurrentBook;
-        final isCompleted = bookProvider.isTimerCompleted && isCurrentBook;
-        final timeText = isCurrentBook ? bookProvider.formattedTime : '';
-        final hasTimer = bookProvider.totalSeconds > 0 && isCurrentBook;
+    return Consumer2<BookProvider, TimerService>(
+      builder: (context, bookProvider, timerService, child) {
+        final isCurrentBook = timerService.currentBookId == widget.bookId;
+        final isRunning = timerService.isTimerRunning && isCurrentBook;
+        final isCompleted =
+            timerService.remainingSeconds <= 0 &&
+            timerService.totalSeconds > 0 &&
+            isCurrentBook;
+        final timeText = isCurrentBook ? timerService.formattedTime : '';
+        final hasTimer = timerService.totalSeconds > 0 && isCurrentBook;
 
         // If timer moved to another book, collapse setup (ignore when no current book)
         if (!hasTimer &&
             !isCompleted &&
             _showSetup == true &&
-            bookProvider.currentBookId != null &&
-            bookProvider.currentBookId != widget.bookId) {
+            timerService.currentBookId != null &&
+            timerService.currentBookId != widget.bookId) {
           _showSetup = false;
         }
 
         // Show page update modal after completion
         if (bookProvider.shouldShowPageUpdateModal && isCurrentBook) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            bookProvider.clearPageUpdateModalFlag();
+            bookProvider.hidePageUpdateModal();
             setState(() {
               _forceProgressUpdate = true;
             });
@@ -76,16 +80,25 @@ class _ReadingTimerState extends State<ReadingTimer>
 
         Widget childContent;
         if (isCompleted || _forceProgressUpdate) {
-          childContent = _buildCompletedState(context, bookProvider);
+          childContent = _buildCompletedState(
+            context,
+            bookProvider,
+            timerService,
+          );
         } else if (hasTimer) {
           childContent = _buildActiveTimerState(
             context,
             bookProvider,
+            timerService,
             timeText,
             isRunning,
           );
         } else if (_showSetup) {
-          childContent = _buildTimerSetupState(context, bookProvider);
+          childContent = _buildTimerSetupState(
+            context,
+            bookProvider,
+            timerService,
+          );
         } else {
           childContent = _buildStartButton(context);
         }
@@ -137,6 +150,7 @@ class _ReadingTimerState extends State<ReadingTimer>
   Widget _buildActiveTimerState(
     BuildContext context,
     BookProvider bookProvider,
+    TimerService timerService,
     String timeText,
     bool isRunning,
   ) {
@@ -166,7 +180,7 @@ class _ReadingTimerState extends State<ReadingTimer>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    onPressed: () => bookProvider.stopTimer(),
+                    onPressed: () => timerService.stopTimer(),
                     icon: const Icon(Icons.stop),
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.grey.withOpacity(0.2),
@@ -176,8 +190,8 @@ class _ReadingTimerState extends State<ReadingTimer>
                   const SizedBox(width: 8),
                   IconButton(
                     onPressed: isRunning
-                        ? () => bookProvider.pauseTimer()
-                        : () => bookProvider.resumeTimer(),
+                        ? () => timerService.pauseTimer()
+                        : () => timerService.resumeTimer(),
                     icon: Icon(isRunning ? Icons.pause : Icons.play_arrow),
                     style: IconButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
@@ -192,10 +206,10 @@ class _ReadingTimerState extends State<ReadingTimer>
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
-              value: bookProvider.totalSeconds > 0
-                  ? (bookProvider.totalSeconds -
-                            bookProvider.remainingSeconds) /
-                        bookProvider.totalSeconds
+              value: timerService.totalSeconds > 0
+                  ? (timerService.totalSeconds -
+                            timerService.remainingSeconds) /
+                        timerService.totalSeconds
                   : 0.0,
               backgroundColor: Theme.of(
                 context,
@@ -214,6 +228,7 @@ class _ReadingTimerState extends State<ReadingTimer>
   Widget _buildTimerSetupState(
     BuildContext context,
     BookProvider bookProvider,
+    TimerService timerService,
   ) {
     return Container(
       key: const ValueKey('setup'),
@@ -352,8 +367,8 @@ class _ReadingTimerState extends State<ReadingTimer>
                     final minutes = _selectedMinutes;
                     final effectiveMinutes =
                         minutes; // 0 means 5s handled in provider UI like bottom sheet
-                    bookProvider.setTimer(widget.book.id!, effectiveMinutes);
-                    bookProvider.startTimer(widget.book.id!);
+                    timerService.setTimer(widget.book.id!, effectiveMinutes);
+                    timerService.startTimer(widget.book.id!);
                     setState(() {
                       _showSetup = false;
                     });
@@ -379,7 +394,11 @@ class _ReadingTimerState extends State<ReadingTimer>
     );
   }
 
-  Widget _buildCompletedState(BuildContext context, BookProvider bookProvider) {
+  Widget _buildCompletedState(
+    BuildContext context,
+    BookProvider bookProvider,
+    TimerService timerService,
+  ) {
     final pageCount = widget.book.pageCount;
     return Container(
       key: const ValueKey('completed'),
@@ -460,12 +479,12 @@ class _ReadingTimerState extends State<ReadingTimer>
                       final newPage = int.tryParse(_pageController.text);
                       if (newPage != null && newPage > 0) {
                         bookProvider.updateProgress(widget.book.id!, newPage);
-                        bookProvider.stopTimer();
-                        bookProvider.clearPageUpdateModalFlag();
-                        bookProvider.clearCurrentBook();
+                        bookProvider.hidePageUpdateModal();
                         setState(() {
                           _forceProgressUpdate = false;
                         });
+                        // Reset timer after user completes the modal
+                        timerService.resetTimer();
                       }
                     },
 

@@ -683,7 +683,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     );
 
     if (confirmed == true) {
-      await bookProvider.deleteBook(widget.book.id!);
+      await bookProvider.deleteBook(widget.book.googleBooksId);
       if (mounted) {
         Navigator.of(context).pop(); // Go back to main screen
       }

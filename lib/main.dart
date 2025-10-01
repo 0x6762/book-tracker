@@ -4,6 +4,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'presentation/providers/book_provider.dart';
+import 'services/timer_service.dart';
+import 'services/notification_service.dart';
 import 'presentation/widgets/search_input.dart';
 import 'presentation/widgets/book_card.dart';
 import 'presentation/widgets/book_cover_carousel.dart';
@@ -34,8 +36,11 @@ class BookTrackerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => BookProvider(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => BookProvider()),
+        ChangeNotifierProvider(create: (context) => TimerService()),
+      ],
       child: MaterialApp(
         title: AppConstants.appTitle,
         debugShowCheckedModeBanner: false,
@@ -62,10 +67,10 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
   @override
   void initState() {
     super.initState();
-    // Initialize notifications
+    // Initialize services
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<BookProvider>().initializeNotifications();
+        _initializeServices();
       }
     });
     // Delay book loading to let UI render first
@@ -79,6 +84,32 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
         });
       }
     });
+  }
+
+  Future<void> _initializeServices() async {
+    // Initialize notification service
+    await NotificationService().initialize();
+  }
+
+  void _handleTimerCompletion(
+    BookProvider bookProvider,
+    TimerService timerService,
+  ) {
+    // Add reading time to the book
+    if (timerService.currentBookId != null) {
+      final minutesRead = timerService.totalSeconds ~/ 60;
+      bookProvider.addReadingTimeToBook(
+        timerService.currentBookId!,
+        minutesRead,
+      );
+    }
+
+    // Show page update modal
+    if (timerService.currentBookId != null) {
+      bookProvider.showPageUpdateModal(timerService.currentBookId!);
+    }
+
+    // Don't clear completion state yet - let it persist until user interacts with modal
   }
 
   void _scrollToNewBook(BookProvider bookProvider) {
@@ -148,12 +179,21 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<BookProvider>(
-      builder: (context, bookProvider, child) {
+    return Consumer2<BookProvider, TimerService>(
+      builder: (context, bookProvider, timerService, child) {
         // Check if we need to scroll to a newly added book
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             _scrollToNewBook(bookProvider);
+          }
+        });
+
+        // Handle timer completion (both automatic and manual stop)
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted &&
+              (timerService.isTimerCompleted ||
+                  timerService.wasManuallyStopped)) {
+            _handleTimerCompletion(bookProvider, timerService);
           }
         });
 
