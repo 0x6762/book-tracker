@@ -95,6 +95,9 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     BookProvider bookProvider,
     TimerService timerService,
   ) {
+    // Mark completion as handled immediately to prevent multiple triggers
+    timerService.markCompletionHandled();
+
     // Add reading time to the book
     if (timerService.currentBookId != null) {
       final minutesRead = timerService.totalSeconds ~/ 60;
@@ -108,8 +111,6 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     if (timerService.currentBookId != null) {
       bookProvider.showPageUpdateModal(timerService.currentBookId!);
     }
-
-    // Don't clear completion state yet - let it persist until user interacts with modal
   }
 
   void _scrollToNewBook(BookProvider bookProvider) {

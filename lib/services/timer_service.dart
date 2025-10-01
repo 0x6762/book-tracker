@@ -16,14 +16,16 @@ class TimerService extends ChangeNotifier {
   bool _isTimerRunning = false;
   int? _currentBookId;
   bool _wasManuallyStopped = false;
+  bool _completionHandled = false;
 
   // Timer getters
   int get remainingSeconds => _remainingSeconds;
   int get totalSeconds => _totalSeconds;
   bool get isTimerRunning => _isTimerRunning;
   int? get currentBookId => _currentBookId;
-  bool get isTimerCompleted => _remainingSeconds <= 0 && _totalSeconds > 0;
-  bool get wasManuallyStopped => _wasManuallyStopped;
+  bool get isTimerCompleted =>
+      _remainingSeconds <= 0 && _totalSeconds > 0 && !_completionHandled;
+  bool get wasManuallyStopped => _wasManuallyStopped && !_completionHandled;
 
   // Timer methods
   void setTimer(int bookId, int minutes) {
@@ -35,6 +37,7 @@ class TimerService extends ChangeNotifier {
     _remainingSeconds = _totalSeconds;
     _isTimerRunning = false;
     _wasManuallyStopped = false;
+    _completionHandled = false;
     notifyListeners();
   }
 
@@ -107,6 +110,7 @@ class TimerService extends ChangeNotifier {
     _totalSeconds = 0;
     _remainingSeconds = 0;
     _wasManuallyStopped = false;
+    _completionHandled = false;
     notifyListeners();
   }
 
@@ -135,9 +139,16 @@ class TimerService extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Mark completion as handled to prevent multiple triggers
+  void markCompletionHandled() {
+    _completionHandled = true;
+    notifyListeners();
+  }
+
   // Clear completion state after handling
   void clearCompletionState() {
     _wasManuallyStopped = false;
+    _completionHandled = false;
     notifyListeners();
   }
 
