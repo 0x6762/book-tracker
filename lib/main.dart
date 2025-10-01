@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'presentation/providers/book_provider.dart';
@@ -163,11 +164,22 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
         return Scaffold(
           appBar: showAppBar
               ? AppBar(
-                  title: Text(
-                    AppConstants.appName,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  title: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/icon/ic_readr.svg',
+                        height: 24,
+                        width: 24,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        AppConstants.appName,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 )
               : null,
