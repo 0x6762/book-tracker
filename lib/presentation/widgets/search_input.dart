@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/book_provider.dart';
-import '../constants/app_constants.dart';
-import '../theme/app_theme.dart';
-import '../theme/color_schemes.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/color_schemes.dart';
 
 class SearchInput extends StatefulWidget {
   final TextEditingController controller;

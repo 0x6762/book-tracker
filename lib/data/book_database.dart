@@ -322,29 +322,3 @@ extension BookToEntity on Book {
     );
   }
 }
-
-// Simple extension to convert from domain entity
-extension EntityToBook on BookEntity {
-  BooksCompanion toCompanion() {
-    return BooksCompanion(
-      id: id != null ? Value(id!) : const Value.absent(),
-      googleBooksId: Value(googleBooksId),
-      title: Value(title),
-      authors: Value(authors),
-      description: Value(description),
-      thumbnailUrl: Value(thumbnailUrl),
-      publishedDate: Value(publishedDate),
-      pageCount: Value(pageCount),
-      currentPage: Value(readingProgress?.currentPage ?? 0),
-      startDate: Value(readingProgress?.startDate),
-      endDate: Value(readingProgress?.endDate),
-      isCompleted: Value(readingProgress?.isCompleted ?? false),
-      totalReadingTimeMinutes: Value(
-        readingProgress?.totalReadingTimeMinutes ?? 0,
-      ),
-      // Map rating fields
-      averageRating: Value(averageRating),
-      ratingsCount: Value(ratingsCount),
-    );
-  }
-}

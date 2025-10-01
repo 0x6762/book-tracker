@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/book_provider.dart';
-import '../../services/timer_service.dart';
+import '../../application/services/timer_service.dart';
 import '../../domain/entities/book.dart';
 
 class ReadingTimer extends StatefulWidget {

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../../data/book_database.dart';
+import '../../data/mappers/book_mapper.dart';
 import '../../data/datasources/google_books_api_service.dart';
 import '../../domain/entities/book.dart';
 import '../utils/color_extractor.dart';
@@ -74,7 +75,7 @@ class BookProvider with ChangeNotifier {
       final stopwatch = Stopwatch()..start();
 
       // Add book to database
-      await _database.insertBook(book.toCompanion());
+      await _database.insertBook(BookMapper.toCompanion(book));
 
       // Load books to refresh the list
       await loadBooks();
@@ -97,7 +98,9 @@ class BookProvider with ChangeNotifier {
   Future<void> updateBook(BookEntity book) async {
     try {
       print('📝 Updating book: ${book.title}');
-      await _database.update(_database.books).replace(book.toCompanion());
+      await _database
+          .update(_database.books)
+          .replace(BookMapper.toCompanion(book));
       await loadBooks(); // Refresh the list
       _error = null;
     } catch (e) {

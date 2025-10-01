@@ -4,14 +4,14 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'presentation/providers/book_provider.dart';
-import 'services/timer_service.dart';
-import 'services/notification_service.dart';
+import 'application/services/timer_service.dart';
+import 'application/services/notification_service.dart';
 import 'presentation/widgets/search_input.dart';
 import 'presentation/widgets/book_card.dart';
 import 'presentation/widgets/book_cover_carousel.dart';
 import 'presentation/screens/search_screen.dart';
-import 'presentation/constants/app_constants.dart';
-import 'presentation/theme/app_theme.dart';
+import 'core/constants/app_constants.dart';
+import 'core/theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

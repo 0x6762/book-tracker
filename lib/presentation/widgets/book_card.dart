@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../constants/app_constants.dart';
+import '../../core/constants/app_constants.dart';
 import '../../domain/entities/book.dart';
 import 'reading_timer.dart';
 import '../screens/book_details_screen.dart';

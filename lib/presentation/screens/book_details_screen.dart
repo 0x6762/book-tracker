@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/entities/book.dart';
 import '../../domain/entities/reading_progress.dart';
-import '../constants/app_constants.dart';
+import '../../core/constants/app_constants.dart';
 import '../widgets/reading_timer.dart';
 import '../widgets/progress_update_bottom_sheet.dart';
 import '../providers/book_provider.dart';

@@ -1,6 +1,4 @@
 import 'reading_progress.dart';
-import 'package:drift/drift.dart';
-import '../../data/book_database.dart';
 
 class BookEntity {
   final int? id;
@@ -102,29 +100,6 @@ class BookEntity {
       readingProgress: readingProgress ?? this.readingProgress,
       averageRating: averageRating ?? this.averageRating,
       ratingsCount: ratingsCount ?? this.ratingsCount,
-    );
-  }
-
-  // Convert to database companion
-  BooksCompanion toCompanion() {
-    return BooksCompanion(
-      id: id != null ? Value(id!) : const Value.absent(),
-      googleBooksId: Value(googleBooksId),
-      title: Value(title),
-      authors: Value(authors),
-      description: Value(description),
-      thumbnailUrl: Value(thumbnailUrl),
-      publishedDate: Value(publishedDate),
-      pageCount: Value(pageCount),
-      currentPage: Value(readingProgress?.currentPage ?? 0),
-      startDate: Value(readingProgress?.startDate),
-      endDate: Value(readingProgress?.endDate),
-      isCompleted: Value(readingProgress?.isCompleted ?? false),
-      totalReadingTimeMinutes: Value(
-        readingProgress?.totalReadingTimeMinutes ?? 0,
-      ),
-      averageRating: Value(averageRating),
-      ratingsCount: Value(ratingsCount),
     );
   }
 }
