@@ -48,11 +48,6 @@ class _ProgressUpdateBottomSheetState extends State<ProgressUpdateBottomSheet> {
     }
   }
 
-  void _completeReading() {
-    widget.onCompleteReading?.call();
-    Navigator.of(context).pop();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -168,12 +163,7 @@ class _ProgressUpdateBottomSheetState extends State<ProgressUpdateBottomSheet> {
               onPressed: _updateProgress,
               child: const Text('Update'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(56),
-                ),
               ),
             ),
           ),

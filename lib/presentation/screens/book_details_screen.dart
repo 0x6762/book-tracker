@@ -415,17 +415,12 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                     child: ElevatedButton.icon(
                       onPressed: () =>
                           _showProgressModal(context, bookDetailsProvider),
-                      icon: const Icon(Icons.edit),
                       label: Text(
                         widget.book.hasReadingProgress
-                            ? 'Update Progress'
+                            ? 'Update'
                             : 'Start Reading',
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Theme.of(
-                          context,
-                        ).colorScheme.onPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                       ),
                     ),
@@ -439,11 +434,8 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                           bookDetailsProvider.completeReading(widget.book.id!);
                           Navigator.of(context).pop();
                         },
-                        icon: const Icon(Icons.check),
-                        label: const Text('Complete'),
+                        label: const Text('Mark Complete'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                       ),
@@ -646,17 +638,13 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
           child: OutlinedButton.icon(
             onPressed: () =>
                 _showDeleteConfirmation(context, bookDetailsProvider),
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
             label: const Text(
-              'Remove from Library',
+              'Remove Book',
               style: TextStyle(color: Colors.red),
             ),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: Colors.red),
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
             ),
           ),
         );

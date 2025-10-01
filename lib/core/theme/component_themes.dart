@@ -36,9 +36,7 @@ class AppComponentThemes {
       style: ElevatedButton.styleFrom(
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
-        elevation: 2,
-        shadowColor: colorScheme.shadow.withOpacity(0.2),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(56)),
         textStyle: const TextStyle(
           fontFamily: 'Inter',
           fontSize: 14,
