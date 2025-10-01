@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_constants.dart';
-import '../providers/book_provider.dart';
+import '../providers/book_list_provider.dart';
+import '../providers/ui_state_provider.dart';
 import '../../domain/entities/book.dart';
 
 class SearchResultCard extends StatelessWidget {
@@ -135,9 +136,9 @@ class SearchResultCard extends StatelessWidget {
               height: AppConstants.searchBookHeight,
               child: Align(
                 alignment: Alignment.center,
-                child: Consumer<BookProvider>(
-                  builder: (context, bookProvider, child) {
-                    final isAdding = bookProvider.isAddingBook;
+                child: Consumer<UIStateProvider>(
+                  builder: (context, uiStateProvider, child) {
+                    final isAdding = uiStateProvider.isAddingBook;
                     return Padding(
                       padding: const EdgeInsets.only(right: 0),
                       child: IconButton(

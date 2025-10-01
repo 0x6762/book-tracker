@@ -3,9 +3,12 @@ import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:timezone/data/latest.dart' as tz;
-import 'presentation/providers/book_provider.dart';
+import 'presentation/providers/book_list_provider.dart';
+import 'presentation/providers/search_provider.dart';
+import 'presentation/providers/ui_state_provider.dart';
+import 'presentation/providers/book_details_provider.dart';
+import 'core/di/service_locator.dart';
 import 'application/services/timer_service.dart';
-import 'application/services/notification_service.dart';
 import 'presentation/widgets/search_input.dart';
 import 'presentation/widgets/book_card.dart';
 import 'presentation/widgets/book_cover_carousel.dart';
@@ -28,6 +31,9 @@ void main() async {
     dotenv.testLoad(fileInput: 'GOOGLE_BOOKS_API_KEY=your_api_key_here');
   }
 
+  // Initialize service locator
+  await ServiceLocator().initialize();
+
   runApp(const BookTrackerApp());
 }
 
@@ -38,8 +44,20 @@ class BookTrackerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => BookProvider()),
-        ChangeNotifierProvider(create: (context) => TimerService()),
+        ChangeNotifierProvider(create: (context) => BookListProvider()),
+        ChangeNotifierProvider(create: (context) => SearchProvider()),
+        ChangeNotifierProvider(create: (context) => UIStateProvider()),
+        ChangeNotifierProvider(
+          create: (context) {
+            final bookDetailsProvider = BookDetailsProvider();
+            final bookListProvider = context.read<BookListProvider>();
+            bookDetailsProvider.setBookListProvider(bookListProvider);
+            return bookDetailsProvider;
+          },
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ServiceLocator().timerService,
+        ),
       ],
       child: MaterialApp(
         title: AppConstants.appTitle,
@@ -67,32 +85,21 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
   @override
   void initState() {
     super.initState();
-    // Initialize services
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _initializeServices();
-      }
-    });
     // Delay book loading to let UI render first
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         // Add a small delay to let the UI render first
         Future.delayed(const Duration(milliseconds: 100), () {
           if (mounted) {
-            context.read<BookProvider>().loadBooks();
+            context.read<BookListProvider>().loadBooks();
           }
         });
       }
     });
   }
 
-  Future<void> _initializeServices() async {
-    // Initialize notification service
-    await NotificationService().initialize();
-  }
-
   void _handleTimerCompletion(
-    BookProvider bookProvider,
+    UIStateProvider uiStateProvider,
     TimerService timerService,
   ) {
     // Mark completion as handled immediately to prevent multiple triggers
@@ -100,15 +107,15 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
 
     // Show page update modal (reading time will be added when user updates progress)
     if (timerService.currentBookId != null) {
-      bookProvider.showPageUpdateModal(timerService.currentBookId!);
+      uiStateProvider.showPageUpdateModal(timerService.currentBookId!);
     }
   }
 
-  void _scrollToNewBook(BookProvider bookProvider) {
-    if (bookProvider.lastAddedBookId != null) {
+  void _scrollToNewBook(BookListProvider bookListProvider) {
+    if (bookListProvider.lastAddedBookId != null) {
       // Find the index of the newly added book
-      final bookIndex = bookProvider.books.indexWhere(
-        (book) => book.googleBooksId == bookProvider.lastAddedBookId,
+      final bookIndex = bookListProvider.books.indexWhere(
+        (book) => book.googleBooksId == bookListProvider.lastAddedBookId,
       );
 
       if (bookIndex != -1) {
@@ -126,7 +133,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
         );
 
         // Clear the last added book ID after scrolling
-        bookProvider.clearLastAddedBookId();
+        bookListProvider.clearLastAddedBookId();
       }
     }
   }
@@ -146,7 +153,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
           onBack: () {
             Navigator.of(context).pop();
             _searchController.clear();
-            context.read<BookProvider>().searchBooks('');
+            context.read<SearchProvider>().searchBooks('');
           },
         ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -171,12 +178,12 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<BookProvider, TimerService>(
-      builder: (context, bookProvider, timerService, child) {
+    return Consumer2<BookListProvider, TimerService>(
+      builder: (context, bookListProvider, timerService, child) {
         // Check if we need to scroll to a newly added book
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
-            _scrollToNewBook(bookProvider);
+            _scrollToNewBook(bookListProvider);
           }
         });
 
@@ -185,13 +192,15 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
           if (mounted &&
               (timerService.isTimerCompleted ||
                   timerService.wasManuallyStopped)) {
-            _handleTimerCompletion(bookProvider, timerService);
+            final uiStateProvider = context.read<UIStateProvider>();
+            _handleTimerCompletion(uiStateProvider, timerService);
           }
         });
 
         // Show app bar only when there are books or when searching
+        final searchProvider = context.read<SearchProvider>();
         final showAppBar =
-            bookProvider.books.isNotEmpty || bookProvider.isSearching;
+            bookListProvider.books.isNotEmpty || searchProvider.isSearching;
 
         return Scaffold(
           appBar: showAppBar
@@ -228,16 +237,16 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
                       ),
                     ),
                     // Content
-                    Expanded(child: _buildBookList(bookProvider)),
+                    Expanded(child: _buildBookList(bookListProvider)),
                   ],
                 )
-              : _buildEmptyStateWithSearch(bookProvider),
+              : _buildEmptyStateWithSearch(bookListProvider),
         );
       },
     );
   }
 
-  Widget _buildEmptyStateWithSearch(BookProvider bookProvider) {
+  Widget _buildEmptyStateWithSearch(BookListProvider bookListProvider) {
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -294,21 +303,21 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     );
   }
 
-  Widget _buildBookList(BookProvider bookProvider) {
-    if (bookProvider.isLoading) {
+  Widget _buildBookList(BookListProvider bookListProvider) {
+    if (bookListProvider.isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (bookProvider.error != null) {
+    if (bookListProvider.error != null) {
       return Center(
         child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('Error: ${bookProvider.error}'),
+              Text('Error: ${bookListProvider.error}'),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => bookProvider.loadBooks(),
+                onPressed: () => bookListProvider.loadBooks(),
                 child: const Text('Retry'),
               ),
             ],
@@ -326,7 +335,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              children: bookProvider.books.asMap().entries.map((entry) {
+              children: bookListProvider.books.asMap().entries.map((entry) {
                 final index = entry.key;
                 final book = entry.value;
 
@@ -347,7 +356,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
                       ),
                     ),
                     // Add spacing only between cards, not after the last one
-                    if (index < bookProvider.books.length - 1)
+                    if (index < bookListProvider.books.length - 1)
                       const SizedBox(width: 16),
                   ],
                 );

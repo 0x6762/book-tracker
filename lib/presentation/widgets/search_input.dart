@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/book_provider.dart';
+import '../providers/search_provider.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/color_schemes.dart';
@@ -197,8 +197,8 @@ class _SearchInputState extends State<SearchInput>
             horizontal: 20,
             vertical: 16,
           ),
-          suffixIcon: Consumer<BookProvider>(
-            builder: (context, bookProvider, child) {
+          suffixIcon: Consumer<SearchProvider>(
+            builder: (context, searchProvider, child) {
               if (widget.controller.text.isNotEmpty) {
                 return IconButton(
                   icon: Icon(
@@ -207,7 +207,7 @@ class _SearchInputState extends State<SearchInput>
                   ),
                   onPressed: () {
                     widget.controller.clear();
-                    context.read<BookProvider>().searchBooks('');
+                    context.read<SearchProvider>().searchBooks('');
                   },
                 );
               }
@@ -216,7 +216,7 @@ class _SearchInputState extends State<SearchInput>
           ),
         ),
         onSubmitted: (query) {
-          context.read<BookProvider>().searchBooks(query);
+          context.read<SearchProvider>().searchBooks(query);
         },
       ),
     );

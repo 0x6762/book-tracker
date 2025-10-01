@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import '../providers/book_provider.dart';
+import '../providers/book_details_provider.dart';
+import '../providers/ui_state_provider.dart';
 import '../../application/services/timer_service.dart';
 import '../../domain/entities/book.dart';
 
@@ -48,8 +49,8 @@ class _ReadingTimerState extends State<ReadingTimer>
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<BookProvider, TimerService>(
-      builder: (context, bookProvider, timerService, child) {
+    return Consumer2<BookDetailsProvider, TimerService>(
+      builder: (context, bookDetailsProvider, timerService, child) {
         final isCurrentBook = timerService.currentBookId == widget.bookId;
         final isRunning = timerService.isTimerRunning && isCurrentBook;
         final isCompleted =
@@ -69,9 +70,10 @@ class _ReadingTimerState extends State<ReadingTimer>
         }
 
         // Show page update modal after completion
-        if (bookProvider.shouldShowPageUpdateModal && isCurrentBook) {
+        final uiStateProvider = context.read<UIStateProvider>();
+        if (uiStateProvider.shouldShowPageUpdateModal && isCurrentBook) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            bookProvider.hidePageUpdateModal();
+            uiStateProvider.hidePageUpdateModal();
             setState(() {
               _forceProgressUpdate = true;
             });
@@ -82,13 +84,13 @@ class _ReadingTimerState extends State<ReadingTimer>
         if (isCompleted || _forceProgressUpdate) {
           childContent = _buildCompletedState(
             context,
-            bookProvider,
+            bookDetailsProvider,
             timerService,
           );
         } else if (hasTimer) {
           childContent = _buildActiveTimerState(
             context,
-            bookProvider,
+            bookDetailsProvider,
             timerService,
             timeText,
             isRunning,
@@ -96,7 +98,7 @@ class _ReadingTimerState extends State<ReadingTimer>
         } else if (_showSetup) {
           childContent = _buildTimerSetupState(
             context,
-            bookProvider,
+            bookDetailsProvider,
             timerService,
           );
         } else {
@@ -149,7 +151,7 @@ class _ReadingTimerState extends State<ReadingTimer>
 
   Widget _buildActiveTimerState(
     BuildContext context,
-    BookProvider bookProvider,
+    BookDetailsProvider bookDetailsProvider,
     TimerService timerService,
     String timeText,
     bool isRunning,
@@ -227,7 +229,7 @@ class _ReadingTimerState extends State<ReadingTimer>
 
   Widget _buildTimerSetupState(
     BuildContext context,
-    BookProvider bookProvider,
+    BookDetailsProvider bookDetailsProvider,
     TimerService timerService,
   ) {
     return Container(
@@ -396,7 +398,7 @@ class _ReadingTimerState extends State<ReadingTimer>
 
   Widget _buildCompletedState(
     BuildContext context,
-    BookProvider bookProvider,
+    BookDetailsProvider bookDetailsProvider,
     TimerService timerService,
   ) {
     final pageCount = widget.book.pageCount;
@@ -480,12 +482,13 @@ class _ReadingTimerState extends State<ReadingTimer>
                       if (newPage != null && newPage > 0) {
                         // Use atomic method to update both progress and reading time
                         final minutesRead = timerService.totalSeconds ~/ 60;
-                        bookProvider.updateProgressWithTime(
+                        bookDetailsProvider.updateProgressWithTime(
                           widget.book.id!,
                           newPage,
                           minutesRead,
                         );
-                        bookProvider.hidePageUpdateModal();
+                        final uiStateProvider = context.read<UIStateProvider>();
+                        uiStateProvider.hidePageUpdateModal();
                         setState(() {
                           _forceProgressUpdate = false;
                         });

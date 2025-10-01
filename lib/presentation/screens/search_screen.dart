@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/book_provider.dart';
+import '../providers/search_provider.dart';
+import '../providers/book_list_provider.dart';
+import '../providers/ui_state_provider.dart';
 import '../widgets/search_result_card.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/search_input.dart';
@@ -77,9 +79,9 @@ class _SearchScreenState extends State<SearchScreen>
                 ),
                 // Search Results
                 Expanded(
-                  child: Consumer<BookProvider>(
-                    builder: (context, bookProvider, child) {
-                      if (bookProvider.isSearching) {
+                  child: Consumer<SearchProvider>(
+                    builder: (context, searchProvider, child) {
+                      if (searchProvider.isSearching) {
                         return const Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -93,7 +95,7 @@ class _SearchScreenState extends State<SearchScreen>
                       }
 
                       // Only show empty state if user has searched but found no results
-                      if (bookProvider.searchResults.isEmpty &&
+                      if (searchProvider.searchResults.isEmpty &&
                           widget.searchController.text.isNotEmpty) {
                         return const EmptyState(
                           title: 'No books found',
@@ -103,31 +105,37 @@ class _SearchScreenState extends State<SearchScreen>
                       }
 
                       // Show blank screen when no search has been performed
-                      if (bookProvider.searchResults.isEmpty &&
+                      if (searchProvider.searchResults.isEmpty &&
                           widget.searchController.text.isEmpty) {
                         return const SizedBox.shrink();
                       }
 
                       return ListView.builder(
-                        itemCount: bookProvider.searchResults.length,
+                        itemCount: searchProvider.searchResults.length,
                         itemBuilder: (context, index) {
-                          final book = bookProvider.searchResults[index];
+                          final book = searchProvider.searchResults[index];
                           return SearchResultCard(
                             book: book,
                             onAdd: () async {
-                              final bookProvider = context.read<BookProvider>();
-                              await bookProvider.addBook(book);
+                              final bookListProvider = context
+                                  .read<BookListProvider>();
+                              final uiStateProvider = context
+                                  .read<UIStateProvider>();
 
-                              if (bookProvider.error != null) {
+                              uiStateProvider.setAddingBook(true);
+                              await bookListProvider.addBook(book);
+                              uiStateProvider.setAddingBook(false);
+
+                              if (bookListProvider.error != null) {
                                 // Show error message
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
-                                    content: Text(bookProvider.error!),
+                                    content: Text(bookListProvider.error!),
                                     backgroundColor: Colors.red,
                                   ),
                                 );
                                 // Clear the error after showing it
-                                bookProvider.clearError();
+                                bookListProvider.clearError();
                               } else {
                                 // Navigate back to main screen after adding book
                                 widget.onBack();

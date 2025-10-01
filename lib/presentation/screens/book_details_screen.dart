@@ -5,7 +5,8 @@ import '../../domain/entities/reading_progress.dart';
 import '../../core/constants/app_constants.dart';
 import '../widgets/reading_timer.dart';
 import '../widgets/progress_update_bottom_sheet.dart';
-import '../providers/book_provider.dart';
+import '../providers/book_details_provider.dart';
+import '../../core/di/service_locator.dart';
 import 'package:provider/provider.dart';
 
 class BookDetailsScreen extends StatefulWidget {
@@ -420,14 +421,14 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
           const SizedBox(height: 16),
 
           // Action buttons
-          Consumer<BookProvider>(
-            builder: (context, bookProvider, child) {
+          Consumer<BookDetailsProvider>(
+            builder: (context, bookDetailsProvider, child) {
               return Row(
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () =>
-                          _showProgressModal(context, bookProvider),
+                          _showProgressModal(context, bookDetailsProvider),
                       icon: const Icon(Icons.edit),
                       label: Text(
                         widget.book.hasReadingProgress
@@ -449,7 +450,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          bookProvider.completeReading(widget.book.id!);
+                          bookDetailsProvider.completeReading(widget.book.id!);
                           Navigator.of(context).pop();
                         },
                         icon: const Icon(Icons.check),
@@ -595,15 +596,18 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     );
   }
 
-  void _showProgressModal(BuildContext context, BookProvider bookProvider) {
+  void _showProgressModal(
+    BuildContext context,
+    BookDetailsProvider bookDetailsProvider,
+  ) {
     showProgressUpdateBottomSheet(
       context: context,
       book: widget.book,
       onUpdateProgress: (currentPage) {
-        bookProvider.updateProgress(widget.book.id!, currentPage);
+        bookDetailsProvider.updateProgress(widget.book.id!, currentPage);
       },
       onCompleteReading: () {
-        bookProvider.completeReading(widget.book.id!);
+        bookDetailsProvider.completeReading(widget.book.id!);
       },
     );
   }
@@ -631,12 +635,13 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   }
 
   Widget _buildDeleteButton(BuildContext context) {
-    return Consumer<BookProvider>(
-      builder: (context, bookProvider, child) {
+    return Consumer<BookDetailsProvider>(
+      builder: (context, bookDetailsProvider, child) {
         return SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: () => _showDeleteConfirmation(context, bookProvider),
+            onPressed: () =>
+                _showDeleteConfirmation(context, bookDetailsProvider),
             icon: const Icon(Icons.delete_outline, color: Colors.red),
             label: const Text(
               'Remove from Library',
@@ -657,7 +662,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
 
   Future<void> _showDeleteConfirmation(
     BuildContext context,
-    BookProvider bookProvider,
+    BookDetailsProvider bookDetailsProvider,
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -683,7 +688,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     );
 
     if (confirmed == true) {
-      await bookProvider.deleteBook(widget.book.googleBooksId);
+      // Note: This should be handled by BookListProvider, but for now we'll use the service directly
+      final serviceLocator = ServiceLocator();
+      await serviceLocator.bookManagementService.deleteBook(widget.book.id!);
       if (mounted) {
         Navigator.of(context).pop(); // Go back to main screen
       }
