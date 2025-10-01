@@ -481,7 +481,11 @@ class _ReadingTimerState extends State<ReadingTimer>
                       final newPage = int.tryParse(_pageController.text);
                       if (newPage != null && newPage > 0) {
                         // Use atomic method to update both progress and reading time
-                        final minutesRead = timerService.totalSeconds ~/ 60;
+                        // Calculate actual reading time: total time - remaining time
+                        final actualReadingSeconds =
+                            timerService.totalSeconds -
+                            timerService.remainingSeconds;
+                        final minutesRead = (actualReadingSeconds / 60).round();
                         bookDetailsProvider.updateProgressWithTime(
                           widget.book.id!,
                           newPage,

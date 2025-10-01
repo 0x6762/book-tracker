@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/entities/book.dart';
 import '../../domain/entities/reading_progress.dart';
-import '../../core/constants/app_constants.dart';
 import '../widgets/reading_timer.dart';
 import '../widgets/progress_update_bottom_sheet.dart';
 import '../providers/book_details_provider.dart';
@@ -241,19 +240,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     } catch (e) {
       return date; // Return original if parsing fails
     }
-  }
-
-  String _calculateReadingSpeed() {
-    if (!widget.book.hasReadingProgress ||
-        widget.book.readingProgress!.totalReadingTimeMinutes <= 0 ||
-        widget.book.pageCount == null) {
-      return 'N/A';
-    }
-
-    final progress = widget.book.readingProgress!;
-    final hours = progress.totalReadingTimeMinutes / 60;
-    final pagesPerHour = (progress.currentPage / hours).round();
-    return '$pagesPerHour p/h';
   }
 
   Widget _buildBookInfo(BuildContext context) {
@@ -528,7 +514,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
           ),
 
           if (progress.totalReadingTimeMinutes > 0 &&
-              widget.book.daysReading > 0) ...[
+              widget.book.daysReading > 0 &&
+              widget.book.pageCount != null &&
+              progress.currentPage > 0) ...[
             const SizedBox(height: 12),
             Row(
               children: [
@@ -613,7 +601,12 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   }
 
   String _calculateAverageSessionTime(ReadingProgress progress) {
-    if (widget.book.daysReading <= 0) return '0m';
+    if (widget.book.daysReading <= 0 || progress.totalReadingTimeMinutes <= 0) {
+      return '0m';
+    }
+
+    // Calculate average session time based on total reading time and days
+    // This gives a more realistic average since users don't read every day
     final avgMinutes =
         progress.totalReadingTimeMinutes / widget.book.daysReading;
     final hours = avgMinutes ~/ 60;
@@ -627,11 +620,22 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   }
 
   String _calculatePagesPerHour(ReadingProgress progress) {
-    if (progress.totalReadingTimeMinutes <= 0 || widget.book.pageCount == null)
+    if (progress.totalReadingTimeMinutes <= 0 ||
+        widget.book.pageCount == null ||
+        progress.currentPage <= 0) {
       return '0';
+    }
+
     final hours = progress.totalReadingTimeMinutes / 60;
+    if (hours <= 0) return '0';
+
+    // Calculate pages per hour based on current page progress
+    // This assumes reading started from page 1 (or 0), which is typical
     final pagesPerHour = (progress.currentPage / hours).round();
-    return '$pagesPerHour';
+
+    // Cap at reasonable reading speed (e.g., 100 pages/hour max)
+    final cappedPagesPerHour = pagesPerHour.clamp(0, 100);
+    return '$cappedPagesPerHour';
   }
 
   Widget _buildDeleteButton(BuildContext context) {

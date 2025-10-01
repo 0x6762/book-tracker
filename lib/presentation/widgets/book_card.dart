@@ -284,24 +284,26 @@ class _BookCardState extends State<BookCard> with TickerProviderStateMixin {
   }
 
   Widget _buildPlaceholder() {
+    final theme = Theme.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(_cardBorderRadius),
       child: Container(
-        decoration: BoxDecoration(color: Colors.grey[200]),
-        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        decoration: BoxDecoration(color: theme.colorScheme.surface),
+        child: const Center(child: CircularProgressIndicator()),
       ),
     );
   }
 
   Widget _buildErrorWidget() {
+    final theme = Theme.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(_cardBorderRadius),
       child: Container(
-        decoration: BoxDecoration(color: Colors.grey[300]),
+        decoration: BoxDecoration(color: theme.colorScheme.surface),
         child: Icon(
           Icons.book,
           size: AppConstants.bookIconSize,
-          color: Colors.grey,
+          color: theme.colorScheme.onSurface.withOpacity(0.3),
         ),
       ),
     );
