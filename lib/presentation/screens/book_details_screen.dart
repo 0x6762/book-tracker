@@ -6,7 +6,7 @@ import '../../core/constants/app_constants.dart';
 import '../widgets/reading_timer.dart';
 import '../widgets/progress_update_bottom_sheet.dart';
 import '../providers/book_details_provider.dart';
-import '../../core/di/service_locator.dart';
+import '../providers/book_list_provider.dart';
 import 'package:provider/provider.dart';
 
 class BookDetailsScreen extends StatefulWidget {
@@ -688,9 +688,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     );
 
     if (confirmed == true) {
-      // Note: This should be handled by BookListProvider, but for now we'll use the service directly
-      final serviceLocator = ServiceLocator();
-      await serviceLocator.bookManagementService.deleteBook(widget.book.id!);
+      // Use BookListProvider to delete the book and update the UI
+      final bookListProvider = context.read<BookListProvider>();
+      await bookListProvider.deleteBook(widget.book.googleBooksId);
       if (mounted) {
         Navigator.of(context).pop(); // Go back to main screen
       }

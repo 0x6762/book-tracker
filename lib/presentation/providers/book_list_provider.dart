@@ -9,14 +9,15 @@ class BookListProvider with ChangeNotifier {
   BookListProvider();
 
   List<BookEntity> _books = [];
-  bool _isLoading =
-      true; // Start with loading true to prevent empty state flash
+  bool _isLoading = false;
+  bool _isInitialized = false; // Track if we've loaded books at least once
   String? _error;
   String? _lastAddedBookId; // Track the last added book's Google Books ID
 
   // Getters
   List<BookEntity> get books => _books;
   bool get isLoading => _isLoading;
+  bool get isInitialized => _isInitialized;
   String? get error => _error;
   String? get lastAddedBookId => _lastAddedBookId;
 
@@ -34,9 +35,11 @@ class BookListProvider with ChangeNotifier {
         '📚 Loaded ${_books.length} books in ${stopwatch.elapsedMilliseconds}ms',
       );
       _error = null;
+      _isInitialized = true; // Mark as initialized
     } catch (e) {
       print('❌ Error loading books: $e');
       _error = 'Failed to load books: $e';
+      _isInitialized = true; // Mark as initialized even on error
     } finally {
       _setLoading(false);
     }

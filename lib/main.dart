@@ -200,7 +200,8 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
         // Show app bar only when there are books or when searching
         final searchProvider = context.read<SearchProvider>();
         final showAppBar =
-            bookListProvider.books.isNotEmpty || searchProvider.isSearching;
+            bookListProvider.isInitialized &&
+            (bookListProvider.books.isNotEmpty || searchProvider.isSearching);
 
         return Scaffold(
           appBar: showAppBar
@@ -224,7 +225,9 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
                   ),
                 )
               : null,
-          body: showAppBar
+          body: !bookListProvider.isInitialized
+              ? const Center(child: CircularProgressIndicator())
+              : showAppBar
               ? Column(
                   children: [
                     // Search Bar with Hero Animation
