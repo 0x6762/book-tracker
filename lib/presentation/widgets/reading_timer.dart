@@ -478,7 +478,13 @@ class _ReadingTimerState extends State<ReadingTimer>
                     onPressed: () {
                       final newPage = int.tryParse(_pageController.text);
                       if (newPage != null && newPage > 0) {
-                        bookProvider.updateProgress(widget.book.id!, newPage);
+                        // Use atomic method to update both progress and reading time
+                        final minutesRead = timerService.totalSeconds ~/ 60;
+                        bookProvider.updateProgressWithTime(
+                          widget.book.id!,
+                          newPage,
+                          minutesRead,
+                        );
                         bookProvider.hidePageUpdateModal();
                         setState(() {
                           _forceProgressUpdate = false;

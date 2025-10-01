@@ -3,7 +3,7 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
 import 'dart:collection';
-import '../../data/simple_database.dart';
+import '../../data/book_database.dart';
 import 'package:drift/drift.dart';
 
 // Simple semaphore implementation for concurrency control

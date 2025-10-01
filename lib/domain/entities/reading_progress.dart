@@ -20,6 +20,8 @@ class ReadingProgress {
   // Calculate progress percentage
   double getProgressPercentage(int totalPages) {
     if (totalPages <= 0) return 0.0;
+    if (currentPage < 0) return 0.0;
+    if (currentPage > totalPages) return 100.0; // Cap at 100% if over
     return (currentPage / totalPages * 100).clamp(0.0, 100.0);
   }
 
@@ -31,7 +33,7 @@ class ReadingProgress {
 
   // Format reading time as human-readable string
   String getFormattedReadingTime() {
-    if (totalReadingTimeMinutes == 0) return 'No reading time';
+    if (totalReadingTimeMinutes <= 0) return 'No reading time';
 
     final hours = totalReadingTimeMinutes ~/ 60;
     final minutes = totalReadingTimeMinutes % 60;

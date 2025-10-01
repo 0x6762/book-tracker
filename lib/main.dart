@@ -98,16 +98,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
     // Mark completion as handled immediately to prevent multiple triggers
     timerService.markCompletionHandled();
 
-    // Add reading time to the book
-    if (timerService.currentBookId != null) {
-      final minutesRead = timerService.totalSeconds ~/ 60;
-      bookProvider.addReadingTimeToBook(
-        timerService.currentBookId!,
-        minutesRead,
-      );
-    }
-
-    // Show page update modal
+    // Show page update modal (reading time will be added when user updates progress)
     if (timerService.currentBookId != null) {
       bookProvider.showPageUpdateModal(timerService.currentBookId!);
     }

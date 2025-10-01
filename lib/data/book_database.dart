@@ -6,7 +6,7 @@ import 'package:path/path.dart' as p;
 import '../domain/entities/book.dart';
 import '../domain/entities/reading_progress.dart';
 
-part 'simple_database.g.dart';
+part 'book_database.g.dart';
 
 // Simplified table with reading progress embedded
 class Books extends Table {
@@ -32,6 +32,12 @@ class Books extends Table {
   // Book ratings
   RealColumn get averageRating => real().nullable()();
   IntColumn get ratingsCount => integer().nullable()();
+
+  Set<Index> get indexes => {
+    Index('idx_google_books_id', 'googleBooksId'),
+    Index('idx_is_completed', 'isCompleted'),
+    Index('idx_start_date', 'startDate'),
+  };
 }
 
 // Book colors table for caching extracted accent colors
@@ -45,8 +51,8 @@ class BookColors extends Table {
 }
 
 @DriftDatabase(tables: [Books, BookColors])
-class SimpleDatabase extends _$SimpleDatabase {
-  SimpleDatabase() : super(_openConnection());
+class BookDatabase extends _$BookDatabase {
+  BookDatabase() : super(_openConnection());
 
   @override
   int get schemaVersion => 4;
@@ -78,8 +84,34 @@ class SimpleDatabase extends _$SimpleDatabase {
 
   Future<int> insertBook(BooksCompanion book) => into(books).insert(book);
 
-  Future<int> deleteBook(int id) =>
-      (delete(books)..where((tbl) => tbl.id.equals(id))).go();
+  // Transactional method to add book with color extraction
+  Future<int> addBookWithColor(BooksCompanion book, int? accentColor) async {
+    return await transaction(() async {
+      // Insert the book
+      final bookId = await into(books).insert(book);
+
+      // If color is provided, insert it
+      if (accentColor != null) {
+        await into(bookColors).insert(
+          BookColorsCompanion(
+            bookId: Value(bookId),
+            accentColor: Value(accentColor),
+            extractedAt: Value(DateTime.now()),
+          ),
+        );
+      }
+
+      return bookId;
+    });
+  }
+
+  Future<int> deleteBook(int id) async {
+    // First delete related BookColors to prevent orphaned records
+    await deleteBookColor(id);
+
+    // Then delete the book
+    return (delete(books)..where((tbl) => tbl.id.equals(id))).go();
+  }
 
   Future<bool> bookExists(String googleBooksId) async {
     final result =
@@ -90,9 +122,82 @@ class SimpleDatabase extends _$SimpleDatabase {
   }
 
   Future<void> updateProgress(int bookId, int currentPage) async {
+    // Validate business rules
+    if (currentPage < 0) {
+      throw ArgumentError('Current page cannot be negative');
+    }
+
+    // Get book to validate against page count
+    final book = await (select(
+      books,
+    )..where((tbl) => tbl.id.equals(bookId))).getSingleOrNull();
+    if (book == null) {
+      throw ArgumentError('Book not found');
+    }
+
+    if (book.pageCount != null && currentPage > book.pageCount!) {
+      throw ArgumentError('Current page cannot exceed total page count');
+    }
+
+    // If this is the first time updating progress (no startDate), set it
+    final shouldSetStartDate = book.startDate == null;
     await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
-      BooksCompanion(currentPage: Value(currentPage)),
+      BooksCompanion(
+        currentPage: Value(currentPage),
+        startDate: shouldSetStartDate
+            ? Value(DateTime.now())
+            : const Value.absent(),
+      ),
     );
+  }
+
+  // Transactional method to update progress and reading time atomically
+  Future<void> updateProgressWithTime(
+    int bookId,
+    int currentPage,
+    int minutesRead,
+  ) async {
+    return await transaction(() async {
+      // Validate business rules
+      if (currentPage < 0) {
+        throw ArgumentError('Current page cannot be negative');
+      }
+      if (minutesRead < 0) {
+        throw ArgumentError('Reading time cannot be negative');
+      }
+
+      // Get book to validate against page count
+      final book = await (select(
+        books,
+      )..where((tbl) => tbl.id.equals(bookId))).getSingleOrNull();
+      if (book == null) {
+        throw ArgumentError('Book not found');
+      }
+
+      if (book.pageCount != null && currentPage > book.pageCount!) {
+        throw ArgumentError('Current page cannot exceed total page count');
+      }
+
+      // Calculate new total reading time
+      final newTotalTime = book.totalReadingTimeMinutes + minutesRead;
+      if (newTotalTime > 5256000) {
+        // 10 years in minutes
+        throw ArgumentError('Reading time exceeds reasonable limit');
+      }
+
+      // Update both progress and reading time atomically
+      // If this is the first time updating progress (no startDate), set it
+      final shouldSetStartDate = book.startDate == null;
+      await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
+        BooksCompanion(
+          currentPage: Value(currentPage),
+          totalReadingTimeMinutes: Value(newTotalTime),
+          startDate: shouldSetStartDate
+              ? Value(DateTime.now())
+              : const Value.absent(),
+        ),
+      );
+    });
   }
 
   Future<void> completeReading(int bookId) async {
@@ -105,6 +210,23 @@ class SimpleDatabase extends _$SimpleDatabase {
   }
 
   Future<void> startReading(int bookId, int currentPage) async {
+    // Validate business rules
+    if (currentPage < 0) {
+      throw ArgumentError('Current page cannot be negative');
+    }
+
+    // Get book to validate against page count
+    final book = await (select(
+      books,
+    )..where((tbl) => tbl.id.equals(bookId))).getSingleOrNull();
+    if (book == null) {
+      throw ArgumentError('Book not found');
+    }
+
+    if (book.pageCount != null && currentPage > book.pageCount!) {
+      throw ArgumentError('Current page cannot exceed total page count');
+    }
+
     await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
       BooksCompanion(
         currentPage: Value(currentPage),
@@ -116,15 +238,30 @@ class SimpleDatabase extends _$SimpleDatabase {
 
   // Add reading time to book's total
   Future<void> addReadingTime(int bookId, int minutes) async {
+    // Validate business rules
+    if (minutes < 0) {
+      throw ArgumentError('Reading time cannot be negative');
+    }
+
     final book = await (select(
       books,
     )..where((tbl) => tbl.id.equals(bookId))).getSingleOrNull();
-    if (book != null) {
-      final newTotalTime = book.totalReadingTimeMinutes + minutes;
-      await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
-        BooksCompanion(totalReadingTimeMinutes: Value(newTotalTime)),
-      );
+
+    if (book == null) {
+      throw ArgumentError('Book not found');
     }
+
+    final newTotalTime = book.totalReadingTimeMinutes + minutes;
+
+    // Prevent overflow (reasonable limit: 10 years of reading)
+    if (newTotalTime > 5256000) {
+      // 10 years in minutes
+      throw ArgumentError('Reading time exceeds reasonable limit');
+    }
+
+    await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
+      BooksCompanion(totalReadingTimeMinutes: Value(newTotalTime)),
+    );
   }
 
   // Book colors DAO methods
@@ -141,16 +278,16 @@ class SimpleDatabase extends _$SimpleDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    print('🔌 Opening simple database connection...');
+    print('🔌 Opening book database connection...');
     final stopwatch = Stopwatch()..start();
 
     final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'simple_book_tracker.db'));
+    final file = File(p.join(dbFolder.path, 'book_tracker.db'));
     final database = NativeDatabase(file);
 
     stopwatch.stop();
     print(
-      '🔌 Simple database connection opened in ${stopwatch.elapsedMilliseconds}ms',
+      '🔌 Book database connection opened in ${stopwatch.elapsedMilliseconds}ms',
     );
     return database;
   });

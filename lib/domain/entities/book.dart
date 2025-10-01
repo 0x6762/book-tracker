@@ -1,6 +1,6 @@
 import 'reading_progress.dart';
 import 'package:drift/drift.dart';
-import '../../data/simple_database.dart';
+import '../../data/book_database.dart';
 
 class BookEntity {
   final int? id;
@@ -120,9 +120,9 @@ class BookEntity {
       startDate: Value(readingProgress?.startDate),
       endDate: Value(readingProgress?.endDate),
       isCompleted: Value(readingProgress?.isCompleted ?? false),
-      totalReadingTimeMinutes: const Value(
-        0,
-      ), // This will be updated separately
+      totalReadingTimeMinutes: Value(
+        readingProgress?.totalReadingTimeMinutes ?? 0,
+      ),
       averageRating: Value(averageRating),
       ratingsCount: Value(ratingsCount),
     );

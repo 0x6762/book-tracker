@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'simple_database.dart';
+part of 'book_database.dart';
 
 // ignore_for_file: type=lint
 class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
@@ -1169,9 +1169,9 @@ class BookColorsCompanion extends UpdateCompanion<BookColor> {
   }
 }
 
-abstract class _$SimpleDatabase extends GeneratedDatabase {
-  _$SimpleDatabase(QueryExecutor e) : super(e);
-  $SimpleDatabaseManager get managers => $SimpleDatabaseManager(this);
+abstract class _$BookDatabase extends GeneratedDatabase {
+  _$BookDatabase(QueryExecutor e) : super(e);
+  $BookDatabaseManager get managers => $BookDatabaseManager(this);
   late final $BooksTable books = $BooksTable(this);
   late final $BookColorsTable bookColors = $BookColorsTable(this);
   @override
@@ -1219,11 +1219,11 @@ typedef $$BooksTableUpdateCompanionBuilder =
     });
 
 final class $$BooksTableReferences
-    extends BaseReferences<_$SimpleDatabase, $BooksTable, Book> {
+    extends BaseReferences<_$BookDatabase, $BooksTable, Book> {
   $$BooksTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static MultiTypedResultKey<$BookColorsTable, List<BookColor>>
-  _bookColorsRefsTable(_$SimpleDatabase db) => MultiTypedResultKey.fromTable(
+  _bookColorsRefsTable(_$BookDatabase db) => MultiTypedResultKey.fromTable(
     db.bookColors,
     aliasName: $_aliasNameGenerator(db.books.id, db.bookColors.bookId),
   );
@@ -1241,8 +1241,7 @@ final class $$BooksTableReferences
   }
 }
 
-class $$BooksTableFilterComposer
-    extends Composer<_$SimpleDatabase, $BooksTable> {
+class $$BooksTableFilterComposer extends Composer<_$BookDatabase, $BooksTable> {
   $$BooksTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -1352,7 +1351,7 @@ class $$BooksTableFilterComposer
 }
 
 class $$BooksTableOrderingComposer
-    extends Composer<_$SimpleDatabase, $BooksTable> {
+    extends Composer<_$BookDatabase, $BooksTable> {
   $$BooksTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -1437,7 +1436,7 @@ class $$BooksTableOrderingComposer
 }
 
 class $$BooksTableAnnotationComposer
-    extends Composer<_$SimpleDatabase, $BooksTable> {
+    extends Composer<_$BookDatabase, $BooksTable> {
   $$BooksTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -1537,7 +1536,7 @@ class $$BooksTableAnnotationComposer
 class $$BooksTableTableManager
     extends
         RootTableManager<
-          _$SimpleDatabase,
+          _$BookDatabase,
           $BooksTable,
           Book,
           $$BooksTableFilterComposer,
@@ -1549,7 +1548,7 @@ class $$BooksTableTableManager
           Book,
           PrefetchHooks Function({bool bookColorsRefs})
         > {
-  $$BooksTableTableManager(_$SimpleDatabase db, $BooksTable table)
+  $$BooksTableTableManager(_$BookDatabase db, $BooksTable table)
     : super(
         TableManagerState(
           db: db,
@@ -1662,7 +1661,7 @@ class $$BooksTableTableManager
 
 typedef $$BooksTableProcessedTableManager =
     ProcessedTableManager<
-      _$SimpleDatabase,
+      _$BookDatabase,
       $BooksTable,
       Book,
       $$BooksTableFilterComposer,
@@ -1688,10 +1687,10 @@ typedef $$BookColorsTableUpdateCompanionBuilder =
     });
 
 final class $$BookColorsTableReferences
-    extends BaseReferences<_$SimpleDatabase, $BookColorsTable, BookColor> {
+    extends BaseReferences<_$BookDatabase, $BookColorsTable, BookColor> {
   $$BookColorsTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
-  static $BooksTable _bookIdTable(_$SimpleDatabase db) => db.books.createAlias(
+  static $BooksTable _bookIdTable(_$BookDatabase db) => db.books.createAlias(
     $_aliasNameGenerator(db.bookColors.bookId, db.books.id),
   );
 
@@ -1711,7 +1710,7 @@ final class $$BookColorsTableReferences
 }
 
 class $$BookColorsTableFilterComposer
-    extends Composer<_$SimpleDatabase, $BookColorsTable> {
+    extends Composer<_$BookDatabase, $BookColorsTable> {
   $$BookColorsTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -1754,7 +1753,7 @@ class $$BookColorsTableFilterComposer
 }
 
 class $$BookColorsTableOrderingComposer
-    extends Composer<_$SimpleDatabase, $BookColorsTable> {
+    extends Composer<_$BookDatabase, $BookColorsTable> {
   $$BookColorsTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -1797,7 +1796,7 @@ class $$BookColorsTableOrderingComposer
 }
 
 class $$BookColorsTableAnnotationComposer
-    extends Composer<_$SimpleDatabase, $BookColorsTable> {
+    extends Composer<_$BookDatabase, $BookColorsTable> {
   $$BookColorsTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -1842,7 +1841,7 @@ class $$BookColorsTableAnnotationComposer
 class $$BookColorsTableTableManager
     extends
         RootTableManager<
-          _$SimpleDatabase,
+          _$BookDatabase,
           $BookColorsTable,
           BookColor,
           $$BookColorsTableFilterComposer,
@@ -1854,7 +1853,7 @@ class $$BookColorsTableTableManager
           BookColor,
           PrefetchHooks Function({bool bookId})
         > {
-  $$BookColorsTableTableManager(_$SimpleDatabase db, $BookColorsTable table)
+  $$BookColorsTableTableManager(_$BookDatabase db, $BookColorsTable table)
     : super(
         TableManagerState(
           db: db,
@@ -1940,7 +1939,7 @@ class $$BookColorsTableTableManager
 
 typedef $$BookColorsTableProcessedTableManager =
     ProcessedTableManager<
-      _$SimpleDatabase,
+      _$BookDatabase,
       $BookColorsTable,
       BookColor,
       $$BookColorsTableFilterComposer,
@@ -1953,9 +1952,9 @@ typedef $$BookColorsTableProcessedTableManager =
       PrefetchHooks Function({bool bookId})
     >;
 
-class $SimpleDatabaseManager {
-  final _$SimpleDatabase _db;
-  $SimpleDatabaseManager(this._db);
+class $BookDatabaseManager {
+  final _$BookDatabase _db;
+  $BookDatabaseManager(this._db);
   $$BooksTableTableManager get books =>
       $$BooksTableTableManager(_db, _db.books);
   $$BookColorsTableTableManager get bookColors =>
