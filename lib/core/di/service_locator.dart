@@ -5,7 +5,6 @@ import '../../application/services/reading_progress_service.dart';
 import '../../application/services/color_extraction_service.dart';
 import '../../application/services/notification_service.dart';
 import '../../application/services/timer_service.dart';
-import '../../presentation/utils/color_extractor.dart';
 
 /// Simple service locator for dependency injection
 class ServiceLocator {

@@ -22,7 +22,6 @@ class _BookCardState extends State<BookCard> with TickerProviderStateMixin {
   late Animation<Offset> _slideAnimation;
   late Animation<double> _gradientFadeAnimation;
   Color? _bookAccentColor;
-  bool _isNavigating = false;
 
   // Constants
   static const double _cardBorderRadius = 28.0;
@@ -369,10 +368,6 @@ class _BookCardState extends State<BookCard> with TickerProviderStateMixin {
   }
 
   void _navigateToDetails(BuildContext context) {
-    setState(() {
-      _isNavigating = true;
-    });
-
     Navigator.of(context)
         .push(
           PageRouteBuilder(
@@ -395,12 +390,8 @@ class _BookCardState extends State<BookCard> with TickerProviderStateMixin {
           ),
         )
         .then((_) {
-          // Reset navigation state when returning
+          // Restart animation when returning from navigation
           if (mounted) {
-            setState(() {
-              _isNavigating = false;
-            });
-            // Restart animation when returning from navigation
             _startAnimation();
           }
         });

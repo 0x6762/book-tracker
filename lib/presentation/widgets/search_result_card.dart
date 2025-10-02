@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_constants.dart';
-import '../providers/book_list_provider.dart';
 import '../providers/ui_state_provider.dart';
 import '../../domain/entities/book.dart';
 

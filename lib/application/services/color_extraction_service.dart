@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:palette_generator/palette_generator.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+// Color extraction service - imports removed as they are unused
 import '../../data/book_database.dart';
 import '../../domain/entities/book.dart';
 import '../../presentation/utils/color_extractor.dart';

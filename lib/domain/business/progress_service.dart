@@ -83,7 +83,7 @@ class ProgressService {
       return CompletionReadiness.notStarted();
     }
 
-    final progress = book.readingProgress!;
+    // Get progress and calculate percentage
     final progressPercentage = calculateProgressPercentage(book);
 
     if (progressPercentage >= 100.0) {
@@ -202,7 +202,7 @@ class ReadingSessionStats {
   });
 
   factory ReadingSessionStats.empty() {
-    return const ReadingSessionStats(
+    return ReadingSessionStats(
       pagesRead: 0,
       minutesRead: 0,
       pagesPerHour: 0.0,

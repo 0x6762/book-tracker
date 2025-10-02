@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
 import '../../core/di/service_locator.dart';
-import '../../domain/entities/book.dart';
 import 'book_list_provider.dart';
 
 /// Provider responsible for individual book operations (progress, reading time, etc.)

@@ -1,6 +1,5 @@
 import 'package:drift/drift.dart';
 import '../../domain/entities/book.dart';
-import '../../domain/entities/reading_progress.dart';
 import '../book_database.dart';
 
 /// Mapper class to convert between domain entities and database models

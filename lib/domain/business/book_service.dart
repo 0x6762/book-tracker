@@ -52,7 +52,6 @@ class BookService {
     if (daysReading == 0) return ReadingPace.unknown();
 
     final pagesPerDay = progress.currentPage / daysReading;
-    final minutesPerDay = progress.totalReadingTimeMinutes / daysReading;
 
     if (pagesPerDay >= 20) return ReadingPace.fast();
     if (pagesPerDay >= 10) return ReadingPace.moderate();

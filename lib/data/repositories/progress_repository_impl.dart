@@ -77,7 +77,10 @@ class ProgressRepositoryImpl implements ProgressRepository {
   @override
   Future<int> getTotalReadingTime() async {
     final books = await _database.getAllBooks();
-    return books.fold(0, (total, book) => total + book.totalReadingTimeMinutes);
+    return books.fold<int>(
+      0,
+      (total, book) => total + book.totalReadingTimeMinutes,
+    );
   }
 
   @override
@@ -86,7 +89,7 @@ class ProgressRepositoryImpl implements ProgressRepository {
     final booksWithProgress = books.where((b) => b.startDate != null).toList();
 
     if (booksWithProgress.isEmpty) {
-      return const ReadingStreak(
+      return ReadingStreak(
         currentStreak: 0,
         longestStreak: 0,
         streakStartDate: DateTime(2024, 1, 1),
