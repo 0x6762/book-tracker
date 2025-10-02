@@ -118,12 +118,7 @@ class NotificationService {
           '🔔 Notification permission granted: $notificationPermission',
         );
 
-        // Request exact alarm permission for Android 12+
-        final exactAlarmPermission = await androidPlugin
-            .requestExactAlarmsPermission();
-        debugPrint('🔔 Exact alarm permission granted: $exactAlarmPermission');
-
-        // Check if exact alarms are available
+        // Check if exact alarms are available (using SCHEDULE_EXACT_ALARM)
         final canScheduleExactAlarms = await androidPlugin
             .canScheduleExactNotifications();
         debugPrint('🔔 Can schedule exact alarms: $canScheduleExactAlarms');
@@ -244,7 +239,7 @@ class NotificationService {
             presentBadge: true,
           ),
         ),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.exact,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
       );
@@ -252,8 +247,8 @@ class NotificationService {
       // Start updating notification every 5 minutes
       _startNotificationUpdates(totalSeconds);
     } catch (e) {
-      debugPrint('⚠️ Could not schedule exact alarm notification: $e');
-      debugPrint('📱 Notifications will work but may not be exact timing');
+      debugPrint('⚠️ Could not schedule notification: $e');
+      debugPrint('📱 Using fallback notification approach');
       // Fallback: Show immediate notification
       await showTimerStartNotification();
     }
