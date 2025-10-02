@@ -175,7 +175,7 @@ class NotificationService {
             importance: Importance.low,
             priority: Priority.low,
             silent: true,
-            icon: '@mipmap/ic_launcher',
+            icon: '@drawable/ic_stat_name',
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: false,
@@ -206,7 +206,7 @@ class NotificationService {
             channelDescription: 'Notifications for reading timer completion',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
+            icon: '@drawable/ic_stat_name',
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -289,7 +289,7 @@ class NotificationService {
             importance: Importance.low,
             priority: Priority.low,
             ongoing: true,
-            icon: '@mipmap/ic_launcher',
+            icon: '@drawable/ic_stat_name',
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: false,
@@ -323,7 +323,7 @@ class NotificationService {
             channelDescription: 'Test notifications',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@mipmap/ic_launcher',
+            icon: '@drawable/ic_stat_name',
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,

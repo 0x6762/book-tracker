@@ -36,3 +36,7 @@
 -keep class * extends androidx.core.app.NotificationCompat$* { *; }
 -keep class * extends androidx.core.app.NotificationCompat$Builder { *; }
 
+# Keep drawable resources for notifications
+-keep class **.R$drawable { *; }
+-keep class **.R$mipmap { *; }
+
