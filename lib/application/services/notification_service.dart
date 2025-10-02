@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -36,8 +37,69 @@ class NotificationService {
 
     await _notifications.initialize(initSettings);
 
+    // Create notification channels for Android
+    await _createNotificationChannels();
+
     // Request notification permissions
     await _requestNotificationPermissions();
+  }
+
+  /// Create notification channels for Android
+  Future<void> _createNotificationChannels() async {
+    final androidPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
+
+    if (androidPlugin != null) {
+      // Timer start channel (silent)
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'reading_timer_start',
+          'Reading Timer Start',
+          description: 'Notifications for reading timer start',
+          importance: Importance.low,
+          enableVibration: false,
+          playSound: false,
+        ),
+      );
+
+      // Timer completion channel (high priority)
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'reading_timer_complete',
+          'Reading Timer Complete',
+          description: 'Notifications for reading timer completion',
+          importance: Importance.high,
+          enableVibration: true,
+          playSound: true,
+        ),
+      );
+
+      // Timer progress channel (ongoing)
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'reading_timer',
+          'Reading Timer',
+          description: 'Notifications for reading timer progress',
+          importance: Importance.low,
+          enableVibration: false,
+          playSound: false,
+        ),
+      );
+
+      // Test channel
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'test_channel',
+          'Test Notifications',
+          description: 'Test notifications',
+          importance: Importance.high,
+          enableVibration: true,
+          playSound: true,
+        ),
+      );
+    }
   }
 
   /// Request notification permissions
@@ -52,20 +114,27 @@ class NotificationService {
         // Request notification permission
         final notificationPermission = await androidPlugin
             .requestNotificationsPermission();
-        print('🔔 Notification permission granted: $notificationPermission');
+        debugPrint(
+          '🔔 Notification permission granted: $notificationPermission',
+        );
 
         // Request exact alarm permission for Android 12+
         final exactAlarmPermission = await androidPlugin
             .requestExactAlarmsPermission();
-        print('🔔 Exact alarm permission granted: $exactAlarmPermission');
+        debugPrint('🔔 Exact alarm permission granted: $exactAlarmPermission');
+
+        // Check if exact alarms are available
+        final canScheduleExactAlarms = await androidPlugin
+            .canScheduleExactNotifications();
+        debugPrint('🔔 Can schedule exact alarms: $canScheduleExactAlarms');
       }
     } catch (e) {
-      print('❌ Error requesting permissions: $e');
+      debugPrint('❌ Error requesting permissions: $e');
     }
   }
 
   /// Ensure notification permissions are granted
-  Future<void> ensurePermissions() async {
+  Future<bool> ensurePermissions() async {
     try {
       final androidPlugin = _notifications
           .resolvePlatformSpecificImplementation<
@@ -74,15 +143,20 @@ class NotificationService {
 
       if (androidPlugin != null) {
         final hasPermission = await androidPlugin.areNotificationsEnabled();
-        print('🔔 Notifications enabled: $hasPermission');
+        debugPrint('🔔 Notifications enabled: $hasPermission');
 
         if (hasPermission == false) {
-          print('🔔 Requesting notification permission...');
-          await androidPlugin.requestNotificationsPermission();
+          debugPrint('🔔 Requesting notification permission...');
+          final granted = await androidPlugin.requestNotificationsPermission();
+          debugPrint('🔔 Permission request result: $granted');
+          return granted ?? false;
         }
+        return true;
       }
+      return false;
     } catch (e) {
-      print('❌ Error checking/requesting permissions: $e');
+      debugPrint('❌ Error checking/requesting permissions: $e');
+      return false;
     }
   }
 
@@ -111,7 +185,7 @@ class NotificationService {
         ),
       );
     } catch (e) {
-      print('❌ Timer start notification failed: $e');
+      debugPrint('❌ Timer start notification failed: $e');
     }
   }
 
@@ -141,7 +215,7 @@ class NotificationService {
         ),
       );
     } catch (e) {
-      print('❌ Completion notification failed: $e');
+      debugPrint('❌ Completion notification failed: $e');
     }
   }
 
@@ -178,8 +252,8 @@ class NotificationService {
       // Start updating notification every 5 minutes
       _startNotificationUpdates(totalSeconds);
     } catch (e) {
-      print('⚠️ Could not schedule exact alarm notification: $e');
-      print('📱 Notifications will work but may not be exact timing');
+      debugPrint('⚠️ Could not schedule exact alarm notification: $e');
+      debugPrint('📱 Notifications will work but may not be exact timing');
       // Fallback: Show immediate notification
       await showTimerStartNotification();
     }
@@ -224,7 +298,7 @@ class NotificationService {
         ),
       );
     } catch (e) {
-      print('❌ Update notification failed: $e');
+      debugPrint('❌ Update notification failed: $e');
     }
   }
 
@@ -257,9 +331,9 @@ class NotificationService {
           ),
         ),
       );
-      print('🔔 Test notification sent successfully');
+      debugPrint('🔔 Test notification sent successfully');
     } catch (e) {
-      print('❌ Test notification failed: $e');
+      debugPrint('❌ Test notification failed: $e');
     }
   }
 

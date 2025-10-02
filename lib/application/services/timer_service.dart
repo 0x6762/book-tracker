@@ -51,7 +51,12 @@ class TimerService extends ChangeNotifier {
     }
 
     // Ensure permissions are granted before starting timer
-    await _notificationService.ensurePermissions();
+    final hasPermission = await _notificationService.ensurePermissions();
+    if (!hasPermission) {
+      print(
+        '⚠️ Notification permissions not granted, timer will start but notifications may not work',
+      );
+    }
 
     _isTimerRunning = true;
     _currentBookId = bookId;

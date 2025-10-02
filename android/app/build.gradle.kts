@@ -69,6 +69,13 @@ android {
             }
             signingConfig = signingConfigs.getByName("release")
             resValue("string", "app_name", "Readr")
+            
+            // ProGuard configuration for release builds
+            isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
