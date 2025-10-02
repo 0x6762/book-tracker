@@ -58,12 +58,17 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            resValue("string", "app_name", "Readr Debug")
+        }
         release {
             // Fail fast if release signing is not configured
             if (keystoreProperties.isEmpty()) {
                 throw GradleException("Release signing is not configured. Provide android/key.properties or env vars.")
             }
             signingConfig = signingConfigs.getByName("release")
+            resValue("string", "app_name", "Readr")
         }
     }
 }

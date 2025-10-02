@@ -22,7 +22,7 @@ class NotificationService {
   /// Initialize the notification service
   Future<void> initialize() async {
     const androidSettings = AndroidInitializationSettings(
-      '@drawable/ic_stat_name',
+      '@mipmap/ic_launcher',
     );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -101,7 +101,7 @@ class NotificationService {
             importance: Importance.low,
             priority: Priority.low,
             silent: true,
-            icon: '@drawable/ic_stat_name',
+            icon: '@mipmap/ic_launcher',
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: false,
@@ -132,7 +132,7 @@ class NotificationService {
             channelDescription: 'Notifications for reading timer completion',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@drawable/ic_stat_name',
+            icon: '@mipmap/ic_launcher',
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -215,7 +215,7 @@ class NotificationService {
             importance: Importance.low,
             priority: Priority.low,
             ongoing: true,
-            icon: '@drawable/ic_stat_name',
+            icon: '@mipmap/ic_launcher',
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: false,
@@ -249,7 +249,7 @@ class NotificationService {
             channelDescription: 'Test notifications',
             importance: Importance.high,
             priority: Priority.high,
-            icon: '@drawable/ic_stat_name',
+            icon: '@mipmap/ic_launcher',
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
