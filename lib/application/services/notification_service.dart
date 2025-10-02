@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'reading_timer_service.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -19,6 +20,9 @@ class NotificationService {
   // Timer state
   Timer? _notificationTimer;
   int _notificationId = 1;
+
+  // Foreground service for reading timer
+  final ReadingTimerService _readingTimerService = ReadingTimerService();
 
   /// Initialize the notification service
   Future<void> initialize() async {
@@ -40,6 +44,9 @@ class NotificationService {
     // Create notification channels for Android
     await _createNotificationChannels();
 
+    // Initialize reading timer service
+    await _readingTimerService.initialize();
+
     // Request notification permissions
     await _requestNotificationPermissions();
   }
@@ -52,19 +59,7 @@ class NotificationService {
         >();
 
     if (androidPlugin != null) {
-      // Timer start channel (silent)
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          'reading_timer_start',
-          'Reading Timer Start',
-          description: 'Notifications for reading timer start',
-          importance: Importance.low,
-          enableVibration: false,
-          playSound: false,
-        ),
-      );
-
-      // Timer completion channel (high priority)
+      // Timer completion channel (for foreground service completion)
       await androidPlugin.createNotificationChannel(
         const AndroidNotificationChannel(
           'reading_timer_complete',
@@ -73,18 +68,6 @@ class NotificationService {
           importance: Importance.high,
           enableVibration: true,
           playSound: true,
-        ),
-      );
-
-      // Timer progress channel (ongoing)
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          'reading_timer',
-          'Reading Timer',
-          description: 'Notifications for reading timer progress',
-          importance: Importance.low,
-          enableVibration: false,
-          playSound: false,
         ),
       );
 
@@ -118,10 +101,10 @@ class NotificationService {
           '🔔 Notification permission granted: $notificationPermission',
         );
 
-        // Check if exact alarms are available (using SCHEDULE_EXACT_ALARM)
-        final canScheduleExactAlarms = await androidPlugin
-            .canScheduleExactNotifications();
-        debugPrint('🔔 Can schedule exact alarms: $canScheduleExactAlarms');
+        // Check if notifications are available
+        final canScheduleNotifications = await androidPlugin
+            .areNotificationsEnabled();
+        debugPrint('🔔 Notifications enabled: $canScheduleNotifications');
       }
     } catch (e) {
       debugPrint('❌ Error requesting permissions: $e');
@@ -155,41 +138,16 @@ class NotificationService {
     }
   }
 
-  /// Show timer start notification
+  /// Show timer start notification (now handled by foreground service)
   Future<void> showTimerStartNotification() async {
-    try {
-      await _notifications.show(
-        _timerStartId,
-        'Reading Timer Started',
-        'Timer is running. Check back when done!',
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'reading_timer_start',
-            'Reading Timer Start',
-            channelDescription: 'Notifications for reading timer start',
-            importance: Importance.low,
-            priority: Priority.low,
-            silent: true,
-            icon: '@drawable/ic_stat_name',
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: false,
-            presentBadge: false,
-            sound: null,
-          ),
-        ),
-      );
-    } catch (e) {
-      debugPrint('❌ Timer start notification failed: $e');
-    }
+    // Timer start notification is now handled by the foreground service
+    // which shows a persistent notification with timer progress
+    debugPrint('🔔 Timer start notification handled by foreground service');
   }
 
   /// Show timer completion notification
   Future<void> showTimerCompleteNotification() async {
     try {
-      // Clear the start notification first
-      await _notifications.cancel(_timerStartId);
-
       await _notifications.show(
         _timerCompleteId,
         'Reading Session Complete!',
@@ -209,48 +167,22 @@ class NotificationService {
           ),
         ),
       );
+      debugPrint('🔔 Timer completion notification shown');
     } catch (e) {
       debugPrint('❌ Completion notification failed: $e');
     }
   }
 
-  /// Schedule notification for timer completion
+  /// Schedule notification for timer completion using foreground service
   Future<void> scheduleTimerNotification(int totalSeconds) async {
     try {
-      final endTime = tz.TZDateTime.now(
-        tz.local,
-      ).add(Duration(seconds: totalSeconds));
-
-      await _notifications.zonedSchedule(
-        _notificationId,
-        'Reading Session Complete!',
-        'Your reading timer has finished. Tap to update your progress.',
-        endTime,
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'reading_timer',
-            'Reading Timer',
-            channelDescription: 'Notifications for reading timer completion',
-            importance: Importance.high,
-            priority: Priority.high,
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-          ),
-        ),
-        androidScheduleMode: AndroidScheduleMode.exact,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-      );
-
-      // Start updating notification every 5 minutes
-      _startNotificationUpdates(totalSeconds);
+      // Use foreground service for reading timer
+      await _readingTimerService.startTimer(totalSeconds);
+      debugPrint('🔔 Started reading timer with foreground service');
     } catch (e) {
-      debugPrint('⚠️ Could not schedule notification: $e');
-      debugPrint('📱 Using fallback notification approach');
-      // Fallback: Show immediate notification
-      await showTimerStartNotification();
+      debugPrint('⚠️ Could not start reading timer: $e');
+      debugPrint('📱 Timer service unavailable - reading session will continue without timer');
+      // Fallback: Continue without timer (user can still track reading manually)
     }
   }
 
@@ -299,6 +231,7 @@ class NotificationService {
 
   /// Cancel timer notification
   Future<void> cancelTimerNotification() async {
+    await _readingTimerService.stopTimer();
     await _notifications.cancel(_notificationId);
     _notificationTimer?.cancel();
     _notificationTimer = null;
