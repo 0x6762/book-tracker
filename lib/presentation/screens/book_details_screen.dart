@@ -22,58 +22,69 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Centered book cover
-            _buildBookCover(context),
-            const SizedBox(height: 24),
+    return Consumer<BookListProvider>(
+      builder: (context, bookListProvider, child) {
+        // Get the updated book from the provider
+        final updatedBook =
+            bookListProvider.books
+                .where((book) => book.id == widget.book.id)
+                .firstOrNull ??
+            widget.book;
 
-            // Book title and authors
-            _buildBookTitle(context),
-            const SizedBox(height: 16),
+        return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          appBar: AppBar(
+            backgroundColor: Theme.of(context).colorScheme.surface,
+            elevation: 0,
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Centered book cover
+                _buildBookCover(context, updatedBook),
+                const SizedBox(height: 24),
 
-            // Book info box
-            _buildBookInfoBox(context),
-            const SizedBox(height: 24),
+                // Book title and authors
+                _buildBookTitle(context, updatedBook),
+                const SizedBox(height: 16),
 
-            // Book info
-            _buildBookInfo(context),
-            const SizedBox(height: 24),
+                // Book info box
+                _buildBookInfoBox(context, updatedBook),
+                const SizedBox(height: 24),
 
-            // Reading progress section
-            _buildReadingProgress(context),
-            const SizedBox(height: 24),
+                // Book info
+                _buildBookInfo(context, updatedBook),
+                const SizedBox(height: 24),
 
-            // Reading timer section
-            _buildReadingTimer(context),
-            const SizedBox(height: 24),
+                // Reading progress section
+                _buildReadingProgress(context, updatedBook),
+                const SizedBox(height: 24),
 
-            // Reading statistics
-            _buildReadingStats(context),
-            const SizedBox(height: 32),
+                // Reading timer section
+                _buildReadingTimer(context, updatedBook),
+                const SizedBox(height: 24),
 
-            // Delete book button
-            _buildDeleteButton(context),
-            const SizedBox(height: 16),
-          ],
-        ),
-      ),
+                // Reading statistics
+                _buildReadingStats(context, updatedBook),
+                const SizedBox(height: 32),
+
+                // Delete book button
+                _buildDeleteButton(context, updatedBook),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildBookCover(BuildContext context) {
+  Widget _buildBookCover(BuildContext context, BookEntity book) {
     return Center(
       child: Hero(
-        tag: 'book_cover_${widget.book.id}',
+        tag: 'book_cover_${book.id}',
         child: Material(
           elevation: 8,
           color: Colors.transparent,
@@ -82,9 +93,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
           child: Container(
             height: 280,
             width: 200,
-            child: widget.book.thumbnailUrl != null
+            child: book.thumbnailUrl != null
                 ? CachedNetworkImage(
-                    imageUrl: widget.book.thumbnailUrl!,
+                    imageUrl: book.thumbnailUrl!,
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
                       color: Theme.of(context).colorScheme.surfaceVariant,
@@ -113,12 +124,12 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     );
   }
 
-  Widget _buildBookTitle(BuildContext context) {
+  Widget _buildBookTitle(BuildContext context, BookEntity book) {
     return Center(
       child: Column(
         children: [
           Text(
-            widget.book.title,
+            book.title,
             style: Theme.of(
               context,
             ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -128,7 +139,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            widget.book.authors,
+            book.authors,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -141,7 +152,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     );
   }
 
-  Widget _buildBookInfoBox(BuildContext context) {
+  Widget _buildBookInfoBox(BuildContext context, BookEntity book) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -154,26 +165,26 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       child: Row(
         children: [
           // Pages
-          if (widget.book.pageCount != null) ...[
+          if (book.pageCount != null) ...[
             Expanded(
               child: _buildInfoItem(
                 context,
                 Icons.menu_book,
                 'Pages',
-                '${widget.book.pageCount}',
+                '${book.pageCount}',
               ),
             ),
             const SizedBox(width: 16),
           ],
 
           // Published
-          if (widget.book.publishedDate != null) ...[
+          if (book.publishedDate != null) ...[
             Expanded(
               child: _buildInfoItem(
                 context,
                 Icons.calendar_today,
                 'Published',
-                _formatPublishedDate(widget.book.publishedDate!),
+                _formatPublishedDate(book.publishedDate!),
               ),
             ),
             const SizedBox(width: 16),
@@ -185,7 +196,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
               context,
               Icons.star,
               'Rating',
-              widget.book.hasRating ? widget.book.formattedRating : 'N/A',
+              book.hasRating ? book.formattedRating : 'N/A',
             ),
           ),
         ],
@@ -242,11 +253,11 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     }
   }
 
-  Widget _buildBookInfo(BuildContext context) {
+  Widget _buildBookInfo(BuildContext context, BookEntity book) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (widget.book.description != null) ...[
+        if (book.description != null) ...[
           Text(
             'Description',
             style: Theme.of(
@@ -254,15 +265,15 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          _buildExpandableDescription(context),
+          _buildExpandableDescription(context, book),
           const SizedBox(height: 16),
         ],
       ],
     );
   }
 
-  Widget _buildExpandableDescription(BuildContext context) {
-    final description = widget.book.description!;
+  Widget _buildExpandableDescription(BuildContext context, BookEntity book) {
+    final description = book.description!;
     final needsExpansion = description.length > 200; // Approximate 3 lines
 
     return Column(
@@ -308,8 +319,8 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     );
   }
 
-  Widget _buildReadingProgress(BuildContext context) {
-    if (!widget.book.hasReadingProgress) {
+  Widget _buildReadingProgress(BuildContext context, BookEntity book) {
+    if (!book.hasReadingProgress) {
       return Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -339,8 +350,8 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       );
     }
 
-    final progress = widget.book.readingProgress!;
-    final progressPercentage = widget.book.progressPercentage;
+    final progress = book.readingProgress!;
+    final progressPercentage = book.progressPercentage;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -375,7 +386,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
               widthFactor: progressPercentage / 100,
               child: Container(
                 decoration: BoxDecoration(
-                  color: widget.book.isCompleted
+                  color: book.isCompleted
                       ? Colors.green
                       : Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(4),
@@ -395,9 +406,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                   context,
                 ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
-              if (widget.book.pageCount != null)
+              if (book.pageCount != null)
                 Text(
-                  '${progress.currentPage}/${widget.book.pageCount} pages',
+                  '${progress.currentPage}/${book.pageCount} pages',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -413,12 +424,13 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () =>
-                          _showProgressModal(context, bookDetailsProvider),
+                      onPressed: () => _showProgressModal(
+                        context,
+                        bookDetailsProvider,
+                        book,
+                      ),
                       label: Text(
-                        widget.book.hasReadingProgress
-                            ? 'Update'
-                            : 'Start Reading',
+                        book.hasReadingProgress ? 'Update' : 'Start Reading',
                       ),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -426,12 +438,11 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  if (widget.book.hasReadingProgress &&
-                      !widget.book.isCompleted)
+                  if (book.hasReadingProgress && !book.isCompleted)
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          bookDetailsProvider.completeReading(widget.book.id!);
+                          bookDetailsProvider.completeReading(book.id!);
                           Navigator.of(context).pop();
                         },
                         label: const Text('Mark Complete'),
@@ -449,18 +460,14 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     );
   }
 
-  Widget _buildReadingTimer(BuildContext context) {
-    return ReadingTimer(
-      bookId: widget.book.id!,
-      bookTitle: widget.book.title,
-      book: widget.book,
-    );
+  Widget _buildReadingTimer(BuildContext context, BookEntity book) {
+    return ReadingTimer(bookId: book.id!, bookTitle: book.title, book: book);
   }
 
-  Widget _buildReadingStats(BuildContext context) {
-    if (!widget.book.hasReadingProgress) return const SizedBox.shrink();
+  Widget _buildReadingStats(BuildContext context, BookEntity book) {
+    if (!book.hasReadingProgress) return const SizedBox.shrink();
 
-    final progress = widget.book.readingProgress!;
+    final progress = book.readingProgress!;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -489,7 +496,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 child: _buildStatCard(
                   context,
                   'Days Reading',
-                  '${widget.book.daysReading}',
+                  '${book.daysReading}',
                   Icons.calendar_today,
                 ),
               ),
@@ -506,8 +513,8 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
           ),
 
           if (progress.totalReadingTimeMinutes > 0 &&
-              widget.book.daysReading > 0 &&
-              widget.book.pageCount != null &&
+              book.daysReading > 0 &&
+              book.pageCount != null &&
               progress.currentPage > 0) ...[
             const SizedBox(height: 12),
             Row(
@@ -516,7 +523,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                   child: _buildStatCard(
                     context,
                     'Avg. Session',
-                    _calculateAverageSessionTime(progress),
+                    _calculateAverageSessionTime(progress, book),
                     Icons.trending_up,
                   ),
                 ),
@@ -525,7 +532,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                   child: _buildStatCard(
                     context,
                     'Pages/Hour',
-                    _calculatePagesPerHour(progress),
+                    _calculatePagesPerHour(progress, book),
                     Icons.speed,
                   ),
                 ),
@@ -579,28 +586,31 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   void _showProgressModal(
     BuildContext context,
     BookDetailsProvider bookDetailsProvider,
+    BookEntity book,
   ) {
     showProgressUpdateBottomSheet(
       context: context,
-      book: widget.book,
+      book: book,
       onUpdateProgress: (currentPage) {
-        bookDetailsProvider.updateProgress(widget.book.id!, currentPage);
+        bookDetailsProvider.updateProgress(book.id!, currentPage);
       },
       onCompleteReading: () {
-        bookDetailsProvider.completeReading(widget.book.id!);
+        bookDetailsProvider.completeReading(book.id!);
       },
     );
   }
 
-  String _calculateAverageSessionTime(ReadingProgress progress) {
-    if (widget.book.daysReading <= 0 || progress.totalReadingTimeMinutes <= 0) {
+  String _calculateAverageSessionTime(
+    ReadingProgress progress,
+    BookEntity book,
+  ) {
+    if (book.daysReading <= 0 || progress.totalReadingTimeMinutes <= 0) {
       return '0m';
     }
 
     // Calculate average session time based on total reading time and days
     // This gives a more realistic average since users don't read every day
-    final avgMinutes =
-        progress.totalReadingTimeMinutes / widget.book.daysReading;
+    final avgMinutes = progress.totalReadingTimeMinutes / book.daysReading;
     final hours = avgMinutes ~/ 60;
     final minutes = (avgMinutes % 60).round();
 
@@ -611,9 +621,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     }
   }
 
-  String _calculatePagesPerHour(ReadingProgress progress) {
+  String _calculatePagesPerHour(ReadingProgress progress, BookEntity book) {
     if (progress.totalReadingTimeMinutes <= 0 ||
-        widget.book.pageCount == null ||
+        book.pageCount == null ||
         progress.currentPage <= 0) {
       return '0';
     }
@@ -630,14 +640,14 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     return '$cappedPagesPerHour';
   }
 
-  Widget _buildDeleteButton(BuildContext context) {
+  Widget _buildDeleteButton(BuildContext context, BookEntity book) {
     return Consumer<BookDetailsProvider>(
       builder: (context, bookDetailsProvider, child) {
         return SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
             onPressed: () =>
-                _showDeleteConfirmation(context, bookDetailsProvider),
+                _showDeleteConfirmation(context, bookDetailsProvider, book),
             label: const Text(
               'Remove Book',
               style: TextStyle(color: Colors.red),
@@ -655,6 +665,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   Future<void> _showDeleteConfirmation(
     BuildContext context,
     BookDetailsProvider bookDetailsProvider,
+    BookEntity book,
   ) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -662,7 +673,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         return AlertDialog(
           title: const Text('Remove Book'),
           content: Text(
-            'Are you sure you want to remove "${widget.book.title}" from your library?',
+            'Are you sure you want to remove "${book.title}" from your library?',
           ),
           actions: [
             TextButton(
@@ -682,7 +693,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     if (confirmed == true) {
       // Use BookListProvider to delete the book and update the UI
       final bookListProvider = context.read<BookListProvider>();
-      await bookListProvider.deleteBook(widget.book.googleBooksId);
+      await bookListProvider.deleteBook(book.googleBooksId);
       if (mounted) {
         Navigator.of(context).pop(); // Go back to main screen
       }
