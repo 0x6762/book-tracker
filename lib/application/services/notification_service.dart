@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/timezone.dart' as tz;
 import 'reading_timer_service.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -13,13 +13,7 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   // Notification IDs
-  static const int _timerStartId = 777;
   static const int _timerCompleteId = 888;
-  static const int _testNotificationId = 999;
-
-  // Timer state
-  Timer? _notificationTimer;
-  int _notificationId = 1;
 
   // Foreground service for reading timer
   final ReadingTimerService _readingTimerService = ReadingTimerService();
@@ -71,17 +65,7 @@ class NotificationService {
         ),
       );
 
-      // Test channel
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          'test_channel',
-          'Test Notifications',
-          description: 'Test notifications',
-          importance: Importance.high,
-          enableVibration: true,
-          playSound: true,
-        ),
-      );
+      // (test channel removed)
     }
   }
 
@@ -148,6 +132,9 @@ class NotificationService {
   /// Show timer completion notification
   Future<void> showTimerCompleteNotification() async {
     try {
+      // Ensure the static timer notification is cleared to avoid duplicates
+      await cancelTimerNotification();
+
       await _notifications.show(
         _timerCompleteId,
         'Reading Session Complete!',
@@ -181,74 +168,27 @@ class NotificationService {
       debugPrint('🔔 Started reading timer with foreground service');
     } catch (e) {
       debugPrint('⚠️ Could not start reading timer: $e');
-      debugPrint('📱 Timer service unavailable - reading session will continue without timer');
+      debugPrint(
+        '📱 Timer service unavailable - reading session will continue without timer',
+      );
       // Fallback: Continue without timer (user can still track reading manually)
     }
   }
 
-  /// Start updating notification every 5 minutes
-  void _startNotificationUpdates(int totalSeconds) {
-    _notificationTimer?.cancel();
-
-    _notificationTimer = Timer.periodic(const Duration(minutes: 5), (timer) {
-      final remainingMinutes = totalSeconds ~/ 60;
-
-      if (remainingMinutes > 0) {
-        _updateTimerNotification(remainingMinutes);
-      } else {
-        timer.cancel();
-      }
-    });
-  }
-
-  /// Update the notification with remaining time
-  Future<void> _updateTimerNotification(int remainingMinutes) async {
+  /// Schedule a completion notification at a specific local DateTime
+  Future<void> scheduleCompletionNotificationAt(DateTime whenLocal) async {
     try {
-      await _notifications.show(
-        _notificationId,
-        'Reading Timer Running',
-        'Time remaining: ${remainingMinutes} minutes',
+      final tzWhen = tz.TZDateTime.from(whenLocal, tz.local);
+      await _notifications.zonedSchedule(
+        _timerCompleteId,
+        'Reading Session Complete!',
+        'Your reading timer has finished. Tap to update your progress.',
+        tzWhen,
         const NotificationDetails(
           android: AndroidNotificationDetails(
-            'reading_timer',
-            'Reading Timer',
-            channelDescription: 'Notifications for reading timer',
-            importance: Importance.low,
-            priority: Priority.low,
-            ongoing: true,
-            icon: '@drawable/ic_stat_name',
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: false,
-            presentBadge: false,
-          ),
-        ),
-      );
-    } catch (e) {
-      debugPrint('❌ Update notification failed: $e');
-    }
-  }
-
-  /// Cancel timer notification
-  Future<void> cancelTimerNotification() async {
-    await _readingTimerService.stopTimer();
-    await _notifications.cancel(_notificationId);
-    _notificationTimer?.cancel();
-    _notificationTimer = null;
-  }
-
-  /// Test notification method (for debugging)
-  Future<void> showTestNotification() async {
-    try {
-      await _notifications.show(
-        _testNotificationId,
-        'Test Notification',
-        'If you see this, notifications are working!',
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'test_channel',
-            'Test Notifications',
-            channelDescription: 'Test notifications',
+            'reading_timer_complete',
+            'Reading Timer Complete',
+            channelDescription: 'Notifications for reading timer completion',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@drawable/ic_stat_name',
@@ -258,15 +198,30 @@ class NotificationService {
             presentBadge: true,
           ),
         ),
+        androidAllowWhileIdle: true,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
       );
-      debugPrint('🔔 Test notification sent successfully');
+      debugPrint('🔔 Completion notification scheduled at $whenLocal');
     } catch (e) {
-      debugPrint('❌ Test notification failed: $e');
+      debugPrint('❌ Scheduling completion notification failed: $e');
     }
   }
 
-  /// Dispose resources
-  void dispose() {
-    _notificationTimer?.cancel();
+  /// Cancel any scheduled completion notification
+  Future<void> cancelScheduledCompletionNotification() async {
+    try {
+      await _notifications.cancel(_timerCompleteId);
+    } catch (e) {
+      debugPrint('❌ Cancel scheduled completion notification failed: $e');
+    }
   }
+
+  /// Cancel timer notification
+  Future<void> cancelTimerNotification() async {
+    await _readingTimerService.stopTimer();
+  }
+
+  /// Dispose resources
+  void dispose() {}
 }
