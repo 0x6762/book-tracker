@@ -4,8 +4,8 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// Foreground service for reading timer functionality
 class ReadingTimerService {
-  static const String _channelId = 'reading_timer_foreground';
-  static const String _channelName = 'Reading Timer';
+  static const String _channelId = 'reading_timer_status';
+  static const String _channelName = 'Reading Timer Status';
   static const int _notificationId = 1001;
 
   static final ReadingTimerService _instance = ReadingTimerService._internal();
@@ -36,7 +36,7 @@ class ReadingTimerService {
         const AndroidNotificationChannel(
           _channelId,
           _channelName,
-          description: 'Reading timer foreground service',
+          description: 'Reading timer status',
           importance: Importance.low,
           enableVibration: false,
           playSound: false,

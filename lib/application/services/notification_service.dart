@@ -14,7 +14,6 @@ class NotificationService {
 
   // Notification IDs
   static const int _timerCompleteId = 888;
-  static const int _testNotificationId = 999;
 
   // Foreground service for reading timer
   final ReadingTimerService _readingTimerService = ReadingTimerService();
@@ -66,17 +65,7 @@ class NotificationService {
         ),
       );
 
-      // Test channel
-      await androidPlugin.createNotificationChannel(
-        const AndroidNotificationChannel(
-          'test_channel',
-          'Test Notifications',
-          description: 'Test notifications',
-          importance: Importance.high,
-          enableVibration: true,
-          playSound: true,
-        ),
-      );
+      // (test channel removed)
     }
   }
 
@@ -231,34 +220,6 @@ class NotificationService {
   /// Cancel timer notification
   Future<void> cancelTimerNotification() async {
     await _readingTimerService.stopTimer();
-  }
-
-  /// Test notification method (for debugging)
-  Future<void> showTestNotification() async {
-    try {
-      await _notifications.show(
-        _testNotificationId,
-        'Test Notification',
-        'If you see this, notifications are working!',
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'test_channel',
-            'Test Notifications',
-            channelDescription: 'Test notifications',
-            importance: Importance.high,
-            priority: Priority.high,
-            icon: '@drawable/ic_stat_name',
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: true,
-            presentBadge: true,
-          ),
-        ),
-      );
-      debugPrint('🔔 Test notification sent successfully');
-    } catch (e) {
-      debugPrint('❌ Test notification failed: $e');
-    }
   }
 
   /// Dispose resources
