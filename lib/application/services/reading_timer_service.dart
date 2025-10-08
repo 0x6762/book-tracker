@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// Foreground service for reading timer functionality
@@ -20,6 +21,11 @@ class ReadingTimerService {
   int _totalSeconds = 0;
   bool _isRunning = false;
   String _bookTitle = '';
+
+  // Method channel for native service communication
+  static const MethodChannel _channel = MethodChannel(
+    'reading_timer/native_service',
+  );
 
   /// Initialize the service
   Future<void> initialize() async {
@@ -47,7 +53,7 @@ class ReadingTimerService {
     }
   }
 
-  /// Start reading timer with foreground service
+  /// Start reading timer with native Android service
   Future<void> startTimer(int totalSeconds, {String bookTitle = ''}) async {
     if (_isRunning) {
       await stopTimer();
@@ -58,11 +64,18 @@ class ReadingTimerService {
     _bookTitle = bookTitle;
     _isRunning = true;
 
-    // Start the foreground service with periodic updates
-    await _startForegroundService();
-
-    // Start the countdown timer
-    _startCountdownTimer();
+    try {
+      // Start native Android service
+      await _channel.invokeMethod('startTimer', {
+        'totalSeconds': totalSeconds,
+        'bookTitle': bookTitle,
+      });
+      debugPrint('🔔 Native timer service started');
+    } catch (e) {
+      debugPrint('❌ Failed to start native service: $e');
+      // Fallback to Flutter-based timer
+      await _startFlutterTimer();
+    }
   }
 
   /// Start foreground service with ongoing notification
@@ -164,8 +177,27 @@ class ReadingTimerService {
     _isRunning = false;
     _timer?.cancel();
     _timer = null;
-    await _notifications.cancel(_notificationId);
-    debugPrint('🔔 Foreground service stopped');
+
+    try {
+      // Stop native Android service
+      await _channel.invokeMethod('stopTimer');
+      debugPrint('🔔 Native timer service stopped');
+    } catch (e) {
+      debugPrint('❌ Failed to stop native service: $e');
+      // Fallback: cancel Flutter notification
+      await _notifications.cancel(_notificationId);
+    }
+  }
+
+  /// Fallback Flutter-based timer (for when native service fails)
+  Future<void> _startFlutterTimer() async {
+    debugPrint('🔄 Using Flutter fallback timer');
+
+    // Start the foreground service with periodic updates
+    await _startForegroundService();
+
+    // Start the countdown timer
+    _startCountdownTimer();
   }
 
   /// Check if timer is running
