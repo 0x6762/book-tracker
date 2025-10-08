@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'reading_timer_service.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -182,6 +183,48 @@ class NotificationService {
         '📱 Timer service unavailable - reading session will continue without timer',
       );
       // Fallback: Continue without timer (user can still track reading manually)
+    }
+  }
+
+  /// Schedule a completion notification at a specific local DateTime
+  Future<void> scheduleCompletionNotificationAt(DateTime whenLocal) async {
+    try {
+      final tzWhen = tz.TZDateTime.from(whenLocal, tz.local);
+      await _notifications.zonedSchedule(
+        _timerCompleteId,
+        'Reading Session Complete!',
+        'Your reading timer has finished. Tap to update your progress.',
+        tzWhen,
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'reading_timer_complete',
+            'Reading Timer Complete',
+            channelDescription: 'Notifications for reading timer completion',
+            importance: Importance.high,
+            priority: Priority.high,
+            icon: '@drawable/ic_stat_name',
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: true,
+            presentBadge: true,
+          ),
+        ),
+        androidAllowWhileIdle: true,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+      debugPrint('🔔 Completion notification scheduled at $whenLocal');
+    } catch (e) {
+      debugPrint('❌ Scheduling completion notification failed: $e');
+    }
+  }
+
+  /// Cancel any scheduled completion notification
+  Future<void> cancelScheduledCompletionNotification() async {
+    try {
+      await _notifications.cancel(_timerCompleteId);
+    } catch (e) {
+      debugPrint('❌ Cancel scheduled completion notification failed: $e');
     }
   }
 

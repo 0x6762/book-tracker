@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -78,13 +79,21 @@ class BookTrackerHomePage extends StatefulWidget {
   State<BookTrackerHomePage> createState() => _BookTrackerHomePageState();
 }
 
-class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
+class _BookTrackerHomePageState extends State<BookTrackerHomePage>
+    with WidgetsBindingObserver {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Attempt restore after first frame (covers cold start)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<TimerService>().restoreFromPersistedState();
+      }
+    });
     // Delay book loading to let UI render first
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -140,9 +149,19 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Recompute remaining time and resume timer if needed
+      context.read<TimerService>().restoreFromPersistedState();
+    }
+    super.didChangeAppLifecycleState(state);
   }
 
   void _navigateToSearch() {
