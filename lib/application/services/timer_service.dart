@@ -79,12 +79,11 @@ class TimerService extends ChangeNotifier {
     // Show timer start notification
     await _notificationService.showTimerStartNotification();
 
-    // Schedule static "timer running" and completion notification
-    await _notificationService.scheduleTimerNotification(_totalSeconds);
-    final completionAt = DateTime.now().add(
-      Duration(seconds: _remainingSeconds),
+    // Start foreground service for timer
+    await _notificationService.scheduleTimerNotification(
+      _totalSeconds,
+      bookTitle: 'Current Book',
     );
-    await _notificationService.scheduleCompletionNotificationAt(completionAt);
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingSeconds > 0) {
@@ -114,7 +113,6 @@ class TimerService extends ChangeNotifier {
 
     // Cancel notification
     _notificationService.cancelTimerNotification();
-    _notificationService.cancelScheduledCompletionNotification();
 
     _timer?.cancel();
     _timer = null;
@@ -129,7 +127,6 @@ class TimerService extends ChangeNotifier {
   void resetTimer() {
     // Cancel notification
     _notificationService.cancelTimerNotification();
-    _notificationService.cancelScheduledCompletionNotification();
 
     _timer?.cancel();
     _timer = null;
@@ -269,10 +266,6 @@ class TimerService extends ChangeNotifier {
 
     // Ensure notifications are scheduled appropriately
     _notificationService.scheduleTimerNotification(_remainingSeconds);
-    final completionAt = DateTime.now().add(
-      Duration(seconds: _remainingSeconds),
-    );
-    _notificationService.scheduleCompletionNotificationAt(completionAt);
 
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {

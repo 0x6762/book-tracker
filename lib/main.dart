@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 import 'presentation/providers/book_list_provider.dart';
 import 'presentation/providers/search_provider.dart';
 import 'presentation/providers/ui_state_provider.dart';
@@ -20,8 +21,13 @@ import 'core/theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize timezone data
+  // Initialize timezone data with proper setup
   tz.initializeTimeZones();
+
+  // Set the local timezone for proper scheduling
+  if (tz.local.name.isEmpty) {
+    tz.setLocalLocation(tz.getLocation('UTC'));
+  }
 
   // Load environment variables from .env file
   // Make sure to copy .env.example to .env and add your API key
