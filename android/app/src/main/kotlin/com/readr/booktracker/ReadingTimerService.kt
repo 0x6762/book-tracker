@@ -163,7 +163,7 @@ class ReadingTimerService : Service() {
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .setAutoCancel(false)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
     }
 
@@ -211,11 +211,11 @@ class ReadingTimerService : Service() {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             
             // Always recreate channels to ensure they're updated
-            // Low importance channel for ongoing timer notifications
+            // High importance channel for ongoing timer notifications (temporary test)
             val timerChannel = NotificationChannel(
                 CHANNEL_ID,
                 CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = CHANNEL_DESCRIPTION
                 enableVibration(false)
