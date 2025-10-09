@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../domain/entities/book.dart';
 import '../domain/entities/reading_progress.dart';
+import '../domain/business/book_validation_service.dart';
 
 part 'book_database.g.dart';
 
@@ -122,22 +123,14 @@ class BookDatabase extends _$BookDatabase {
   }
 
   Future<void> updateProgress(int bookId, int currentPage) async {
-    // Validate business rules
-    if (currentPage < 0) {
-      throw ArgumentError('Current page cannot be negative');
-    }
-
-    // Get book to validate against page count
+    // Get book for validation
     final book = await (select(
       books,
     )..where((tbl) => tbl.id.equals(bookId))).getSingleOrNull();
-    if (book == null) {
-      throw ArgumentError('Book not found');
-    }
 
-    if (book.pageCount != null && currentPage > book.pageCount!) {
-      throw ArgumentError('Current page cannot exceed total page count');
-    }
+    // Validate using domain service
+    BookValidationService.validateBookExists(book);
+    BookValidationService.validateCurrentPage(currentPage, book!.pageCount);
 
     // If this is the first time updating progress (no startDate), set it
     final shouldSetStartDate = book.startDate == null;
@@ -158,32 +151,21 @@ class BookDatabase extends _$BookDatabase {
     int minutesRead,
   ) async {
     return await transaction(() async {
-      // Validate business rules
-      if (currentPage < 0) {
-        throw ArgumentError('Current page cannot be negative');
-      }
-      if (minutesRead < 0) {
-        throw ArgumentError('Reading time cannot be negative');
-      }
-
-      // Get book to validate against page count
+      // Get book for validation
       final book = await (select(
         books,
       )..where((tbl) => tbl.id.equals(bookId))).getSingleOrNull();
-      if (book == null) {
-        throw ArgumentError('Book not found');
-      }
 
-      if (book.pageCount != null && currentPage > book.pageCount!) {
-        throw ArgumentError('Current page cannot exceed total page count');
-      }
+      // Validate using domain service
+      BookValidationService.validateBookExists(book);
+      BookValidationService.validateCurrentPage(currentPage, book!.pageCount);
+      BookValidationService.validateReadingTime(minutesRead);
 
       // Calculate new total reading time
-      final newTotalTime = book.totalReadingTimeMinutes + minutesRead;
-      if (newTotalTime > 5256000) {
-        // 10 years in minutes
-        throw ArgumentError('Reading time exceeds reasonable limit');
-      }
+      final newTotalTime = BookValidationService.validateTotalReadingTime(
+        book.totalReadingTimeMinutes,
+        minutesRead,
+      );
 
       // Update both progress and reading time atomically
       // If this is the first time updating progress (no startDate), set it
@@ -210,22 +192,14 @@ class BookDatabase extends _$BookDatabase {
   }
 
   Future<void> startReading(int bookId, int currentPage) async {
-    // Validate business rules
-    if (currentPage < 0) {
-      throw ArgumentError('Current page cannot be negative');
-    }
-
-    // Get book to validate against page count
+    // Get book for validation
     final book = await (select(
       books,
     )..where((tbl) => tbl.id.equals(bookId))).getSingleOrNull();
-    if (book == null) {
-      throw ArgumentError('Book not found');
-    }
 
-    if (book.pageCount != null && currentPage > book.pageCount!) {
-      throw ArgumentError('Current page cannot exceed total page count');
-    }
+    // Validate using domain service
+    BookValidationService.validateBookExists(book);
+    BookValidationService.validateCurrentPage(currentPage, book!.pageCount);
 
     await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
       BooksCompanion(
@@ -238,26 +212,18 @@ class BookDatabase extends _$BookDatabase {
 
   // Add reading time to book's total
   Future<void> addReadingTime(int bookId, int minutes) async {
-    // Validate business rules
-    if (minutes < 0) {
-      throw ArgumentError('Reading time cannot be negative');
-    }
-
     final book = await (select(
       books,
     )..where((tbl) => tbl.id.equals(bookId))).getSingleOrNull();
 
-    if (book == null) {
-      throw ArgumentError('Book not found');
-    }
+    // Validate using domain service
+    BookValidationService.validateBookExists(book);
+    BookValidationService.validateReadingTime(minutes);
 
-    final newTotalTime = book.totalReadingTimeMinutes + minutes;
-
-    // Prevent overflow (reasonable limit: 10 years of reading)
-    if (newTotalTime > 5256000) {
-      // 10 years in minutes
-      throw ArgumentError('Reading time exceeds reasonable limit');
-    }
+    final newTotalTime = BookValidationService.validateTotalReadingTime(
+      book!.totalReadingTimeMinutes,
+      minutes,
+    );
 
     await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
       BooksCompanion(totalReadingTimeMinutes: Value(newTotalTime)),

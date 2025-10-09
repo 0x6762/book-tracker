@@ -5,13 +5,19 @@ import android.content.Intent
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.EventChannel.EventSink
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "reading_timer/native_service"
+    private val EVENT_CHANNEL = "reading_timer/events"
+    private var eventSink: EventSink? = null
+    
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         
+        // Method Channel for commands
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "startTimer" -> {
@@ -33,6 +39,45 @@ class MainActivity : FlutterActivity() {
                 }
             }
         }
+        
+        // Event Channel for real-time updates
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger, EVENT_CHANNEL).setStreamHandler(
+            object : EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, events: EventSink?) {
+                    eventSink = events
+                    staticEventSink = events
+                }
+                
+                override fun onCancel(arguments: Any?) {
+                    eventSink = null
+                    staticEventSink = null
+                }
+            }
+        )
+    }
+    
+    // Method to send timer updates to Flutter
+    fun sendTimerUpdate(isRunning: Boolean, remainingSeconds: Int, totalSeconds: Int, bookTitle: String) {
+        eventSink?.success(mapOf(
+            "isRunning" to isRunning,
+            "remainingSeconds" to remainingSeconds,
+            "totalSeconds" to totalSeconds,
+            "bookTitle" to bookTitle
+        ))
+    }
+    
+    // Static method for service to call
+    companion object {
+        private var staticEventSink: EventSink? = null
+        
+        fun sendTimerUpdateStatic(isRunning: Boolean, remainingSeconds: Int, totalSeconds: Int, bookTitle: String) {
+            staticEventSink?.success(mapOf(
+                "isRunning" to isRunning,
+                "remainingSeconds" to remainingSeconds,
+                "totalSeconds" to totalSeconds,
+                "bookTitle" to bookTitle
+            ))
+        }
     }
 
     private fun startTimerService(totalSeconds: Int, bookTitle: String) {
@@ -52,30 +97,25 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun getTimerState(): Map<String, Any> {
-        // Try to get state from service if it's running
+        // For now, return a simple state - we'll improve this later
+        // The issue is that service binding is asynchronous
         return try {
-            val serviceConnection = object : android.content.ServiceConnection {
-                var service: ReadingTimerService? = null
-                
-                override fun onServiceConnected(name: android.content.ComponentName?, binder: android.os.IBinder?) {
-                    service = (binder as ReadingTimerService.TimerBinder).getService()
-                }
-                
-                override fun onServiceDisconnected(name: android.content.ComponentName?) {
-                    service = null
-                }
-            }
+            // Check if service is running by looking at SharedPreferences
+            val prefs = getSharedPreferences("reading_timer_service", Context.MODE_PRIVATE)
+            val isRunning = prefs.getBoolean("is_running", false)
+            val totalSeconds = prefs.getInt("total_seconds", 0)
+            val startTime = prefs.getLong("start_time", 0)
+            val bookTitle = prefs.getString("book_title", "") ?: ""
             
-            val intent = Intent(this, ReadingTimerService::class.java)
-            val bound = bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-            
-            if (bound && serviceConnection.service != null) {
-                val service = serviceConnection.service!!
+            if (isRunning && startTime > 0 && totalSeconds > 0) {
+                val elapsedSeconds = ((System.currentTimeMillis() - startTime) / 1000).toInt()
+                val remainingSeconds = (totalSeconds - elapsedSeconds).coerceAtLeast(0)
+                
                 mapOf(
-                    "isRunning" to service.isTimerRunning(),
-                    "remainingSeconds" to service.getRemainingSeconds(),
-                    "totalSeconds" to service.getTotalSeconds(),
-                    "bookTitle" to service.getBookTitle()
+                    "isRunning" to (remainingSeconds > 0),
+                    "remainingSeconds" to remainingSeconds,
+                    "totalSeconds" to totalSeconds,
+                    "bookTitle" to bookTitle
                 )
             } else {
                 mapOf(

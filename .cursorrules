@@ -1,0 +1,190 @@
+# Book Tracker - Project Guidelines
+
+## Project Overview
+A Flutter book tracking application for Android that helps users manage their reading list and track reading progress with features like search, reading timers, and progress tracking.
+
+## Project Structure
+```
+lib/
+├── application/
+│   └── services/          # App-level services (timer, notifications, book management)
+│       ├── timer_service.dart           # Flutter UI sync service
+│       ├── native_timer_service.dart    # Native service bridge
+│       └── notification_service.dart    # Flutter notification fallback
+├── core/
+│   ├── constants/         # App constants and configuration
+│   ├── di/               # Dependency injection (ServiceLocator)
+│   ├── errors/           # Custom error classes
+│   ├── theme/            # UI themes, colors, text styles
+│   └── utils/            # Utility functions and helpers
+├── data/
+│   ├── datasources/      # External data sources (Google Books API)
+│   ├── mappers/          # Data transformation between layers
+│   ├── repositories/     # Data layer repository implementations
+│   ├── book_database.dart # Drift database setup
+│   └── book_database.g.dart # Generated database code
+├── domain/
+│   ├── business/         # Business validation services (keep simple)
+│   ├── entities/         # Domain models (Book, ReadingProgress)
+│   └── repositories/     # Repository interfaces (contracts)
+├── presentation/
+│   ├── providers/        # State management (Provider pattern)
+│   ├── screens/          # Full screen widgets
+│   ├── utils/            # UI-specific utilities
+│   └── widgets/          # Reusable UI components
+└── main.dart             # App entry point
+
+android/app/src/main/kotlin/
+├── com/readr/booktracker/
+│   ├── MainActivity.kt           # Flutter activity with method channels
+│   └── ReadingTimerService.kt    # Native Android foreground service
+└── com/example/book_tracker/
+    └── MainActivity.kt           # Legacy activity (can be removed)
+```
+
+## Key Technologies & Dependencies
+- **State Management**: Provider
+- **Database**: Drift (SQLite)
+- **HTTP**: Dio + HTTP
+- **UI**: Material Design with custom theming
+- **Notifications**: flutter_local_notifications + Native Android service
+- **Audio**: audioplayers
+- **Images**: cached_network_image, palette_generator
+- **Environment**: flutter_dotenv
+- **Native Integration**: Kotlin method channels for foreground service
+
+## Architecture Rules
+
+### File Placement
+- **New screens** → `presentation/screens/`
+- **Reusable widgets** → `presentation/widgets/`
+- **Business validation** → `domain/business/` (keep simple, avoid over-engineering)
+- **Data access** → `data/repositories/`
+- **State management** → `presentation/providers/`
+- **Services** → `application/services/`
+- **Database models** → `data/` (with Drift annotations)
+- **Domain models** → `domain/entities/`
+- **Native Android code** → `android/app/src/main/kotlin/com/readr/booktracker/`
+
+### Naming Conventions
+- **Files**: snake_case (e.g., `book_details_screen.dart`)
+- **Classes**: PascalCase (e.g., `BookDetailsScreen`)
+- **Variables/Functions**: camelCase (e.g., `loadBooks()`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `APP_TITLE`)
+- **Providers**: End with `Provider` (e.g., `BookListProvider`)
+
+### State Management (Provider)
+- **Provider Types**: Use `ChangeNotifierProvider` for mutable state, `Provider` for immutable
+- **Cross-Provider Communication**: Use `context.read<OtherProvider>()` in methods, not in `build()`
+- **State Persistence**: Use SharedPreferences in services, not in providers
+- **Memory Management**: Always call `dispose()` in providers, cancel subscriptions
+- **Common Gotchas**: Don't call `notifyListeners()` in `build()`, use `addPostFrameCallback` for UI updates
+
+#### Provider Patterns
+- **Single Responsibility**: Each provider should handle one feature/domain
+- **Immutable State**: Use `Provider` for data that doesn't change (config, constants)
+- **Mutable State**: Use `ChangeNotifierProvider` for data that changes (timers, UI state)
+- **Complex State**: Use `MultiProvider` for multiple related providers
+
+#### State Lifecycle
+- **Initialization**: Initialize state in constructor or `initState()`
+- **Updates**: Call `notifyListeners()` after state changes
+- **Disposal**: Override `dispose()` to cancel timers, subscriptions, controllers
+- **Persistence**: Save important state to SharedPreferences in services
+
+#### Common Patterns
+- **Timer State**: Use `TimerService` for timer logic, `UIStateProvider` for UI state
+- **Book Data**: Use `BookListProvider` for list, `BookDetailsProvider` for individual book
+- **Search State**: Use `SearchProvider` for search logic and results
+- **Modal State**: Use `UIStateProvider` for modals, loading states, navigation
+
+#### Anti-Patterns to Avoid
+- **Don't**: Call `notifyListeners()` in `build()` method
+- **Don't**: Store complex objects in providers (use services instead)
+- **Don't**: Access providers in constructors (use `addPostFrameCallback`)
+- **Don't**: Forget to dispose subscriptions and timers
+- **Don't**: Put business logic in providers (use services instead)
+
+### Database (Drift)
+- Define tables in `book_database.dart`
+- Use `@DriftDatabase` for main database class
+- Generate code with `dart run build_runner build`
+- Keep database operations in repository implementations
+- **No business validation in database** - use domain validation services
+
+### API Integration
+- Use **Dio** for HTTP requests
+- Keep API calls in `data/datasources/`
+- Transform API responses using mappers
+- Handle errors gracefully with try-catch
+
+### UI Guidelines
+- Follow Material Design principles
+- Use custom theme from `core/theme/`
+- Implement responsive design
+- Use Hero animations for smooth transitions
+- Keep widgets small and focused
+- Extract reusable components to `presentation/widgets/`
+
+### Error Handling
+- Define custom errors in `core/errors/`
+- Handle errors at appropriate layers
+- Show user-friendly error messages
+- Log errors for debugging
+
+### Native Android Integration
+- **Method Channels**: Flutter ↔ Kotlin communication via `reading_timer/native_service`
+- **Foreground Service**: `ReadingTimerService.kt` handles persistent timer notifications
+- **Service Lifecycle**: Uses `START_STICKY` to survive app termination
+- **State Persistence**: SharedPreferences for timer state restoration
+- **Notification Channels**: Separate channels for timer vs completion notifications
+- **Service Communication**: MainActivity.kt bridges Flutter and native service
+
+### Timer Architecture (Native-First)
+- **Native Service**: Single source of truth for timer logic and notifications
+- **EventChannel Communication**: Real-time updates via EventChannel (no polling)
+- **State Sync**: Native service pushes updates to Flutter via EventChannel stream
+- **Completion Flow**: Native service handles all completion notifications
+- **Background Persistence**: Native service survives app termination
+- **Graceful Fallback**: Flutter timer fallback if native service unavailable
+- **Progress Update Modal**: Flutter handles UI flow after timer completion
+- **Notification Behavior**: Silent in-progress, loud completion notifications
+
+**Key Pattern**: Native service pushes updates, Flutter receives and updates UI reactively.
+
+### Timer Flow
+1. **Start**: User taps start → Native service starts with silent in-progress notification
+2. **Running**: Native service updates notification every second with countdown
+3. **Complete**: Timer ends or user stops → Native shows completion notification + Flutter shows progress modal
+4. **Update**: User updates progress → Book progress saved, timer resets
+
+### Key Architectural Decisions
+- **Native-First Timer**: Native Android service handles all timer logic and notifications
+- **EventChannel Pattern**: Real-time updates via EventChannel instead of polling
+- **No Duplicate Notifications**: Only native service shows notifications
+- **Conditional Reset**: Only reset timers when actually needed (prevents premature completion)
+- **State Persistence**: SharedPreferences for reliable state reading across app restarts
+- **Graceful Fallback**: Flutter timer fallback if native service fails
+- **Clean Separation**: Native = logic + push updates, Flutter = UI + receive updates
+- **Completion Detection**: Uses `hasTimerJustCompleted` getter for reliable completion flow
+- **Silent Notifications**: In-progress notifications are silent, completion notifications are loud
+
+## Before Making Changes
+1. **Check existing patterns** in similar files
+2. **Follow the established folder structure**
+3. **Maintain separation of concerns** between layers
+4. **Use existing providers** before creating new ones
+5. **Follow naming conventions** consistently
+6. **Update database schema** if adding new data models
+7. **Test state management** changes thoroughly
+8. **Use domain validation services** for business rules (keep simple)
+9. **Keep database layer pure** - no business logic
+10. **Avoid over-engineering** - prefer simple solutions over complex ones
+
+## Code Quality
+- Use `flutter_lints` rules
+- Write clean, readable code
+- Add comments for complex logic
+- Keep functions small and focused
+- Use meaningful variable names
+- Handle edge cases appropriately

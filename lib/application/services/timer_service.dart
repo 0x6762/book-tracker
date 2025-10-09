@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'notification_service.dart';
+import 'native_timer_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TimerService extends ChangeNotifier {
@@ -9,6 +10,7 @@ class TimerService extends ChangeNotifier {
   TimerService._internal();
 
   final NotificationService _notificationService = NotificationService();
+  final NativeTimerService _nativeTimerService = NativeTimerService();
 
   // Timer state
   Timer? _timer;
@@ -18,6 +20,9 @@ class TimerService extends ChangeNotifier {
   int? _currentBookId;
   bool _wasManuallyStopped = false;
   bool _completionHandled = false;
+
+  // Stream subscription for native timer updates
+  StreamSubscription<Map<String, dynamic>>? _timerStateSubscription;
 
   // Persistence keys
   static const String _prefsKeyIsRunning = 'timer_is_running';
@@ -34,9 +39,15 @@ class TimerService extends ChangeNotifier {
       _remainingSeconds <= 0 && _totalSeconds > 0 && !_completionHandled;
   bool get wasManuallyStopped => _wasManuallyStopped && !_completionHandled;
 
+  // New getter for completion detection that works after _completionHandled is set
+  bool get hasTimerJustCompleted => _completionHandled && _totalSeconds > 0;
+
   // Timer methods
   void setTimer(int bookId, int minutes) {
-    resetTimer(); // Reset any existing timer
+    // Only reset if there's an active timer running
+    if (_isTimerRunning) {
+      resetTimer();
+    }
 
     _currentBookId = bookId;
     // Special case: 0 minutes = 5 seconds for testing
@@ -60,20 +71,20 @@ class TimerService extends ChangeNotifier {
     _isTimerRunning = true;
     _currentBookId = bookId;
 
-    // Start foreground service for timer FIRST (this shows notification immediately)
-    await _notificationService.scheduleTimerNotification(
-      _totalSeconds,
-      bookTitle: 'Current Book',
-    );
+    try {
+      // Start native Android service - this handles everything
+      await _nativeTimerService.startTimer(
+        _totalSeconds,
+        bookTitle: 'Current Book',
+      );
 
-    // Check permissions in background (non-blocking)
-    _notificationService.ensurePermissions().then((hasPermission) {
-      if (!hasPermission) {
-        print(
-          '⚠️ Notification permissions not granted, timer will start but notifications may not work',
-        );
-      }
-    });
+      debugPrint('🔔 Started native timer service (single source of truth)');
+    } catch (e) {
+      debugPrint('❌ Native timer failed: $e');
+      _isTimerRunning = false;
+      notifyListeners();
+      return;
+    }
 
     // Persist timer metadata for stateless resume (non-blocking)
     _persistTimerState(
@@ -83,19 +94,8 @@ class TimerService extends ChangeNotifier {
       bookId: _currentBookId!,
     );
 
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingSeconds > 0) {
-        _remainingSeconds--;
-        notifyListeners();
-      } else {
-        // Timer completed
-        _timer?.cancel();
-        _timer = null;
-        _isTimerRunning = false;
-        notifyListeners();
-        _onTimerCompleted();
-      }
-    });
+    // Start listening to native timer updates
+    _startNativeTimerListener();
 
     notifyListeners();
   }
@@ -109,22 +109,29 @@ class TimerService extends ChangeNotifier {
     // Mark as manually stopped
     _wasManuallyStopped = true;
 
-    // Cancel notification
-    _notificationService.cancelTimerNotification();
+    // Stop listening to native updates
+    _timerStateSubscription?.cancel();
+    _timerStateSubscription = null;
 
-    _timer?.cancel();
-    _timer = null;
-    _isTimerRunning = false;
+    // Stop native service (handles everything)
+    _nativeTimerService.stopTimer().catchError((e) {
+      debugPrint('⚠️ Failed to stop native timer: $e');
+    });
+
     // Clear persisted state
     _clearPersistedTimerState();
 
     // Trigger completion flow for manual stop
-    _onTimerCompleted();
+    _handleTimerCompletion();
+
+    notifyListeners();
   }
 
   void resetTimer() {
-    // Cancel notification
-    _notificationService.cancelTimerNotification();
+    // Stop native service (handles notifications)
+    _nativeTimerService.stopTimer().catchError((e) {
+      debugPrint('⚠️ Failed to stop native timer: $e');
+    });
 
     _timer?.cancel();
     _timer = null;
@@ -153,17 +160,85 @@ class TimerService extends ChangeNotifier {
     }
   }
 
-  void _onTimerCompleted() {
-    print('⏰ Reading session completed!');
+  /// Start listening to native timer updates via EventChannel
+  void _startNativeTimerListener() {
+    _timerStateSubscription?.cancel(); // Cancel any existing subscription
 
-    // Show completion notification
-    _notificationService.showTimerCompleteNotification();
+    _timerStateSubscription = _nativeTimerService.timerStateStream.listen(
+      (nativeState) {
+        final isRunning = nativeState['isRunning'] as bool? ?? false;
+        final remainingSeconds = nativeState['remainingSeconds'] as int? ?? 0;
+        final totalSeconds = nativeState['totalSeconds'] as int? ?? 0;
+        final bookTitle = nativeState['bookTitle'] as String? ?? '';
+
+        debugPrint(
+          '🔄 Native update: isRunning=$isRunning, remaining=$remainingSeconds, total=$totalSeconds',
+        );
+
+        // Update Flutter state to match native
+        _remainingSeconds = remainingSeconds;
+        _isTimerRunning = isRunning;
+        if (totalSeconds > 0) {
+          _totalSeconds = totalSeconds;
+        }
+
+        // Handle completion if timer finished
+        if (!isRunning &&
+            remainingSeconds == 0 &&
+            _totalSeconds > 0 &&
+            !_completionHandled) {
+          debugPrint('🎯 Timer completion detected from native service');
+          _handleTimerCompletion();
+        }
+
+        notifyListeners();
+      },
+      onError: (error) {
+        debugPrint('⚠️ Native timer stream error: $error');
+        // Fallback: use Flutter timer logic
+        _startFallbackTimer();
+      },
+    );
+  }
+
+  /// Fallback timer when native service is unavailable
+  void _startFallbackTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_remainingSeconds > 0) {
+        _remainingSeconds--;
+        notifyListeners();
+      } else if (_totalSeconds > 0 && !_completionHandled) {
+        _handleTimerCompletion();
+      }
+    });
+  }
+
+  /// Handle timer completion (called when native service reports completion)
+  void _handleTimerCompletion() {
+    if (_completionHandled) return; // Prevent multiple calls
+
+    _completionHandled = true;
+    _isTimerRunning = false;
+    _timer?.cancel();
+    _timer = null;
+
+    debugPrint('⏰ Reading session completed!');
 
     // Clear persisted state
     _clearPersistedTimerState();
 
-    // Notify listeners that timer completed
+    // Trigger progress update modal
+    _triggerProgressUpdateModal();
+
     notifyListeners();
+  }
+
+  /// Trigger progress update modal
+  void _triggerProgressUpdateModal() {
+    // This will be handled by the UI layer
+    // We just need to notify that completion happened
+    debugPrint('📝 Triggering progress update modal for book $_currentBookId');
   }
 
   // Mark completion as handled to prevent multiple triggers
@@ -175,6 +250,12 @@ class TimerService extends ChangeNotifier {
   // Clear completion state after handling
   void clearCompletionState() {
     _wasManuallyStopped = false;
+    _completionHandled = false;
+    notifyListeners();
+  }
+
+  // Clear just completed state (called after modal is shown)
+  void clearJustCompletedState() {
     _completionHandled = false;
     notifyListeners();
   }
@@ -201,6 +282,7 @@ class TimerService extends ChangeNotifier {
   @override
   void dispose() {
     _timer?.cancel();
+    _timerStateSubscription?.cancel();
     _notificationService.dispose();
     super.dispose();
   }
@@ -251,33 +333,19 @@ class TimerService extends ChangeNotifier {
       _totalSeconds = totalSeconds;
       _remainingSeconds = 0;
       _isTimerRunning = false;
-      _onTimerCompleted();
+      _handleTimerCompletion();
       notifyListeners();
       return;
     }
 
-    // Restore in-memory state and restart ticking
+    // Restore in-memory state
     _currentBookId = bookId;
     _totalSeconds = totalSeconds;
     _remainingSeconds = remaining;
     _isTimerRunning = true;
 
-    // Don't start a new native service if one is already running
-    // The native service should already be running from the original start
-
-    _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingSeconds > 0) {
-        _remainingSeconds--;
-        notifyListeners();
-      } else {
-        _timer?.cancel();
-        _timer = null;
-        _isTimerRunning = false;
-        notifyListeners();
-        _onTimerCompleted();
-      }
-    });
+    // Start listening to native timer updates
+    _startNativeTimerListener();
 
     notifyListeners();
   }

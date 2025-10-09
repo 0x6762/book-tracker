@@ -1,46 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'dart:async';
-import 'dart:collection';
 import '../../data/book_database.dart';
 import 'package:drift/drift.dart';
-
-// Simple semaphore implementation for concurrency control
-class Semaphore {
-  final int maxCount;
-  int _currentCount;
-  final Queue<Completer<void>> _waitQueue = Queue<Completer<void>>();
-
-  Semaphore(this.maxCount) : _currentCount = maxCount;
-
-  Future<void> acquire() async {
-    if (_currentCount > 0) {
-      _currentCount--;
-      return;
-    }
-
-    final completer = Completer<void>();
-    _waitQueue.add(completer);
-    return completer.future;
-  }
-
-  void release() {
-    if (_waitQueue.isNotEmpty) {
-      final completer = _waitQueue.removeFirst();
-      completer.complete();
-    } else {
-      _currentCount++;
-    }
-  }
-}
 
 class ColorExtractor {
   // Cache per-image URL to avoid recomputation and repeated network decode
   static final Map<String, Color> _cacheByUrl = <String, Color>{};
-
-  // Concurrency control - limit to 2 parallel extractions
-  static final Semaphore _extractionSemaphore = Semaphore(2);
 
   // Database reference for persistent caching
   static dynamic _database;
@@ -223,43 +189,34 @@ class ColorExtractor {
       }
     }
 
-    // If not cached, extract with concurrency control
-    await _extractionSemaphore.acquire();
-    try {
-      // Double-check memory cache in case another extraction completed
-      final cached = _cacheByUrl[imageUrl];
-      if (cached != null) return cached;
+    // If not cached, extract color
+    final color = await extractVividProminentColor(
+      imageUrl,
+      blendAnchor: blendAnchor,
+      contrastAgainstSurface: contrastAgainstSurface,
+    );
 
-      final color = await extractVividProminentColor(
-        imageUrl,
-        blendAnchor: blendAnchor,
-        contrastAgainstSurface: contrastAgainstSurface,
-      );
+    if (color != null) {
+      // Cache in memory
+      _cacheByUrl[imageUrl] = color;
 
-      if (color != null) {
-        // Cache in memory
-        _cacheByUrl[imageUrl] = color;
-
-        // Cache in database
-        if (_database != null) {
-          try {
-            await _database.insertOrUpdateBookColor(
-              BookColorsCompanion(
-                bookId: Value(bookId),
-                accentColor: Value(color.value),
-                extractedAt: Value(DateTime.now()),
-              ),
-            );
-          } catch (e) {
-            print('Error saving color to database: $e');
-          }
+      // Cache in database
+      if (_database != null) {
+        try {
+          await _database.insertOrUpdateBookColor(
+            BookColorsCompanion(
+              bookId: Value(bookId),
+              accentColor: Value(color.value),
+              extractedAt: Value(DateTime.now()),
+            ),
+          );
+        } catch (e) {
+          print('Error saving color to database: $e');
         }
       }
-
-      return color;
-    } finally {
-      _extractionSemaphore.release();
     }
+
+    return color;
   }
 
   /// Clears the cached colors
