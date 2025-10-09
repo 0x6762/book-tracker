@@ -122,8 +122,16 @@ android/app/src/main/kotlin/
 - **Completion Flow**: Native service handles all completion notifications
 - **Background Persistence**: Native service survives app termination
 - **Graceful Fallback**: Flutter timer fallback if native service unavailable
+- **Progress Update Modal**: Flutter handles UI flow after timer completion
+- **Notification Behavior**: Silent in-progress, loud completion notifications
 
 **Key Pattern**: Native service pushes updates, Flutter receives and updates UI reactively.
+
+### Timer Flow
+1. **Start**: User taps start → Native service starts with silent in-progress notification
+2. **Running**: Native service updates notification every second with countdown
+3. **Complete**: Timer ends or user stops → Native shows completion notification + Flutter shows progress modal
+4. **Update**: User updates progress → Book progress saved, timer resets
 
 ### Key Architectural Decisions
 - **Native-First Timer**: Native Android service handles all timer logic and notifications
@@ -133,6 +141,8 @@ android/app/src/main/kotlin/
 - **State Persistence**: SharedPreferences for reliable state reading across app restarts
 - **Graceful Fallback**: Flutter timer fallback if native service fails
 - **Clean Separation**: Native = logic + push updates, Flutter = UI + receive updates
+- **Completion Detection**: Uses `hasTimerJustCompleted` getter for reliable completion flow
+- **Silent Notifications**: In-progress notifications are silent, completion notifications are loud
 
 ## Before Making Changes
 1. **Check existing patterns** in similar files
