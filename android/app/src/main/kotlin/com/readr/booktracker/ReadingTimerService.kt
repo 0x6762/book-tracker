@@ -88,7 +88,9 @@ class ReadingTimerService : Service() {
         createNotificationChannel()
 
         // Start foreground service with initial notification
-        startForeground(NOTIFICATION_ID, buildNotification())
+        val notification = buildNotification()
+        startForeground(NOTIFICATION_ID, notification)
+        android.util.Log.d("ReadingTimerService", "📱 Started foreground service with notification")
 
         // Persist state
         saveTimerState()
@@ -205,11 +207,10 @@ class ReadingTimerService : Service() {
     }
 
     private fun createNotificationChannel() {
-        if (channelsCreated) return // Skip if already created
-        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             
+            // Always recreate channels to ensure they're updated
             // Low importance channel for ongoing timer notifications
             val timerChannel = NotificationChannel(
                 CHANNEL_ID,
@@ -219,6 +220,7 @@ class ReadingTimerService : Service() {
                 description = CHANNEL_DESCRIPTION
                 enableVibration(false)
                 setShowBadge(false)
+                setSound(null, null) // No sound
             }
             
             // High importance channel for completion notifications
@@ -234,7 +236,6 @@ class ReadingTimerService : Service() {
             
             notificationManager.createNotificationChannel(timerChannel)
             notificationManager.createNotificationChannel(completionChannel)
-            channelsCreated = true
             android.util.Log.d("ReadingTimerService", "📱 Created notification channels")
         }
     }
