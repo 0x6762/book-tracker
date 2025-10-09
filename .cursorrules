@@ -1,0 +1,116 @@
+# Book Tracker - Project Guidelines
+
+## Project Overview
+A Flutter book tracking application for Android that helps users manage their reading list and track reading progress with features like search, reading timers, and progress tracking.
+
+## Project Structure
+```
+lib/
+├── application/
+│   └── services/          # App-level services (timer, notifications, book management)
+├── core/
+│   ├── constants/         # App constants and configuration
+│   ├── di/               # Dependency injection (ServiceLocator)
+│   ├── errors/           # Custom error classes
+│   ├── theme/            # UI themes, colors, text styles
+│   └── utils/            # Utility functions and helpers
+├── data/
+│   ├── datasources/      # External data sources (Google Books API)
+│   ├── mappers/          # Data transformation between layers
+│   ├── repositories/     # Data layer repository implementations
+│   ├── book_database.dart # Drift database setup
+│   └── book_database.g.dart # Generated database code
+├── domain/
+│   ├── business/         # Business logic, use cases, and validation
+│   ├── entities/         # Domain models (Book, ReadingProgress)
+│   └── repositories/     # Repository interfaces (contracts)
+├── presentation/
+│   ├── providers/        # State management (Provider pattern)
+│   ├── screens/          # Full screen widgets
+│   ├── utils/            # UI-specific utilities
+│   └── widgets/          # Reusable UI components
+└── main.dart             # App entry point
+```
+
+## Key Technologies & Dependencies
+- **State Management**: Provider
+- **Database**: Drift (SQLite)
+- **HTTP**: Dio + HTTP
+- **UI**: Material Design with custom theming
+- **Notifications**: flutter_local_notifications
+- **Audio**: audioplayers
+- **Images**: cached_network_image, palette_generator
+- **Environment**: flutter_dotenv
+
+## Architecture Rules
+
+### File Placement
+- **New screens** → `presentation/screens/`
+- **Reusable widgets** → `presentation/widgets/`
+- **Business logic** → `domain/business/`
+- **Business validation** → `domain/business/` (use validation services)
+- **Data access** → `data/repositories/`
+- **State management** → `presentation/providers/`
+- **Services** → `application/services/`
+- **Database models** → `data/` (with Drift annotations)
+- **Domain models** → `domain/entities/`
+
+### Naming Conventions
+- **Files**: snake_case (e.g., `book_details_screen.dart`)
+- **Classes**: PascalCase (e.g., `BookDetailsScreen`)
+- **Variables/Functions**: camelCase (e.g., `loadBooks()`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `APP_TITLE`)
+- **Providers**: End with `Provider` (e.g., `BookListProvider`)
+
+### State Management
+- Use **Provider** for all state management
+- Create separate providers for different features
+- Keep providers focused on single responsibilities
+- Use `ChangeNotifierProvider` for most cases
+- Access providers with `context.read<ProviderType>()`
+
+### Database (Drift)
+- Define tables in `book_database.dart`
+- Use `@DriftDatabase` for main database class
+- Generate code with `dart run build_runner build`
+- Keep database operations in repository implementations
+- **No business validation in database** - use domain validation services
+
+### API Integration
+- Use **Dio** for HTTP requests
+- Keep API calls in `data/datasources/`
+- Transform API responses using mappers
+- Handle errors gracefully with try-catch
+
+### UI Guidelines
+- Follow Material Design principles
+- Use custom theme from `core/theme/`
+- Implement responsive design
+- Use Hero animations for smooth transitions
+- Keep widgets small and focused
+- Extract reusable components to `presentation/widgets/`
+
+### Error Handling
+- Define custom errors in `core/errors/`
+- Handle errors at appropriate layers
+- Show user-friendly error messages
+- Log errors for debugging
+
+## Before Making Changes
+1. **Check existing patterns** in similar files
+2. **Follow the established folder structure**
+3. **Maintain separation of concerns** between layers
+4. **Use existing providers** before creating new ones
+5. **Follow naming conventions** consistently
+6. **Update database schema** if adding new data models
+7. **Test state management** changes thoroughly
+8. **Use domain validation services** for business rules
+9. **Keep database layer pure** - no business logic
+
+## Code Quality
+- Use `flutter_lints` rules
+- Write clean, readable code
+- Add comments for complex logic
+- Keep functions small and focused
+- Use meaningful variable names
+- Handle edge cases appropriately

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'reading_timer_service.dart';
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -11,8 +10,10 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
 
-  // Foreground service for reading timer
-  final ReadingTimerService _readingTimerService = ReadingTimerService();
+  // Timer state for notifications
+  Timer? _timer;
+  int _remainingSeconds = 0;
+  bool _isRunning = false;
 
   /// Initialize the notification service
   Future<void> initialize() async {
@@ -34,8 +35,7 @@ class NotificationService {
     // Create notification channels for Android
     await _createNotificationChannels();
 
-    // Initialize reading timer service
-    await _readingTimerService.initialize();
+    // Timer service is now handled internally
 
     // Request notification permissions
     await _requestNotificationPermissions();
@@ -61,7 +61,17 @@ class NotificationService {
         ),
       );
 
-      // (test channel removed)
+      // Timer foreground channel (for in-progress timer)
+      await androidPlugin.createNotificationChannel(
+        const AndroidNotificationChannel(
+          'reading_timer_foreground',
+          'Reading Timer',
+          description: 'Ongoing reading timer notifications',
+          importance: Importance.low,
+          enableVibration: false,
+          playSound: false,
+        ),
+      );
     }
   }
 
@@ -156,29 +166,140 @@ class NotificationService {
     }
   }
 
-  /// Schedule notification for timer completion using foreground service
+  /// Schedule notification for timer completion
   Future<void> scheduleTimerNotification(
     int totalSeconds, {
     String bookTitle = '',
   }) async {
     try {
-      // Use foreground service for reading timer
-      await _readingTimerService.startTimer(totalSeconds, bookTitle: bookTitle);
-      debugPrint('🔔 Started reading timer with foreground service');
+      if (_isRunning) {
+        await cancelTimerNotification();
+      }
+
+      _remainingSeconds = totalSeconds;
+      _isRunning = true;
+
+      // Show initial notification
+      await _showTimerNotification(bookTitle);
+
+      // Start countdown timer that updates notification
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (_remainingSeconds > 0) {
+          _remainingSeconds--;
+          _updateTimerNotification(bookTitle);
+        } else {
+          _onTimerCompleted();
+        }
+      });
+
+      debugPrint('🔔 Started reading timer notification');
     } catch (e) {
       debugPrint('⚠️ Could not start reading timer: $e');
       debugPrint(
         '📱 Timer service unavailable - reading session will continue without timer',
       );
-      // Fallback: Continue without timer (user can still track reading manually)
+    }
+  }
+
+  /// Show the in-progress timer notification
+  Future<void> _showTimerNotification(String bookTitle) async {
+    try {
+      await _notifications.show(
+        1001, // Timer notification ID
+        '📚 Reading Timer',
+        _getTimerNotificationText(bookTitle),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'reading_timer_foreground',
+            'Reading Timer',
+            channelDescription: 'Ongoing reading timer notifications',
+            importance: Importance.low,
+            priority: Priority.low,
+            ongoing: true,
+            showWhen: false,
+            icon: '@drawable/ic_stat_name',
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: false,
+            presentBadge: false,
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ Failed to show timer notification: $e');
+    }
+  }
+
+  /// Update the timer notification with current time
+  Future<void> _updateTimerNotification(String bookTitle) async {
+    try {
+      await _notifications.show(
+        1001, // Same ID to update existing notification
+        '📚 Reading Timer',
+        _getTimerNotificationText(bookTitle),
+        const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'reading_timer_foreground',
+            'Reading Timer',
+            channelDescription: 'Ongoing reading timer notifications',
+            importance: Importance.low,
+            priority: Priority.low,
+            ongoing: true,
+            showWhen: false,
+            icon: '@drawable/ic_stat_name',
+          ),
+          iOS: DarwinNotificationDetails(
+            presentAlert: false,
+            presentBadge: false,
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('❌ Failed to update timer notification: $e');
+    }
+  }
+
+  /// Get notification text with current time
+  String _getTimerNotificationText(String bookTitle) {
+    final minutes = _remainingSeconds ~/ 60;
+    final seconds = _remainingSeconds % 60;
+    final timeText =
+        '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')} remaining';
+
+    if (bookTitle.isNotEmpty) {
+      return 'Reading: $bookTitle - $timeText';
+    } else {
+      return 'Reading Timer - $timeText';
     }
   }
 
   /// Cancel timer notification
   Future<void> cancelTimerNotification() async {
-    await _readingTimerService.stopTimer();
+    _isRunning = false;
+    _timer?.cancel();
+    _timer = null;
+
+    // Actually cancel the notification
+    try {
+      await _notifications.cancel(1001);
+      debugPrint('🔔 Timer notification cancelled');
+    } catch (e) {
+      debugPrint('❌ Failed to cancel timer notification: $e');
+    }
+  }
+
+  /// Handle timer completion
+  void _onTimerCompleted() {
+    _timer?.cancel();
+    _timer = null;
+    _isRunning = false;
+    debugPrint('⏰ Reading timer completed');
+    // The completion notification will be handled by TimerService
   }
 
   /// Dispose resources
-  void dispose() {}
+  void dispose() {
+    _timer?.cancel();
+    _timer = null;
+  }
 }

@@ -5,7 +5,6 @@ import '../../application/services/reading_progress_service.dart';
 import '../../application/services/color_extraction_service.dart';
 import '../../application/services/notification_service.dart';
 import '../../application/services/timer_service.dart';
-import '../../application/services/reading_timer_service.dart';
 
 /// Simple service locator for dependency injection
 class ServiceLocator {
@@ -23,7 +22,6 @@ class ServiceLocator {
   late final ColorExtractionService _colorExtractionService;
   late final NotificationService _notificationService;
   late final TimerService _timerService;
-  late final ReadingTimerService _readingTimerService;
 
   // Initialize all services
   Future<void> initialize() async {
@@ -37,7 +35,6 @@ class ServiceLocator {
     _colorExtractionService = ColorExtractionService(_database);
     _notificationService = NotificationService();
     _timerService = TimerService();
-    _readingTimerService = ReadingTimerService();
 
     // Initialize notification service
     await _notificationService.initialize();
@@ -51,5 +48,4 @@ class ServiceLocator {
   ColorExtractionService get colorExtractionService => _colorExtractionService;
   NotificationService get notificationService => _notificationService;
   TimerService get timerService => _timerService;
-  ReadingTimerService get readingTimerService => _readingTimerService;
 }
