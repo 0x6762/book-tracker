@@ -30,6 +30,13 @@ lib/
 │   ├── utils/            # UI-specific utilities
 │   └── widgets/          # Reusable UI components
 └── main.dart             # App entry point
+
+android/app/src/main/kotlin/
+├── com/readr/booktracker/
+│   ├── MainActivity.kt           # Flutter activity with method channels
+│   └── ReadingTimerService.kt    # Native Android foreground service
+└── com/example/book_tracker/
+    └── MainActivity.kt           # Legacy activity (can be removed)
 ```
 
 ## Key Technologies & Dependencies
@@ -37,10 +44,11 @@ lib/
 - **Database**: Drift (SQLite)
 - **HTTP**: Dio + HTTP
 - **UI**: Material Design with custom theming
-- **Notifications**: flutter_local_notifications
+- **Notifications**: flutter_local_notifications + Native Android service
 - **Audio**: audioplayers
 - **Images**: cached_network_image, palette_generator
 - **Environment**: flutter_dotenv
+- **Native Integration**: Kotlin method channels for foreground service
 
 ## Architecture Rules
 
@@ -53,6 +61,7 @@ lib/
 - **Services** → `application/services/`
 - **Database models** → `data/` (with Drift annotations)
 - **Domain models** → `domain/entities/`
+- **Native Android code** → `android/app/src/main/kotlin/com/readr/booktracker/`
 
 ### Naming Conventions
 - **Files**: snake_case (e.g., `book_details_screen.dart`)
@@ -94,6 +103,16 @@ lib/
 - Handle errors at appropriate layers
 - Show user-friendly error messages
 - Log errors for debugging
+
+### Native Android Integration
+- **Method Channels**: Flutter ↔ Kotlin communication via `reading_timer/native_service`
+- **Foreground Service**: `ReadingTimerService.kt` handles persistent timer notifications
+- **Service Lifecycle**: Uses `START_STICKY` to survive app termination
+- **State Persistence**: SharedPreferences for timer state restoration
+- **Notification Channels**: Separate channels for timer vs completion notifications
+- **Service Communication**: MainActivity.kt bridges Flutter and native service
+
+**Note**: Currently using Flutter-only notifications. Native service exists but is not actively used. Can be enabled for more robust background timer functionality.
 
 ## Before Making Changes
 1. **Check existing patterns** in similar files
