@@ -117,21 +117,22 @@ android/app/src/main/kotlin/
 
 ### Timer Architecture (Native-First)
 - **Native Service**: Single source of truth for timer logic and notifications
-- **Flutter Service**: UI sync only - polls native service every second for state updates
-- **State Sync**: Flutter `TimerService` syncs with native via `getTimerState()` method
+- **EventChannel Communication**: Real-time updates via EventChannel (no polling)
+- **State Sync**: Native service pushes updates to Flutter via EventChannel stream
 - **Completion Flow**: Native service handles all completion notifications
 - **Background Persistence**: Native service survives app termination
-- **No Duplicate Logic**: Flutter only updates UI, native handles all timer logic
+- **Graceful Fallback**: Flutter timer fallback if native service unavailable
 
-**Key Pattern**: Native service is authoritative. Flutter service is purely for UI synchronization.
+**Key Pattern**: Native service pushes updates, Flutter receives and updates UI reactively.
 
 ### Key Architectural Decisions
 - **Native-First Timer**: Native Android service handles all timer logic and notifications
-- **UI Sync Pattern**: Flutter polls native service every second for state updates
+- **EventChannel Pattern**: Real-time updates via EventChannel instead of polling
 - **No Duplicate Notifications**: Only native service shows notifications
 - **Conditional Reset**: Only reset timers when actually needed (prevents premature completion)
 - **State Persistence**: SharedPreferences for reliable state reading across app restarts
-- **Clean Separation**: Native = logic, Flutter = UI synchronization only
+- **Graceful Fallback**: Flutter timer fallback if native service fails
+- **Clean Separation**: Native = logic + push updates, Flutter = UI + receive updates
 
 ## Before Making Changes
 1. **Check existing patterns** in similar files

@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.CountDownTimer
 import androidx.core.app.NotificationCompat
+import com.readr.booktracker.MainActivity
 
 class ReadingTimerService : Service() {
     companion object {
@@ -86,8 +87,8 @@ class ReadingTimerService : Service() {
         // Create notification channels first (only once)
         createNotificationChannel()
 
-        // Update the existing foreground notification with timer details
-        updateNotification()
+        // Start foreground service with initial notification
+        startForeground(NOTIFICATION_ID, buildNotification())
 
         // Persist state
         saveTimerState()
@@ -97,6 +98,8 @@ class ReadingTimerService : Service() {
             override fun onTick(millisUntilFinished: Long) {
                 remainingSeconds = (millisUntilFinished / 1000).toInt()
                 updateNotification()
+                // Send update to Flutter
+                sendUpdateToFlutter()
             }
 
             override fun onFinish() {
@@ -166,6 +169,7 @@ class ReadingTimerService : Service() {
         val notification = buildNotification()
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.notify(NOTIFICATION_ID, notification)
+        android.util.Log.d("ReadingTimerService", "📱 Updated notification: ${getNotificationText()}")
     }
 
     private fun showCompletionNotification() {
@@ -231,6 +235,7 @@ class ReadingTimerService : Service() {
             notificationManager.createNotificationChannel(timerChannel)
             notificationManager.createNotificationChannel(completionChannel)
             channelsCreated = true
+            android.util.Log.d("ReadingTimerService", "📱 Created notification channels")
         }
     }
 
@@ -239,6 +244,15 @@ class ReadingTimerService : Service() {
     fun getTotalSeconds(): Int = totalSeconds
     fun isTimerRunning(): Boolean = isRunning
     fun getBookTitle(): String = bookTitle
+
+    // Send update to Flutter via static reference
+    private fun sendUpdateToFlutter() {
+        try {
+            MainActivity.sendTimerUpdateStatic(isRunning, remainingSeconds, totalSeconds, bookTitle)
+        } catch (e: Exception) {
+            // MainActivity might not be available, that's okay
+        }
+    }
 
     // State persistence methods
     private fun saveTimerState() {

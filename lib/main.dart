@@ -120,6 +120,8 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
     // Show page update modal (reading time will be added when user updates progress)
     if (timerService.currentBookId != null) {
       uiStateProvider.showPageUpdateModal(timerService.currentBookId!);
+      // Clear the just completed state to prevent multiple triggers
+      timerService.clearJustCompletedState();
     }
   }
 
@@ -209,9 +211,9 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
           }
         });
 
-        // Handle timer completion (only automatic completion, not manual stop)
+        // Handle timer completion (both automatic and manual stop)
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && timerService.isTimerCompleted) {
+          if (mounted && timerService.hasTimerJustCompleted) {
             final uiStateProvider = context.read<UIStateProvider>();
             _handleTimerCompletion(uiStateProvider, timerService);
           }

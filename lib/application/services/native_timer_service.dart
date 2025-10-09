@@ -7,6 +7,9 @@ class NativeTimerService {
   static const MethodChannel _channel = MethodChannel(
     'reading_timer/native_service',
   );
+  static const EventChannel _eventChannel = EventChannel(
+    'reading_timer/events',
+  );
 
   static final NativeTimerService _instance = NativeTimerService._internal();
   factory NativeTimerService() => _instance;
@@ -46,5 +49,12 @@ class NativeTimerService {
       debugPrint('❌ Failed to get timer state: $e');
       return null;
     }
+  }
+
+  /// Stream of timer state updates from native service
+  Stream<Map<String, dynamic>> get timerStateStream {
+    return _eventChannel.receiveBroadcastStream().map((event) {
+      return Map<String, dynamic>.from(event ?? {});
+    });
   }
 }

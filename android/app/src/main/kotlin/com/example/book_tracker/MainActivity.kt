@@ -5,13 +5,19 @@ import android.content.Intent
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.EventChannel.EventSink
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "reading_timer/native_service"
+    private val EVENT_CHANNEL = "reading_timer/events"
+    private var eventSink: EventSink? = null
+    
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         
+        // Method Channel for commands
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
                 "startTimer" -> {
@@ -32,6 +38,45 @@ class MainActivity : FlutterActivity() {
                     result.notImplemented()
                 }
             }
+        }
+        
+        // Event Channel for real-time updates
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger, EVENT_CHANNEL).setStreamHandler(
+            object : EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, events: EventSink?) {
+                    eventSink = events
+                    staticEventSink = events
+                }
+                
+                override fun onCancel(arguments: Any?) {
+                    eventSink = null
+                    staticEventSink = null
+                }
+            }
+        )
+    }
+    
+    // Method to send timer updates to Flutter
+    fun sendTimerUpdate(isRunning: Boolean, remainingSeconds: Int, totalSeconds: Int, bookTitle: String) {
+        eventSink?.success(mapOf(
+            "isRunning" to isRunning,
+            "remainingSeconds" to remainingSeconds,
+            "totalSeconds" to totalSeconds,
+            "bookTitle" to bookTitle
+        ))
+    }
+    
+    // Static method for service to call
+    companion object {
+        private var staticEventSink: EventSink? = null
+        
+        fun sendTimerUpdateStatic(isRunning: Boolean, remainingSeconds: Int, totalSeconds: Int, bookTitle: String) {
+            staticEventSink?.success(mapOf(
+                "isRunning" to isRunning,
+                "remainingSeconds" to remainingSeconds,
+                "totalSeconds" to totalSeconds,
+                "bookTitle" to bookTitle
+            ))
         }
     }
 

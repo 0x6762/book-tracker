@@ -21,6 +21,9 @@ class TimerService extends ChangeNotifier {
   bool _wasManuallyStopped = false;
   bool _completionHandled = false;
 
+  // Stream subscription for native timer updates
+  StreamSubscription<Map<String, dynamic>>? _timerStateSubscription;
+
   // Persistence keys
   static const String _prefsKeyIsRunning = 'timer_is_running';
   static const String _prefsKeyStartEpochMs = 'timer_start_epoch_ms';
@@ -35,6 +38,9 @@ class TimerService extends ChangeNotifier {
   bool get isTimerCompleted =>
       _remainingSeconds <= 0 && _totalSeconds > 0 && !_completionHandled;
   bool get wasManuallyStopped => _wasManuallyStopped && !_completionHandled;
+
+  // New getter for completion detection that works after _completionHandled is set
+  bool get hasTimerJustCompleted => _completionHandled && _totalSeconds > 0;
 
   // Timer methods
   void setTimer(int bookId, int minutes) {
@@ -88,12 +94,8 @@ class TimerService extends ChangeNotifier {
       bookId: _currentBookId!,
     );
 
-    // Start UI sync timer after a short delay to let native service initialize
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (_isTimerRunning) {
-        _startUISyncTimer();
-      }
-    });
+    // Start listening to native timer updates
+    _startNativeTimerListener();
 
     notifyListeners();
   }
@@ -107,10 +109,9 @@ class TimerService extends ChangeNotifier {
     // Mark as manually stopped
     _wasManuallyStopped = true;
 
-    // Stop UI sync timer
-    _timer?.cancel();
-    _timer = null;
-    _isTimerRunning = false;
+    // Stop listening to native updates
+    _timerStateSubscription?.cancel();
+    _timerStateSubscription = null;
 
     // Stop native service (handles everything)
     _nativeTimerService.stopTimer().catchError((e) {
@@ -119,6 +120,9 @@ class TimerService extends ChangeNotifier {
 
     // Clear persisted state
     _clearPersistedTimerState();
+
+    // Trigger completion flow for manual stop
+    _handleTimerCompletion();
 
     notifyListeners();
   }
@@ -156,58 +160,56 @@ class TimerService extends ChangeNotifier {
     }
   }
 
-  /// Start UI sync timer - syncs with native service for UI updates
-  void _startUISyncTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
-      try {
-        // Get current state from native service
-        final nativeState = await _nativeTimerService.getTimerState();
+  /// Start listening to native timer updates via EventChannel
+  void _startNativeTimerListener() {
+    _timerStateSubscription?.cancel(); // Cancel any existing subscription
 
-        if (nativeState != null) {
-          final isRunning = nativeState['isRunning'] as bool? ?? false;
-          final remainingSeconds = nativeState['remainingSeconds'] as int? ?? 0;
+    _timerStateSubscription = _nativeTimerService.timerStateStream.listen(
+      (nativeState) {
+        final isRunning = nativeState['isRunning'] as bool? ?? false;
+        final remainingSeconds = nativeState['remainingSeconds'] as int? ?? 0;
+        final totalSeconds = nativeState['totalSeconds'] as int? ?? 0;
+        final bookTitle = nativeState['bookTitle'] as String? ?? '';
 
-          debugPrint(
-            '🔄 Native state: isRunning=$isRunning, remaining=$remainingSeconds, total=$_totalSeconds',
-          );
+        debugPrint(
+          '🔄 Native update: isRunning=$isRunning, remaining=$remainingSeconds, total=$totalSeconds',
+        );
 
-          // Update Flutter state to match native
-          _remainingSeconds = remainingSeconds;
-          _isTimerRunning = isRunning;
-
-          // Only handle completion if:
-          // 1. Timer is not running AND
-          // 2. Remaining seconds is 0 AND
-          // 3. We had a valid total time AND
-          // 4. We haven't already handled completion
-          if (!isRunning &&
-              remainingSeconds == 0 &&
-              _totalSeconds > 0 &&
-              !_completionHandled) {
-            debugPrint('🎯 Timer completion detected from native service');
-            _handleTimerCompletion();
-          }
-
-          notifyListeners();
-        } else {
-          debugPrint('⚠️ Native state is null, using Flutter fallback');
-          // Fallback: use Flutter timer logic
-          if (_remainingSeconds > 0) {
-            _remainingSeconds--;
-            notifyListeners();
-          } else if (_totalSeconds > 0 && !_completionHandled) {
-            _handleTimerCompletion();
-          }
+        // Update Flutter state to match native
+        _remainingSeconds = remainingSeconds;
+        _isTimerRunning = isRunning;
+        if (totalSeconds > 0) {
+          _totalSeconds = totalSeconds;
         }
-      } catch (e) {
-        debugPrint('⚠️ Failed to sync with native timer: $e');
-        // Fallback: use Flutter timer logic
-        if (_remainingSeconds > 0) {
-          _remainingSeconds--;
-          notifyListeners();
-        } else if (_totalSeconds > 0 && !_completionHandled) {
+
+        // Handle completion if timer finished
+        if (!isRunning &&
+            remainingSeconds == 0 &&
+            _totalSeconds > 0 &&
+            !_completionHandled) {
+          debugPrint('🎯 Timer completion detected from native service');
           _handleTimerCompletion();
         }
+
+        notifyListeners();
+      },
+      onError: (error) {
+        debugPrint('⚠️ Native timer stream error: $error');
+        // Fallback: use Flutter timer logic
+        _startFallbackTimer();
+      },
+    );
+  }
+
+  /// Fallback timer when native service is unavailable
+  void _startFallbackTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_remainingSeconds > 0) {
+        _remainingSeconds--;
+        notifyListeners();
+      } else if (_totalSeconds > 0 && !_completionHandled) {
+        _handleTimerCompletion();
       }
     });
   }
@@ -226,7 +228,17 @@ class TimerService extends ChangeNotifier {
     // Clear persisted state
     _clearPersistedTimerState();
 
+    // Trigger progress update modal
+    _triggerProgressUpdateModal();
+
     notifyListeners();
+  }
+
+  /// Trigger progress update modal
+  void _triggerProgressUpdateModal() {
+    // This will be handled by the UI layer
+    // We just need to notify that completion happened
+    debugPrint('📝 Triggering progress update modal for book $_currentBookId');
   }
 
   // Mark completion as handled to prevent multiple triggers
@@ -238,6 +250,12 @@ class TimerService extends ChangeNotifier {
   // Clear completion state after handling
   void clearCompletionState() {
     _wasManuallyStopped = false;
+    _completionHandled = false;
+    notifyListeners();
+  }
+
+  // Clear just completed state (called after modal is shown)
+  void clearJustCompletedState() {
     _completionHandled = false;
     notifyListeners();
   }
@@ -264,6 +282,7 @@ class TimerService extends ChangeNotifier {
   @override
   void dispose() {
     _timer?.cancel();
+    _timerStateSubscription?.cancel();
     _notificationService.dispose();
     super.dispose();
   }
@@ -325,8 +344,8 @@ class TimerService extends ChangeNotifier {
     _remainingSeconds = remaining;
     _isTimerRunning = true;
 
-    // Start UI sync timer to sync with native service
-    _startUISyncTimer();
+    // Start listening to native timer updates
+    _startNativeTimerListener();
 
     notifyListeners();
   }
