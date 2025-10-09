@@ -73,12 +73,37 @@ android/app/src/main/kotlin/
 - **Constants**: UPPER_SNAKE_CASE (e.g., `APP_TITLE`)
 - **Providers**: End with `Provider` (e.g., `BookListProvider`)
 
-### State Management
-- Use **Provider** for all state management
-- Create separate providers for different features
-- Keep providers focused on single responsibilities
-- Use `ChangeNotifierProvider` for most cases
-- Access providers with `context.read<ProviderType>()`
+### State Management (Provider)
+- **Provider Types**: Use `ChangeNotifierProvider` for mutable state, `Provider` for immutable
+- **Cross-Provider Communication**: Use `context.read<OtherProvider>()` in methods, not in `build()`
+- **State Persistence**: Use SharedPreferences in services, not in providers
+- **Memory Management**: Always call `dispose()` in providers, cancel subscriptions
+- **Common Gotchas**: Don't call `notifyListeners()` in `build()`, use `addPostFrameCallback` for UI updates
+
+#### Provider Patterns
+- **Single Responsibility**: Each provider should handle one feature/domain
+- **Immutable State**: Use `Provider` for data that doesn't change (config, constants)
+- **Mutable State**: Use `ChangeNotifierProvider` for data that changes (timers, UI state)
+- **Complex State**: Use `MultiProvider` for multiple related providers
+
+#### State Lifecycle
+- **Initialization**: Initialize state in constructor or `initState()`
+- **Updates**: Call `notifyListeners()` after state changes
+- **Disposal**: Override `dispose()` to cancel timers, subscriptions, controllers
+- **Persistence**: Save important state to SharedPreferences in services
+
+#### Common Patterns
+- **Timer State**: Use `TimerService` for timer logic, `UIStateProvider` for UI state
+- **Book Data**: Use `BookListProvider` for list, `BookDetailsProvider` for individual book
+- **Search State**: Use `SearchProvider` for search logic and results
+- **Modal State**: Use `UIStateProvider` for modals, loading states, navigation
+
+#### Anti-Patterns to Avoid
+- **Don't**: Call `notifyListeners()` in `build()` method
+- **Don't**: Store complex objects in providers (use services instead)
+- **Don't**: Access providers in constructors (use `addPostFrameCallback`)
+- **Don't**: Forget to dispose subscriptions and timers
+- **Don't**: Put business logic in providers (use services instead)
 
 ### Database (Drift)
 - Define tables in `book_database.dart`
