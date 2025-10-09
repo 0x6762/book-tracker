@@ -40,6 +40,7 @@ class ReadingTimerService : Service() {
     private var bookTitle = ""
     private var isRunning = false
     private var isStopped = false // Guard against double-stop
+    private var channelsCreated = false // Track if channels are already created
     
     private lateinit var prefs: SharedPreferences
 
@@ -55,6 +56,9 @@ class ReadingTimerService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Start foreground immediately to avoid timeout
+        startForeground(NOTIFICATION_ID, buildNotification())
+        
         when (intent?.action) {
             "START_TIMER" -> {
                 val totalSeconds = intent.getIntExtra("total_seconds", 0)
@@ -79,14 +83,14 @@ class ReadingTimerService : Service() {
         this.isRunning = true
         this.isStopped = false
 
-        // Persist state
-        saveTimerState()
-
-        // Create notification channels
+        // Create notification channels first (only once)
         createNotificationChannel()
 
-        // Start foreground service
-        startForeground(NOTIFICATION_ID, buildNotification())
+        // Update the existing foreground notification with timer details
+        updateNotification()
+
+        // Persist state
+        saveTimerState()
 
         // Start countdown timer
         countDownTimer = object : CountDownTimer(totalSeconds * 1000L, 1000L) {
@@ -136,8 +140,6 @@ class ReadingTimerService : Service() {
     }
 
     private fun buildNotification(): Notification {
-        createNotificationChannel()
-        
         val notificationIntent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
             this, 0, notificationIntent,
@@ -194,6 +196,8 @@ class ReadingTimerService : Service() {
     }
 
     private fun createNotificationChannel() {
+        if (channelsCreated) return // Skip if already created
+        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             
@@ -221,6 +225,7 @@ class ReadingTimerService : Service() {
             
             notificationManager.createNotificationChannel(timerChannel)
             notificationManager.createNotificationChannel(completionChannel)
+            channelsCreated = true
         }
     }
 

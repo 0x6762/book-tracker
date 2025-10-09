@@ -57,32 +57,30 @@ class TimerService extends ChangeNotifier {
       return; // No time left
     }
 
-    // Ensure permissions are granted before starting timer
-    final hasPermission = await _notificationService.ensurePermissions();
-    if (!hasPermission) {
-      print(
-        '⚠️ Notification permissions not granted, timer will start but notifications may not work',
-      );
-    }
-
     _isTimerRunning = true;
     _currentBookId = bookId;
 
-    // Persist timer metadata for stateless resume
-    await _persistTimerState(
+    // Start foreground service for timer FIRST (this shows notification immediately)
+    await _notificationService.scheduleTimerNotification(
+      _totalSeconds,
+      bookTitle: 'Current Book',
+    );
+
+    // Check permissions in background (non-blocking)
+    _notificationService.ensurePermissions().then((hasPermission) {
+      if (!hasPermission) {
+        print(
+          '⚠️ Notification permissions not granted, timer will start but notifications may not work',
+        );
+      }
+    });
+
+    // Persist timer metadata for stateless resume (non-blocking)
+    _persistTimerState(
       isRunning: true,
       startEpochMs: DateTime.now().millisecondsSinceEpoch,
       totalSeconds: _totalSeconds,
       bookId: _currentBookId!,
-    );
-
-    // Show timer start notification
-    await _notificationService.showTimerStartNotification();
-
-    // Start foreground service for timer
-    await _notificationService.scheduleTimerNotification(
-      _totalSeconds,
-      bookTitle: 'Current Book',
     );
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
