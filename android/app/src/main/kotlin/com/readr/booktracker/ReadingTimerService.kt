@@ -21,6 +21,10 @@ class ReadingTimerService : Service() {
         private const val CHANNEL_NAME = "Reading Timer"
         private const val CHANNEL_DESCRIPTION = "Ongoing reading timer notifications"
         
+        private const val COMPLETION_CHANNEL_ID = "reading_timer_complete"
+        private const val COMPLETION_CHANNEL_NAME = "Reading Timer Complete"
+        private const val COMPLETION_CHANNEL_DESCRIPTION = "Reading timer completion notifications"
+        
         // SharedPreferences keys
         private const val PREFS_NAME = "reading_timer_service"
         private const val KEY_IS_RUNNING = "is_running"
@@ -77,6 +81,9 @@ class ReadingTimerService : Service() {
 
         // Persist state
         saveTimerState()
+
+        // Create notification channels
+        createNotificationChannel()
 
         // Start foreground service
         startForeground(NOTIFICATION_ID, buildNotification())
@@ -161,7 +168,7 @@ class ReadingTimerService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(this, COMPLETION_CHANNEL_ID)
             .setContentTitle("Reading Session Complete!")
             .setContentText("Your reading timer has finished. Tap to update your progress.")
             .setSmallIcon(R.drawable.ic_stat_name)
@@ -188,7 +195,10 @@ class ReadingTimerService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            
+            // Low importance channel for ongoing timer notifications
+            val timerChannel = NotificationChannel(
                 CHANNEL_ID,
                 CHANNEL_NAME,
                 NotificationManager.IMPORTANCE_LOW
@@ -197,9 +207,20 @@ class ReadingTimerService : Service() {
                 enableVibration(false)
                 setShowBadge(false)
             }
-
-            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
+            
+            // High importance channel for completion notifications
+            val completionChannel = NotificationChannel(
+                COMPLETION_CHANNEL_ID,
+                COMPLETION_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = COMPLETION_CHANNEL_DESCRIPTION
+                enableVibration(true)
+                setShowBadge(true)
+            }
+            
+            notificationManager.createNotificationChannel(timerChannel)
+            notificationManager.createNotificationChannel(completionChannel)
         }
     }
 

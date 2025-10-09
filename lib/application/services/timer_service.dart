@@ -264,8 +264,8 @@ class TimerService extends ChangeNotifier {
     _remainingSeconds = remaining;
     _isTimerRunning = true;
 
-    // Ensure notifications are scheduled appropriately
-    _notificationService.scheduleTimerNotification(_remainingSeconds);
+    // Don't start a new native service if one is already running
+    // The native service should already be running from the original start
 
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
