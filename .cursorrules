@@ -21,7 +21,7 @@ lib/
 │   ├── book_database.dart # Drift database setup
 │   └── book_database.g.dart # Generated database code
 ├── domain/
-│   ├── business/         # Business logic, use cases, and validation
+│   ├── business/         # Business validation services (keep simple)
 │   ├── entities/         # Domain models (Book, ReadingProgress)
 │   └── repositories/     # Repository interfaces (contracts)
 ├── presentation/
@@ -47,8 +47,7 @@ lib/
 ### File Placement
 - **New screens** → `presentation/screens/`
 - **Reusable widgets** → `presentation/widgets/`
-- **Business logic** → `domain/business/`
-- **Business validation** → `domain/business/` (use validation services)
+- **Business validation** → `domain/business/` (keep simple, avoid over-engineering)
 - **Data access** → `data/repositories/`
 - **State management** → `presentation/providers/`
 - **Services** → `application/services/`
@@ -104,8 +103,9 @@ lib/
 5. **Follow naming conventions** consistently
 6. **Update database schema** if adding new data models
 7. **Test state management** changes thoroughly
-8. **Use domain validation services** for business rules
+8. **Use domain validation services** for business rules (keep simple)
 9. **Keep database layer pure** - no business logic
+10. **Avoid over-engineering** - prefer simple solutions over complex ones
 
 ## Code Quality
 - Use `flutter_lints` rules
