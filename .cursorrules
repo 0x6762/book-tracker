@@ -8,6 +8,9 @@ A Flutter book tracking application for Android that helps users manage their re
 lib/
 ├── application/
 │   └── services/          # App-level services (timer, notifications, book management)
+│       ├── timer_service.dart           # Flutter UI sync service
+│       ├── native_timer_service.dart    # Native service bridge
+│       └── notification_service.dart    # Flutter notification fallback
 ├── core/
 │   ├── constants/         # App constants and configuration
 │   ├── di/               # Dependency injection (ServiceLocator)
@@ -112,7 +115,23 @@ android/app/src/main/kotlin/
 - **Notification Channels**: Separate channels for timer vs completion notifications
 - **Service Communication**: MainActivity.kt bridges Flutter and native service
 
-**Note**: Currently using Flutter-only notifications. Native service exists but is not actively used. Can be enabled for more robust background timer functionality.
+### Timer Architecture (Native-First)
+- **Native Service**: Single source of truth for timer logic and notifications
+- **Flutter Service**: UI sync only - polls native service every second for state updates
+- **State Sync**: Flutter `TimerService` syncs with native via `getTimerState()` method
+- **Completion Flow**: Native service handles all completion notifications
+- **Background Persistence**: Native service survives app termination
+- **No Duplicate Logic**: Flutter only updates UI, native handles all timer logic
+
+**Key Pattern**: Native service is authoritative. Flutter service is purely for UI synchronization.
+
+### Key Architectural Decisions
+- **Native-First Timer**: Native Android service handles all timer logic and notifications
+- **UI Sync Pattern**: Flutter polls native service every second for state updates
+- **No Duplicate Notifications**: Only native service shows notifications
+- **Conditional Reset**: Only reset timers when actually needed (prevents premature completion)
+- **State Persistence**: SharedPreferences for reliable state reading across app restarts
+- **Clean Separation**: Native = logic, Flutter = UI synchronization only
 
 ## Before Making Changes
 1. **Check existing patterns** in similar files

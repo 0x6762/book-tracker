@@ -52,30 +52,25 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun getTimerState(): Map<String, Any> {
-        // Try to get state from service if it's running
+        // For now, return a simple state - we'll improve this later
+        // The issue is that service binding is asynchronous
         return try {
-            val serviceConnection = object : android.content.ServiceConnection {
-                var service: ReadingTimerService? = null
-                
-                override fun onServiceConnected(name: android.content.ComponentName?, binder: android.os.IBinder?) {
-                    service = (binder as ReadingTimerService.TimerBinder).getService()
-                }
-                
-                override fun onServiceDisconnected(name: android.content.ComponentName?) {
-                    service = null
-                }
-            }
+            // Check if service is running by looking at SharedPreferences
+            val prefs = getSharedPreferences("reading_timer_service", Context.MODE_PRIVATE)
+            val isRunning = prefs.getBoolean("is_running", false)
+            val totalSeconds = prefs.getInt("total_seconds", 0)
+            val startTime = prefs.getLong("start_time", 0)
+            val bookTitle = prefs.getString("book_title", "") ?: ""
             
-            val intent = Intent(this, ReadingTimerService::class.java)
-            val bound = bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
-            
-            if (bound && serviceConnection.service != null) {
-                val service = serviceConnection.service!!
+            if (isRunning && startTime > 0 && totalSeconds > 0) {
+                val elapsedSeconds = ((System.currentTimeMillis() - startTime) / 1000).toInt()
+                val remainingSeconds = (totalSeconds - elapsedSeconds).coerceAtLeast(0)
+                
                 mapOf(
-                    "isRunning" to service.isTimerRunning(),
-                    "remainingSeconds" to service.getRemainingSeconds(),
-                    "totalSeconds" to service.getTotalSeconds(),
-                    "bookTitle" to service.getBookTitle()
+                    "isRunning" to (remainingSeconds > 0),
+                    "remainingSeconds" to remainingSeconds,
+                    "totalSeconds" to totalSeconds,
+                    "bookTitle" to bookTitle
                 )
             } else {
                 mapOf(

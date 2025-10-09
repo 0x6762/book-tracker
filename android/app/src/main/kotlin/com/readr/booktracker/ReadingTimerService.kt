@@ -116,6 +116,11 @@ class ReadingTimerService : Service() {
         // Clear persisted state
         clearTimerState()
         
+        // Only show completion notification if timer was actually running
+        if (totalSeconds > 0) {
+            showCompletionNotification()
+        }
+        
         stopForeground(true)
         stopSelf()
     }
