@@ -1,5 +1,6 @@
 package com.readr.booktracker
 
+import android.content.Context
 import android.content.Intent
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -51,13 +52,46 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun getTimerState(): Map<String, Any> {
-        // This would require binding to the service to get real-time state
-        // For now, return basic state
-        return mapOf(
-            "isRunning" to false,
-            "remainingSeconds" to 0,
-            "totalSeconds" to 0,
-            "bookTitle" to ""
-        )
+        // Try to get state from service if it's running
+        return try {
+            val serviceConnection = object : android.content.ServiceConnection {
+                var service: ReadingTimerService? = null
+                
+                override fun onServiceConnected(name: android.content.ComponentName?, binder: android.os.IBinder?) {
+                    service = (binder as ReadingTimerService.TimerBinder).getService()
+                }
+                
+                override fun onServiceDisconnected(name: android.content.ComponentName?) {
+                    service = null
+                }
+            }
+            
+            val intent = Intent(this, ReadingTimerService::class.java)
+            val bound = bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+            
+            if (bound && serviceConnection.service != null) {
+                val service = serviceConnection.service!!
+                mapOf(
+                    "isRunning" to service.isTimerRunning(),
+                    "remainingSeconds" to service.getRemainingSeconds(),
+                    "totalSeconds" to service.getTotalSeconds(),
+                    "bookTitle" to service.getBookTitle()
+                )
+            } else {
+                mapOf(
+                    "isRunning" to false,
+                    "remainingSeconds" to 0,
+                    "totalSeconds" to 0,
+                    "bookTitle" to ""
+                )
+            }
+        } catch (e: Exception) {
+            mapOf(
+                "isRunning" to false,
+                "remainingSeconds" to 0,
+                "totalSeconds" to 0,
+                "bookTitle" to ""
+            )
+        }
     }
 }

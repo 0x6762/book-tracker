@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
@@ -19,6 +20,13 @@ class ReadingTimerService : Service() {
         private const val CHANNEL_ID = "reading_timer_foreground"
         private const val CHANNEL_NAME = "Reading Timer"
         private const val CHANNEL_DESCRIPTION = "Ongoing reading timer notifications"
+        
+        // SharedPreferences keys
+        private const val PREFS_NAME = "reading_timer_service"
+        private const val KEY_IS_RUNNING = "is_running"
+        private const val KEY_START_TIME = "start_time"
+        private const val KEY_TOTAL_SECONDS = "total_seconds"
+        private const val KEY_BOOK_TITLE = "book_title"
     }
 
     private val binder = TimerBinder()
@@ -27,12 +35,20 @@ class ReadingTimerService : Service() {
     private var remainingSeconds = 0
     private var bookTitle = ""
     private var isRunning = false
+    private var isStopped = false // Guard against double-stop
+    
+    private lateinit var prefs: SharedPreferences
 
     inner class TimerBinder : Binder() {
         fun getService(): ReadingTimerService = this@ReadingTimerService
     }
 
     override fun onBind(intent: Intent?): IBinder = binder
+
+    override fun onCreate() {
+        super.onCreate()
+        prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
@@ -44,6 +60,10 @@ class ReadingTimerService : Service() {
             "STOP_TIMER" -> {
                 stopTimer()
             }
+            null -> {
+                // Service was restarted by START_STICKY, try to restore state
+                restoreTimerState()
+            }
         }
         return START_STICKY // This is the key - service will restart if killed
     }
@@ -53,6 +73,10 @@ class ReadingTimerService : Service() {
         this.remainingSeconds = totalSeconds
         this.bookTitle = bookTitle
         this.isRunning = true
+        this.isStopped = false
+
+        // Persist state
+        saveTimerState()
 
         // Start foreground service
         startForeground(NOTIFICATION_ID, buildNotification())
@@ -71,17 +95,30 @@ class ReadingTimerService : Service() {
     }
 
     private fun stopTimer() {
+        if (isStopped) return // Guard against double-stop
+        
+        isStopped = true
         isRunning = false
         countDownTimer?.cancel()
         countDownTimer = null
+        
+        // Clear persisted state
+        clearTimerState()
+        
         stopForeground(true)
         stopSelf()
     }
 
     private fun onTimerCompleted() {
+        if (isStopped) return // Guard against double-completion
+        
+        isStopped = true
         isRunning = false
         countDownTimer?.cancel()
         countDownTimer = null
+        
+        // Clear persisted state
+        clearTimerState()
         
         // Show completion notification
         showCompletionNotification()
@@ -171,4 +208,63 @@ class ReadingTimerService : Service() {
     fun getTotalSeconds(): Int = totalSeconds
     fun isTimerRunning(): Boolean = isRunning
     fun getBookTitle(): String = bookTitle
+
+    // State persistence methods
+    private fun saveTimerState() {
+        prefs.edit().apply {
+            putBoolean(KEY_IS_RUNNING, isRunning)
+            putLong(KEY_START_TIME, System.currentTimeMillis())
+            putInt(KEY_TOTAL_SECONDS, totalSeconds)
+            putString(KEY_BOOK_TITLE, bookTitle)
+            apply()
+        }
+    }
+
+    private fun clearTimerState() {
+        prefs.edit().clear().apply()
+    }
+
+    private fun restoreTimerState() {
+        val wasRunning = prefs.getBoolean(KEY_IS_RUNNING, false)
+        if (!wasRunning) return
+
+        val startTime = prefs.getLong(KEY_START_TIME, 0)
+        val savedTotalSeconds = prefs.getInt(KEY_TOTAL_SECONDS, 0)
+        val savedBookTitle = prefs.getString(KEY_BOOK_TITLE, "") ?: ""
+
+        if (startTime == 0L || savedTotalSeconds == 0) return
+
+        val elapsedSeconds = ((System.currentTimeMillis() - startTime) / 1000).toInt()
+        val remaining = savedTotalSeconds - elapsedSeconds
+
+        if (remaining <= 0) {
+            // Timer should have completed
+            clearTimerState()
+            showCompletionNotification()
+            stopSelf()
+            return
+        }
+
+        // Restore timer with remaining time
+        this.totalSeconds = savedTotalSeconds
+        this.remainingSeconds = remaining
+        this.bookTitle = savedBookTitle
+        this.isRunning = true
+        this.isStopped = false
+
+        // Start foreground service
+        startForeground(NOTIFICATION_ID, buildNotification())
+
+        // Start countdown timer with remaining time
+        countDownTimer = object : CountDownTimer(remaining * 1000L, 1000L) {
+            override fun onTick(millisUntilFinished: Long) {
+                remainingSeconds = (millisUntilFinished / 1000).toInt()
+                updateNotification()
+            }
+
+            override fun onFinish() {
+                onTimerCompleted()
+            }
+        }.start()
+    }
 }
