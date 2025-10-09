@@ -57,34 +57,31 @@ class TimerService extends ChangeNotifier {
       return; // No time left
     }
 
-    // Ensure permissions are granted before starting timer
-    final hasPermission = await _notificationService.ensurePermissions();
-    if (!hasPermission) {
-      print(
-        '⚠️ Notification permissions not granted, timer will start but notifications may not work',
-      );
-    }
-
     _isTimerRunning = true;
     _currentBookId = bookId;
 
-    // Persist timer metadata for stateless resume
-    await _persistTimerState(
+    // Start foreground service for timer FIRST (this shows notification immediately)
+    await _notificationService.scheduleTimerNotification(
+      _totalSeconds,
+      bookTitle: 'Current Book',
+    );
+
+    // Check permissions in background (non-blocking)
+    _notificationService.ensurePermissions().then((hasPermission) {
+      if (!hasPermission) {
+        print(
+          '⚠️ Notification permissions not granted, timer will start but notifications may not work',
+        );
+      }
+    });
+
+    // Persist timer metadata for stateless resume (non-blocking)
+    _persistTimerState(
       isRunning: true,
       startEpochMs: DateTime.now().millisecondsSinceEpoch,
       totalSeconds: _totalSeconds,
       bookId: _currentBookId!,
     );
-
-    // Show timer start notification
-    await _notificationService.showTimerStartNotification();
-
-    // Schedule static "timer running" and completion notification
-    await _notificationService.scheduleTimerNotification(_totalSeconds);
-    final completionAt = DateTime.now().add(
-      Duration(seconds: _remainingSeconds),
-    );
-    await _notificationService.scheduleCompletionNotificationAt(completionAt);
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingSeconds > 0) {
@@ -114,7 +111,6 @@ class TimerService extends ChangeNotifier {
 
     // Cancel notification
     _notificationService.cancelTimerNotification();
-    _notificationService.cancelScheduledCompletionNotification();
 
     _timer?.cancel();
     _timer = null;
@@ -129,7 +125,6 @@ class TimerService extends ChangeNotifier {
   void resetTimer() {
     // Cancel notification
     _notificationService.cancelTimerNotification();
-    _notificationService.cancelScheduledCompletionNotification();
 
     _timer?.cancel();
     _timer = null;
@@ -267,12 +262,8 @@ class TimerService extends ChangeNotifier {
     _remainingSeconds = remaining;
     _isTimerRunning = true;
 
-    // Ensure notifications are scheduled appropriately
-    _notificationService.scheduleTimerNotification(_remainingSeconds);
-    final completionAt = DateTime.now().add(
-      Duration(seconds: _remainingSeconds),
-    );
-    _notificationService.scheduleCompletionNotificationAt(completionAt);
+    // Don't start a new native service if one is already running
+    // The native service should already be running from the original start
 
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
