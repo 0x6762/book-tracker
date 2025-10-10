@@ -10,7 +10,8 @@ lib/
 │   └── services/          # App-level services (timer, notifications, book management)
 │       ├── timer_service.dart           # Flutter UI sync service
 │       ├── native_timer_service.dart    # Native service bridge
-│       └── notification_service.dart    # Flutter notification fallback
+│       ├── notification_service.dart    # Flutter notification fallback
+│       └── simple_color_extraction_service.dart # Book cover color extraction
 ├── core/
 │   ├── constants/         # App constants and configuration
 │   ├── di/               # Dependency injection (ServiceLocator)
@@ -52,6 +53,7 @@ android/app/src/main/kotlin/
 - **Images**: cached_network_image, palette_generator
 - **Environment**: flutter_dotenv
 - **Native Integration**: Kotlin method channels for foreground service
+- **Color Extraction**: palette_generator with database caching
 
 ## Architecture Rules
 
@@ -74,36 +76,12 @@ android/app/src/main/kotlin/
 - **Providers**: End with `Provider` (e.g., `BookListProvider`)
 
 ### State Management (Provider)
-- **Provider Types**: Use `ChangeNotifierProvider` for mutable state, `Provider` for immutable
-- **Cross-Provider Communication**: Use `context.read<OtherProvider>()` in methods, not in `build()`
-- **State Persistence**: Use SharedPreferences in services, not in providers
-- **Memory Management**: Always call `dispose()` in providers, cancel subscriptions
-- **Common Gotchas**: Don't call `notifyListeners()` in `build()`, use `addPostFrameCallback` for UI updates
-
-#### Provider Patterns
-- **Single Responsibility**: Each provider should handle one feature/domain
-- **Immutable State**: Use `Provider` for data that doesn't change (config, constants)
-- **Mutable State**: Use `ChangeNotifierProvider` for data that changes (timers, UI state)
-- **Complex State**: Use `MultiProvider` for multiple related providers
-
-#### State Lifecycle
-- **Initialization**: Initialize state in constructor or `initState()`
-- **Updates**: Call `notifyListeners()` after state changes
-- **Disposal**: Override `dispose()` to cancel timers, subscriptions, controllers
-- **Persistence**: Save important state to SharedPreferences in services
-
-#### Common Patterns
-- **Timer State**: Use `TimerService` for timer logic, `UIStateProvider` for UI state
-- **Book Data**: Use `BookListProvider` for list, `BookDetailsProvider` for individual book
-- **Search State**: Use `SearchProvider` for search logic and results
-- **Modal State**: Use `UIStateProvider` for modals, loading states, navigation
-
-#### Anti-Patterns to Avoid
-- **Don't**: Call `notifyListeners()` in `build()` method
-- **Don't**: Store complex objects in providers (use services instead)
-- **Don't**: Access providers in constructors (use `addPostFrameCallback`)
-- **Don't**: Forget to dispose subscriptions and timers
-- **Don't**: Put business logic in providers (use services instead)
+- **Provider Types**: `ChangeNotifierProvider` for mutable state, `Provider` for immutable
+- **Communication**: Use `context.read<OtherProvider>()` in methods, not in `build()`
+- **Persistence**: Use SharedPreferences in services, not in providers
+- **Memory**: Always call `dispose()`, cancel subscriptions
+- **Patterns**: Single responsibility per provider, use services for business logic
+- **Common Gotchas**: Don't call `notifyListeners()` in `build()`, use `addPostFrameCallback`
 
 ### Database (Drift)
 - Define tables in `book_database.dart`
@@ -111,6 +89,7 @@ android/app/src/main/kotlin/
 - Generate code with `dart run build_runner build`
 - Keep database operations in repository implementations
 - **No business validation in database** - use domain validation services
+- **Color Caching**: Use `BookColors` table for extracted book cover colors
 
 ### API Integration
 - Use **Dio** for HTTP requests
@@ -125,6 +104,12 @@ android/app/src/main/kotlin/
 - Use Hero animations for smooth transitions
 - Keep widgets small and focused
 - Extract reusable components to `presentation/widgets/`
+
+### Color Extraction
+- **Service**: Use `SimpleColorExtractionService` for book cover color extraction
+- **Caching**: Database persistence via `BookColors` table, memory cache for performance
+- **Performance**: Smart loading - instant for cached colors, 500ms delay for new extractions
+- **Integration**: Colors extracted in `BookCard` widget for progress bar theming
 
 ### Error Handling
 - Define custom errors in `core/errors/`
@@ -142,32 +127,11 @@ android/app/src/main/kotlin/
 
 ### Timer Architecture (Native-First)
 - **Native Service**: Single source of truth for timer logic and notifications
-- **EventChannel Communication**: Real-time updates via EventChannel (no polling)
-- **State Sync**: Native service pushes updates to Flutter via EventChannel stream
-- **Completion Flow**: Native service handles all completion notifications
+- **EventChannel**: Real-time updates via EventChannel stream (no polling)
 - **Background Persistence**: Native service survives app termination
-- **Graceful Fallback**: Flutter timer fallback if native service unavailable
-- **Progress Update Modal**: Flutter handles UI flow after timer completion
-- **Notification Behavior**: Silent in-progress, loud completion notifications
-
-**Key Pattern**: Native service pushes updates, Flutter receives and updates UI reactively.
-
-### Timer Flow
-1. **Start**: User taps start → Native service starts with silent in-progress notification
-2. **Running**: Native service updates notification every second with countdown
-3. **Complete**: Timer ends or user stops → Native shows completion notification + Flutter shows progress modal
-4. **Update**: User updates progress → Book progress saved, timer resets
-
-### Key Architectural Decisions
-- **Native-First Timer**: Native Android service handles all timer logic and notifications
-- **EventChannel Pattern**: Real-time updates via EventChannel instead of polling
-- **No Duplicate Notifications**: Only native service shows notifications
-- **Conditional Reset**: Only reset timers when actually needed (prevents premature completion)
-- **State Persistence**: SharedPreferences for reliable state reading across app restarts
-- **Graceful Fallback**: Flutter timer fallback if native service fails
-- **Clean Separation**: Native = logic + push updates, Flutter = UI + receive updates
-- **Completion Detection**: Uses `hasTimerJustCompleted` getter for reliable completion flow
-- **Silent Notifications**: In-progress notifications are silent, completion notifications are loud
+- **Notifications**: Silent in-progress, loud completion notifications
+- **Flow**: Start → Running → Complete → Progress Update Modal
+- **Key Pattern**: Native pushes updates, Flutter receives and updates UI reactively
 
 ## Before Making Changes
 1. **Check existing patterns** in similar files
@@ -180,6 +144,7 @@ android/app/src/main/kotlin/
 8. **Use domain validation services** for business rules (keep simple)
 9. **Keep database layer pure** - no business logic
 10. **Avoid over-engineering** - prefer simple solutions over complex ones
+11. **Color extraction** - Use `SimpleColorExtractionService` with database caching
 
 ## Code Quality
 - Use `flutter_lints` rules
