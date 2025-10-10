@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/di/service_locator.dart';
 import '../../domain/entities/book.dart';
 import 'reading_timer.dart';
 import '../screens/book_details_screen.dart';
-import '../utils/color_extractor.dart';
+import '../../application/services/simple_color_extraction_service.dart';
 
 class BookCard extends StatefulWidget {
   final BookEntity book;
@@ -29,8 +30,8 @@ class _BookCardState extends State<BookCard> with TickerProviderStateMixin {
   static const double _gradientHeight = 300.0;
   static const Duration _animationDelay = Duration(milliseconds: 300);
   static const Duration _colorExtractionDelay = Duration(
-    milliseconds: 800,
-  ); // Increased for better timing
+    milliseconds: 500,
+  ); // Reduced since we now have proper caching
   static const Duration _animationDuration = Duration(milliseconds: 200);
   static const Duration _gradientFadeDuration = Duration(milliseconds: 500);
   static const double _progressBarHeight = 8.0;
@@ -67,22 +68,50 @@ class _BookCardState extends State<BookCard> with TickerProviderStateMixin {
     _startAnimation();
 
     // Extract color after image has time to load and display
+    // Check if color is already cached first
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future.delayed(_colorExtractionDelay, _extractBookColor);
+      _checkAndExtractColor();
     });
+  }
+
+  void _checkAndExtractColor() async {
+    // Skip extraction for completed books; use green bar already
+    if (widget.book.isCompleted) return;
+    if (widget.book.thumbnailUrl == null || widget.book.id == null || !mounted)
+      return;
+
+    // Check if color is already cached in database
+    try {
+      final database = ServiceLocator().database;
+      final bookColor = await database.getBookColor(widget.book.id!);
+      if (bookColor?.accentColor != null) {
+        // Color is cached - use it immediately
+        final color = Color(bookColor!.accentColor!);
+        if (mounted) {
+          setState(() {
+            _bookAccentColor = color;
+          });
+        }
+        return;
+      }
+    } catch (e) {
+      print('Error checking cached color: $e');
+    }
+
+    // Color not cached - extract with a small delay for image loading
+    Future.delayed(_colorExtractionDelay, _extractBookColor);
   }
 
   void _extractBookColor() async {
     // Skip extraction for completed books; use green bar already
     if (widget.book.isCompleted) return;
-    if (widget.book.thumbnailUrl != null && widget.book.id != null) {
-      final theme = Theme.of(context);
-      final color = await ColorExtractor.extractColorForBook(
+    if (widget.book.thumbnailUrl != null && widget.book.id != null && mounted) {
+      final color = await SimpleColorExtractionService.extractColor(
+        widget.book.thumbnailUrl!,
         widget.book.id!,
-        widget.book.thumbnailUrl,
-        blendAnchor: theme.colorScheme.primary,
-        contrastAgainstSurface: theme.colorScheme.surface,
       );
+
+      // Double-check mounted state after async operation
       if (mounted) {
         setState(() {
           _bookAccentColor = color;

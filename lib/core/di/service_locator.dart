@@ -2,7 +2,6 @@ import '../../data/book_database.dart';
 import '../../data/datasources/google_books_api_service.dart';
 import '../../application/services/book_management_service.dart';
 import '../../application/services/reading_progress_service.dart';
-import '../../application/services/color_extraction_service.dart';
 import '../../application/services/notification_service.dart';
 import '../../application/services/timer_service.dart';
 import '../../application/services/native_timer_service.dart';
@@ -20,7 +19,6 @@ class ServiceLocator {
   // Application services
   late final BookManagementService _bookManagementService;
   late final ReadingProgressService _readingProgressService;
-  late final ColorExtractionService _colorExtractionService;
   late final NotificationService _notificationService;
   late final TimerService _timerService;
   late final NativeTimerService _nativeTimerService;
@@ -34,7 +32,6 @@ class ServiceLocator {
     // Initialize application services
     _bookManagementService = BookManagementService(_database);
     _readingProgressService = ReadingProgressService(_database);
-    _colorExtractionService = ColorExtractionService(_database);
     _notificationService = NotificationService();
     _timerService = TimerService();
     _nativeTimerService = NativeTimerService();
@@ -48,7 +45,6 @@ class ServiceLocator {
   GoogleBooksApiService get googleBooksApiService => _googleBooksApiService;
   BookManagementService get bookManagementService => _bookManagementService;
   ReadingProgressService get readingProgressService => _readingProgressService;
-  ColorExtractionService get colorExtractionService => _colorExtractionService;
   NotificationService get notificationService => _notificationService;
   TimerService get timerService => _timerService;
   NativeTimerService get nativeTimerService => _nativeTimerService;

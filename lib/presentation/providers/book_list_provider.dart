@@ -61,15 +61,8 @@ class BookListProvider with ChangeNotifier {
       print('📖 Adding book: ${book.title}');
       final stopwatch = Stopwatch()..start();
 
-      // Extract accent color
-      final accentColor = await _serviceLocator.colorExtractionService
-          .extractBookAccentColor(book);
-
-      // Add book to database with color
-      await _serviceLocator.bookManagementService.addBookWithColor(
-        book,
-        accentColor,
-      );
+      // Add book to database (color will be extracted in UI)
+      await _serviceLocator.bookManagementService.addBookWithColor(book, null);
 
       // Load books to refresh the list
       await loadBooks();
