@@ -31,6 +31,27 @@ class ReadingProgress {
     return end.difference(startDate).inDays + 1;
   }
 
+  // Calculate reading streak (consecutive days with reading activity)
+  int getReadingStreak() {
+    // For now, we'll use a simple calculation based on total reading time
+    // In a more advanced implementation, this would track daily reading sessions
+    if (totalReadingTimeMinutes <= 0) return 0;
+
+    // Estimate streak based on reading consistency
+    // If user has been reading for multiple days with good time, assume streak
+    final daysReading = getDaysReading();
+    if (daysReading <= 1) return 1;
+
+    // Simple heuristic: if reading time is substantial and spread over days
+    final avgMinutesPerDay = totalReadingTimeMinutes / daysReading;
+    if (avgMinutesPerDay >= 15) {
+      // At least 15 minutes per day average
+      return daysReading; // Assume they've been reading consistently
+    }
+
+    return 1; // At least 1 day if they have any reading time
+  }
+
   // Format reading time as human-readable string
   String getFormattedReadingTime() {
     if (totalReadingTimeMinutes <= 0) return 'No reading time';

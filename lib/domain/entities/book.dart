@@ -53,6 +53,8 @@ class BookEntity {
 
   int get daysReading => readingProgress?.getDaysReading() ?? 0;
 
+  int get readingStreak => readingProgress?.getReadingStreak() ?? 0;
+
   // Rating helpers
   bool get hasRating => averageRating != null && averageRating! > 0;
 

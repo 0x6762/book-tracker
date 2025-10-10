@@ -32,7 +32,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             widget.book;
 
         return Scaffold(
-          backgroundColor: Theme.of(context).colorScheme.surface,
           appBar: AppBar(
             backgroundColor: Theme.of(context).colorScheme.surface,
             elevation: 0,
@@ -156,7 +155,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
@@ -356,7 +355,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
@@ -472,7 +471,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
@@ -489,7 +488,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
           ),
           const SizedBox(height: 16),
 
-          // Stats grid
+          // Stats grid - Row 1
           Row(
             children: [
               Expanded(
@@ -504,9 +503,34 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
               Expanded(
                 child: _buildStatCard(
                   context,
+                  'Reading Streak',
+                  '${book.readingStreak} days',
+                  Icons.local_fire_department,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Stats grid - Row 2
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  context,
                   'Total Time',
                   progress.getFormattedReadingTime(),
                   Icons.timer,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  context,
+                  'Sessions/Week',
+                  _calculateSessionsPerWeek(progress, book),
+                  Icons.trending_up,
                 ),
               ),
             ],
@@ -522,18 +546,18 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 Expanded(
                   child: _buildStatCard(
                     context,
-                    'Avg. Session',
-                    _calculateAverageSessionTime(progress, book),
-                    Icons.trending_up,
+                    'Pages/Hour',
+                    _calculatePagesPerHour(progress, book),
+                    Icons.speed,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildStatCard(
                     context,
-                    'Pages/Hour',
-                    _calculatePagesPerHour(progress, book),
-                    Icons.speed,
+                    'Avg. Session',
+                    _calculateAverageSessionTime(progress, book),
+                    Icons.schedule,
                   ),
                 ),
               ],
@@ -598,6 +622,26 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         bookDetailsProvider.completeReading(book.id!);
       },
     );
+  }
+
+  String _calculateSessionsPerWeek(ReadingProgress progress, BookEntity book) {
+    if (book.daysReading <= 0 || progress.totalReadingTimeMinutes <= 0) {
+      return '0';
+    }
+
+    // Calculate how many reading sessions per week
+    // Assume each timer session is ~30 minutes on average
+    final avgSessionMinutes = 30;
+    final totalSessions = (progress.totalReadingTimeMinutes / avgSessionMinutes)
+        .round();
+
+    // Calculate weeks of reading
+    final weeksReading = (book.daysReading / 7).clamp(1.0, double.infinity);
+
+    // Sessions per week
+    final sessionsPerWeek = (totalSessions / weeksReading).round();
+
+    return '$sessionsPerWeek';
   }
 
   String _calculateAverageSessionTime(

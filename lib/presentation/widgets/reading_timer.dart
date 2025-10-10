@@ -485,7 +485,11 @@ class _ReadingTimerState extends State<ReadingTimer>
                         final actualReadingSeconds =
                             timerService.totalSeconds -
                             timerService.remainingSeconds;
-                        final minutesRead = (actualReadingSeconds / 60).round();
+
+                        // Convert to minutes with proper rounding and minimum validation
+                        final minutesRead = _calculateReadingMinutes(
+                          actualReadingSeconds,
+                        );
                         bookDetailsProvider.updateProgressWithTime(
                           widget.book.id!,
                           newPage,
@@ -523,6 +527,18 @@ class _ReadingTimerState extends State<ReadingTimer>
     } else {
       return '${hours}h ${minutes}m';
     }
+  }
+
+  // Calculate reading minutes with proper rounding and validation
+  int _calculateReadingMinutes(int actualReadingSeconds) {
+    if (actualReadingSeconds <= 0) return 0;
+
+    // Convert to minutes with ceiling (round up) to avoid losing time
+    final minutes = (actualReadingSeconds / 60).ceil();
+
+    // Ensure minimum of 1 minute for any reading session
+    // This handles the testing case where 5 seconds = 1 minute
+    return minutes.clamp(1, 999); // Cap at reasonable maximum
   }
 
   // Modal helpers removed; inline progress UI is used instead.
