@@ -82,7 +82,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             ],
           ),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
+            padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -92,22 +92,22 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
 
                 // Book title and authors
                 _buildBookTitle(context, updatedBook),
-                const SizedBox(height: 16),
-
-                // Book info box
-                _buildBookInfoBox(context, updatedBook),
-                const SizedBox(height: 24),
-
-                // Book info
-                _buildBookInfo(context, updatedBook),
                 const SizedBox(height: 24),
 
                 // Reading progress section
                 _buildReadingProgress(context, updatedBook),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
                 // Reading statistics
                 _buildReadingStats(context, updatedBook),
+                const SizedBox(height: 16),
+
+                // Book info box
+                _buildBookInfoBox(context, updatedBook),
+                const SizedBox(height: 16),
+
+                // Book info
+                _buildBookInfo(context, updatedBook),
                 const SizedBox(height: 32),
               ],
             ),
@@ -173,7 +173,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Text(
             book.authors,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -198,42 +198,54 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
           color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
         ),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Pages
-          if (book.pageCount != null) ...[
-            Expanded(
-              child: _buildInfoItem(
-                context,
-                Icons.menu_book,
-                'Pages',
-                '${book.pageCount}',
-              ),
-            ),
-            const SizedBox(width: 16),
-          ],
-
-          // Published
-          if (book.publishedDate != null) ...[
-            Expanded(
-              child: _buildInfoItem(
-                context,
-                Icons.calendar_today,
-                'Published',
-                _formatPublishedDate(book.publishedDate!),
-              ),
-            ),
-            const SizedBox(width: 16),
-          ],
-
-          // Rating
-          Expanded(
-            child: _buildInfoItem(
+          Text(
+            'Book Information',
+            style: Theme.of(
               context,
-              Icons.star,
-              'Rating',
-              book.hasRating ? book.formattedRating : 'N/A',
-            ),
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              // Pages
+              if (book.pageCount != null) ...[
+                Expanded(
+                  child: _buildInfoItem(
+                    context,
+                    Icons.menu_book,
+                    'Pages',
+                    '${book.pageCount}',
+                  ),
+                ),
+                const SizedBox(width: 16),
+              ],
+
+              // Published
+              if (book.publishedDate != null) ...[
+                Expanded(
+                  child: _buildInfoItem(
+                    context,
+                    Icons.calendar_today,
+                    'Published',
+                    _formatPublishedDate(book.publishedDate!),
+                  ),
+                ),
+                const SizedBox(width: 16),
+              ],
+
+              // Rating
+              Expanded(
+                child: _buildInfoItem(
+                  context,
+                  Icons.star,
+                  'Rating',
+                  book.hasRating ? book.formattedRating : 'N/A',
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -294,14 +306,29 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (book.description != null) ...[
-          Text(
-            'Description',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Description',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildExpandableDescription(context, book),
+              ],
+            ),
           ),
-          const SizedBox(height: 8),
-          _buildExpandableDescription(context, book),
           const SizedBox(height: 16),
         ],
       ],
