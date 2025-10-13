@@ -31,7 +31,56 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             widget.book;
 
         return Scaffold(
-          appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            actions: [
+              PopupMenuButton<String>(
+                onSelected: (value) =>
+                    _handleMenuAction(context, value, updatedBook),
+                icon: Icon(
+                  Icons.more_vert,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                tooltip: 'More options',
+                offset: const Offset(-8, 48), // Position below the icon
+                // Alternative: Use position to control horizontal alignment
+                // position: PopupMenuPosition.under, // or .over
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 8,
+                color: Theme.of(context).colorScheme.surface,
+                itemBuilder: (context) => [
+                  PopupMenuItem<String>(
+                    value: 'delete',
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.delete_outline,
+                          size: 20,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Remove Book',
+                          style: Theme.of(context).textTheme.labelLarge
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -60,10 +109,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 // Reading statistics
                 _buildReadingStats(context, updatedBook),
                 const SizedBox(height: 32),
-
-                // Delete book button
-                _buildDeleteButton(context, updatedBook),
-                const SizedBox(height: 16),
               ],
             ),
           ),
@@ -676,31 +721,16 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     return '$cappedPagesPerHour';
   }
 
-  Widget _buildDeleteButton(BuildContext context, BookEntity book) {
-    return Consumer<BookDetailsProvider>(
-      builder: (context, bookDetailsProvider, child) {
-        return SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: () =>
-                _showDeleteConfirmation(context, bookDetailsProvider, book),
-            label: const Text(
-              'Remove Book',
-              style: TextStyle(color: Colors.red),
-            ),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.red),
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-          ),
-        );
-      },
-    );
+  void _handleMenuAction(BuildContext context, String action, BookEntity book) {
+    switch (action) {
+      case 'delete':
+        _showDeleteConfirmation(context, book);
+        break;
+    }
   }
 
   Future<void> _showDeleteConfirmation(
     BuildContext context,
-    BookDetailsProvider bookDetailsProvider,
     BookEntity book,
   ) async {
     final confirmed = await showDialog<bool>(
