@@ -132,12 +132,22 @@ class BookDatabase extends _$BookDatabase {
     BookValidationService.validateBookExists(book);
     BookValidationService.validateCurrentPage(currentPage, book!.pageCount);
 
+    // Determine if book should be marked as completed or not
+    final shouldBeCompleted =
+        book.pageCount != null && currentPage >= book.pageCount!;
+
     // If this is the first time updating progress (no startDate), set it
     final shouldSetStartDate = book.startDate == null;
+
     await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
       BooksCompanion(
         currentPage: Value(currentPage),
         startDate: shouldSetStartDate
+            ? Value(DateTime.now())
+            : const Value.absent(),
+        // Update completion status based on current page
+        isCompleted: Value(shouldBeCompleted),
+        endDate: shouldBeCompleted
             ? Value(DateTime.now())
             : const Value.absent(),
       ),
@@ -167,6 +177,10 @@ class BookDatabase extends _$BookDatabase {
         minutesRead,
       );
 
+      // Determine if book should be marked as completed or not
+      final shouldBeCompleted =
+          book.pageCount != null && currentPage >= book.pageCount!;
+
       // Update both progress and reading time atomically
       // If this is the first time updating progress (no startDate), set it
       final shouldSetStartDate = book.startDate == null;
@@ -177,16 +191,32 @@ class BookDatabase extends _$BookDatabase {
           startDate: shouldSetStartDate
               ? Value(DateTime.now())
               : const Value.absent(),
+          // Update completion status based on current page
+          isCompleted: Value(shouldBeCompleted),
+          endDate: shouldBeCompleted
+              ? Value(DateTime.now())
+              : const Value.absent(),
         ),
       );
     });
   }
 
   Future<void> completeReading(int bookId) async {
+    // Get book to access pageCount
+    final book = await (select(
+      books,
+    )..where((tbl) => tbl.id.equals(bookId))).getSingleOrNull();
+
+    if (book == null) return;
+
     await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
       BooksCompanion(
         isCompleted: const Value(true),
         endDate: Value(DateTime.now()),
+        // Set currentPage to pageCount to show 100% progress
+        currentPage: book.pageCount != null
+            ? Value(book.pageCount!)
+            : const Value.absent(),
       ),
     );
   }

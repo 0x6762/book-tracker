@@ -355,7 +355,9 @@ class _BookCardState extends State<BookCard> with TickerProviderStateMixin {
           ),
           child: FractionallySizedBox(
             alignment: Alignment.centerLeft,
-            widthFactor: progressPercentage / 100,
+            widthFactor: widget.book.isCompleted
+                ? 1.0
+                : progressPercentage / 100,
             child: Container(
               decoration: BoxDecoration(
                 color: _getProgressBarColor(),
@@ -370,7 +372,7 @@ class _BookCardState extends State<BookCard> with TickerProviderStateMixin {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '${progressPercentage.toStringAsFixed(1)}% complete',
+              '${widget.book.isCompleted ? '100' : progressPercentage.toStringAsFixed(1)}% complete',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: Colors.grey[400],
                 fontWeight: FontWeight.w500,
@@ -378,7 +380,7 @@ class _BookCardState extends State<BookCard> with TickerProviderStateMixin {
             ),
             if (widget.book.pageCount != null)
               Text(
-                '${progress.currentPage}/${widget.book.pageCount}',
+                '${widget.book.isCompleted ? widget.book.pageCount : progress.currentPage}/${widget.book.pageCount}',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: Colors.grey[400],
                 ),

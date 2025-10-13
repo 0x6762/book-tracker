@@ -28,8 +28,10 @@ class BookDetailsProvider with ChangeNotifier {
       );
       print('📖 Added $minutesRead minutes to book $bookId');
       _error = null;
-      // Refresh book list to update UI
-      _bookListProvider?.loadBooks();
+      // Refresh book list to update UI and wait for completion
+      if (_bookListProvider != null) {
+        await _bookListProvider!.loadBooks();
+      }
     } catch (e) {
       print('❌ Error adding reading time: $e');
       _error = 'Failed to add reading time: $e';
@@ -53,8 +55,10 @@ class BookDetailsProvider with ChangeNotifier {
         '📖 Updated progress for book $bookId to page $currentPage and added $minutesRead minutes',
       );
       _error = null;
-      // Refresh book list to update UI
-      _bookListProvider?.loadBooks();
+      // Refresh book list to update UI and wait for completion
+      if (_bookListProvider != null) {
+        await _bookListProvider!.loadBooks();
+      }
     } catch (e) {
       print('❌ Error updating progress with time: $e');
       _error = 'Failed to update progress: $e';
@@ -71,8 +75,10 @@ class BookDetailsProvider with ChangeNotifier {
       );
       print('📖 Updated progress for book $bookId to page $currentPage');
       _error = null;
-      // Refresh book list to update UI
-      _bookListProvider?.loadBooks();
+      // Refresh book list to update UI and wait for completion
+      if (_bookListProvider != null) {
+        await _bookListProvider!.loadBooks();
+      }
     } catch (e) {
       print('❌ Error updating progress: $e');
       _error = 'Failed to update progress: $e';
@@ -86,8 +92,10 @@ class BookDetailsProvider with ChangeNotifier {
       await _serviceLocator.readingProgressService.completeReading(bookId);
       print('📖 Marked book $bookId as completed');
       _error = null;
-      // Refresh book list to update UI
-      _bookListProvider?.loadBooks();
+      // Refresh book list to update UI and wait for completion
+      if (_bookListProvider != null) {
+        await _bookListProvider!.loadBooks();
+      }
     } catch (e) {
       print('❌ Error completing book: $e');
       _error = 'Failed to complete book: $e';

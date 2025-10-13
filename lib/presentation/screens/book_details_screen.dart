@@ -374,7 +374,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             ),
             child: FractionallySizedBox(
               alignment: Alignment.centerLeft,
-              widthFactor: progressPercentage / 100,
+              widthFactor: book.isCompleted ? 1.0 : progressPercentage / 100,
               child: Container(
                 decoration: BoxDecoration(
                   color: book.isCompleted
@@ -392,14 +392,14 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${progressPercentage.toStringAsFixed(1)}% complete',
+                '${book.isCompleted ? '100' : progressPercentage.toStringAsFixed(1)}% complete',
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
               if (book.pageCount != null)
                 Text(
-                  '${progress.currentPage}/${book.pageCount} pages',
+                  '${book.isCompleted ? book.pageCount : progress.currentPage}/${book.pageCount} pages',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -421,7 +421,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                         book,
                       ),
                       label: Text(
-                        book.hasReadingProgress ? 'Update' : 'Start Reading',
+                        book.hasReadingProgress
+                            ? (book.isCompleted ? 'Update Progress' : 'Update')
+                            : 'Start Reading',
                       ),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -432,9 +434,11 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                   if (book.hasReadingProgress && !book.isCompleted)
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          bookDetailsProvider.completeReading(book.id!);
-                          Navigator.of(context).pop();
+                        onPressed: () async {
+                          await bookDetailsProvider.completeReading(book.id!);
+                          if (mounted) {
+                            Navigator.of(context).pop();
+                          }
                         },
                         label: const Text('Mark Complete'),
                         style: ElevatedButton.styleFrom(
