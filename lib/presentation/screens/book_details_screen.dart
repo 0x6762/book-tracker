@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/entities/book.dart';
 import '../../domain/entities/reading_progress.dart';
-import '../widgets/reading_timer.dart';
 import '../widgets/progress_update_bottom_sheet.dart';
 import '../providers/book_details_provider.dart';
 import '../providers/book_list_provider.dart';
@@ -59,10 +58,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
 
                 // Reading progress section
                 _buildReadingProgress(context, updatedBook),
-                const SizedBox(height: 24),
-
-                // Reading timer section
-                _buildReadingTimer(context, updatedBook),
                 const SizedBox(height: 24),
 
                 // Reading statistics
@@ -457,10 +452,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         ],
       ),
     );
-  }
-
-  Widget _buildReadingTimer(BuildContext context, BookEntity book) {
-    return ReadingTimer(bookId: book.id!, bookTitle: book.title, book: book);
   }
 
   Widget _buildReadingStats(BuildContext context, BookEntity book) {
