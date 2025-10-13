@@ -31,10 +31,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             widget.book;
 
         return Scaffold(
-          appBar: AppBar(
-            backgroundColor: Theme.of(context).colorScheme.surface,
-            elevation: 0,
-          ),
+          appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
           body: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
