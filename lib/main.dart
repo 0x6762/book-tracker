@@ -15,6 +15,7 @@ import 'presentation/widgets/search_input.dart';
 import 'presentation/widgets/book_card.dart';
 import 'presentation/widgets/book_cover_carousel.dart';
 import 'presentation/screens/search_screen.dart';
+import 'presentation/screens/barcode_scanner_screen.dart';
 import 'core/constants/app_constants.dart';
 import 'core/theme/app_theme.dart';
 
@@ -200,6 +201,17 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
     );
   }
 
+  Future<void> _navigateToScannerAndSearch() async {
+    final isbn = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
+    if (isbn != null && isbn.trim().isNotEmpty) {
+      _searchController.text = isbn;
+      context.read<SearchProvider>().searchBooks(isbn);
+      _navigateToSearch();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer2<BookListProvider, TimerService>(
@@ -259,6 +271,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
                         controller: _searchController,
                         onTap: _navigateToSearch,
                         isSearchMode: false,
+                        onScan: _navigateToScannerAndSearch,
                       ),
                     ),
                     // Content
@@ -320,6 +333,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
                 controller: _searchController,
                 onTap: _navigateToSearch,
                 isSearchMode: false,
+                onScan: _navigateToScannerAndSearch,
               ),
             ),
           ),
