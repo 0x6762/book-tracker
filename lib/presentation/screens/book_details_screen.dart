@@ -3,8 +3,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/entities/book.dart';
 import '../../domain/entities/reading_progress.dart';
 import '../widgets/progress_update_bottom_sheet.dart';
+import '../widgets/app_card.dart';
 import '../providers/book_details_provider.dart';
 import '../providers/book_list_provider.dart';
+import '../../core/constants/app_constants.dart';
+import '../../core/theme/text_styles.dart';
 import 'package:provider/provider.dart';
 
 class BookDetailsScreen extends StatefulWidget {
@@ -82,33 +85,21 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             ],
           ),
           body: SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.all(AppConstants.md),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Centered book cover
                 _buildBookCover(context, updatedBook),
-                const SizedBox(height: 24),
-
-                // Book title and authors
+                const SizedBox(height: AppConstants.lg),
                 _buildBookTitle(context, updatedBook),
-                const SizedBox(height: 24),
-
-                // Reading progress section
+                const SizedBox(height: AppConstants.lg),
                 _buildReadingProgress(context, updatedBook),
-                const SizedBox(height: 16),
-
-                // Reading statistics
+                const SizedBox(height: AppConstants.md),
                 _buildReadingStats(context, updatedBook),
-                const SizedBox(height: 16),
-
-                // Book info box
+                const SizedBox(height: AppConstants.md),
                 _buildBookInfoBox(context, updatedBook),
-                const SizedBox(height: 16),
-
-                // Book info
+                const SizedBox(height: AppConstants.md),
                 _buildBookInfo(context, updatedBook),
-                const SizedBox(height: 32),
               ],
             ),
           ),
@@ -168,17 +159,17 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         children: [
           Text(
             book.title,
-            style: Theme.of(
-              context,
-            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: AppTextStyles.headlineMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
             textAlign: TextAlign.center,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppConstants.xs),
           Text(
             book.authors,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            style: AppTextStyles.bookAuthor.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
             textAlign: TextAlign.center,
@@ -191,25 +182,18 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   }
 
   Widget _buildBookInfoBox(BuildContext context, BookEntity book) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-        ),
-      ),
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Book Information',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: AppTextStyles.titleMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppConstants.md),
           Row(
             children: [
               // Pages
@@ -222,7 +206,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                     '${book.pageCount}',
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppConstants.md),
               ],
 
               // Published
@@ -235,7 +219,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                     _formatPublishedDate(book.publishedDate!),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: AppConstants.md),
               ],
 
               // Rating
@@ -263,18 +247,19 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     return Column(
       children: [
         Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppConstants.sm),
         Text(
           value,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          style: AppTextStyles.titleMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.bold,
+          ),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppConstants.xs),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          style: AppTextStyles.bodySmall.copyWith(
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
           textAlign: TextAlign.center,
@@ -386,26 +371,18 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
 
   Widget _buildReadingProgress(BuildContext context, BookEntity book) {
     if (!book.hasReadingProgress) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-          ),
-        ),
+      return AppInfoCard(
         child: Row(
           children: [
             Icon(
               Icons.info_outline,
               color: Theme.of(context).colorScheme.primary,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppConstants.sm + AppConstants.xs),
             Expanded(
               child: Text(
                 'Start reading to track your progress',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: AppTextStyles.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -418,25 +395,18 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     final progress = book.readingProgress!;
     final progressPercentage = book.progressPercentage;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-        ),
-      ),
+    return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Reading Progress',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: AppTextStyles.titleMedium.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppConstants.md),
 
           // Progress bar
           Container(
@@ -444,7 +414,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             height: 8,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(4),
+              borderRadius: BorderRadius.circular(
+                AppConstants.progressBarBorderRadius,
+              ),
             ),
             child: FractionallySizedBox(
               alignment: Alignment.centerLeft,
@@ -454,12 +426,14 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                   color: book.isCompleted
                       ? Colors.green
                       : Theme.of(context).colorScheme.primary,
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(
+                    AppConstants.progressBarBorderRadius,
+                  ),
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppConstants.sm + AppConstants.xs),
 
           // Progress details
           Row(
@@ -467,20 +441,21 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             children: [
               Text(
                 '${book.isCompleted ? '100' : progressPercentage.toStringAsFixed(1)}% complete',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               if (book.pageCount != null)
                 Text(
                   '${book.isCompleted ? book.pageCount : progress.currentPage}/${book.pageCount} pages',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppConstants.sm + AppConstants.xs),
 
           // Last time read
           Row(
@@ -490,17 +465,17 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 size: 18,
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppConstants.sm),
               Text(
                 'Last read: ' +
                     _formatLastRead(progress.endDate, progress.startDate),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: AppTextStyles.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppConstants.md),
 
           // Action buttons
           Consumer<BookDetailsProvider>(
@@ -520,11 +495,13 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                             : 'Start Reading',
                       ),
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppConstants.sm + AppConstants.xs,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppConstants.sm + AppConstants.xs),
                   if (book.hasReadingProgress && !book.isCompleted)
                     Expanded(
                       child: ElevatedButton.icon(
@@ -536,7 +513,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                         },
                         label: const Text('Mark Complete'),
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: AppConstants.sm + AppConstants.xs,
+                          ),
                         ),
                       ),
                     ),

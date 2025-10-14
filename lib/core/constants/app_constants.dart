@@ -16,6 +16,9 @@ class AppConstants {
 
   // Border Radius
   static const double borderRadius = 8.0;
+  static const double cardBorderRadius = 28.0; // For cards and containers
+  static const double buttonBorderRadius = 28.0; // For buttons
+  static const double progressBarBorderRadius = 4.0; // For progress bars
   static const double emptyStatePadding = 32.0;
 
   // Icon Sizes
@@ -31,10 +34,18 @@ class AppConstants {
   static const double emptyStateBodySize = 16.0;
 
   // Spacing
-  static const double smallSpacing = 4.0;
-  static const double mediumSpacing = 8.0;
-  static const double largeSpacing = 16.0;
-  static const double extraLargeSpacing = 24.0;
+  static const double xs = 4.0; // Extra small
+  static const double sm = 8.0; // Small
+  static const double md = 16.0; // Medium (most common)
+  static const double lg = 24.0; // Large
+  static const double xl = 32.0; // Extra large
+  static const double xxl = 48.0; // Extra extra large
+
+  // Legacy spacing (for backward compatibility)
+  static const double smallSpacing = xs;
+  static const double mediumSpacing = sm;
+  static const double largeSpacing = md;
+  static const double extraLargeSpacing = lg;
 
   // Search Configuration
   static const int minQueryLength = 3;
