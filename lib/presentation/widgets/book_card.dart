@@ -28,12 +28,12 @@ class _BookCardState extends State<BookCard> with TickerProviderStateMixin {
   static const double _cardBorderRadius = 28.0;
   static const double _imageScale = 1.01;
   static const double _gradientHeight = 300.0;
-  static const Duration _animationDelay = Duration(milliseconds: 300);
+  static const Duration _animationDelay = Duration(milliseconds: 200);
   static const Duration _colorExtractionDelay = Duration(
     milliseconds: 500,
   ); // Reduced since we now have proper caching
   static const Duration _animationDuration = Duration(milliseconds: 200);
-  static const Duration _gradientFadeDuration = Duration(milliseconds: 500);
+  static const Duration _gradientFadeDuration = Duration(milliseconds: 300);
   static const double _progressBarHeight = 8.0;
   static const double _progressBarRadius = 56.0;
 
@@ -235,6 +235,7 @@ class _BookCardState extends State<BookCard> with TickerProviderStateMixin {
                                 end: Alignment.bottomCenter,
                                 colors: [
                                   Colors.transparent,
+                                  colorScheme.surface.withOpacity(0.3),
                                   colorScheme.surface.withOpacity(0.8),
                                   colorScheme.surface,
                                 ],
