@@ -25,6 +25,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen>
   late ScrollController _scrollController;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  late TabController _tabController;
 
   @override
   void initState() {
@@ -41,6 +42,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen>
     // Initialize to show elements when screen first loads
     _fadeController.value = 1.0;
 
+    // Initialize tab controller
+    _tabController = TabController(length: 2, vsync: this);
+
     // Listen to scroll changes to update fade animation
     _scrollController.addListener(_onScroll);
   }
@@ -50,6 +54,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen>
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _fadeController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -133,61 +138,109 @@ class _BookDetailsScreenState extends State<BookDetailsScreen>
               ),
             ],
           ),
-          body: CustomScrollView(
+          body: NestedScrollView(
             controller: _scrollController,
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              return [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppConstants.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Animated book cover
+                        AnimatedBuilder(
+                          animation: _fadeAnimation,
+                          builder: (context, child) {
+                            return Transform.scale(
+                              scale:
+                                  1.0 -
+                                  ((1.0 - _fadeAnimation.value) *
+                                      0.1), // Slight scale down
+                              child: Opacity(
+                                opacity: _fadeAnimation.value,
+                                child: _buildBookCover(context, updatedBook),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: AppConstants.lg),
+                        // Animated book title and author
+                        AnimatedBuilder(
+                          animation: _fadeAnimation,
+                          builder: (context, child) {
+                            return Transform.translate(
+                              offset: Offset(
+                                0,
+                                (1.0 - _fadeAnimation.value) * 1,
+                              ), // Slight upward movement
+                              child: Opacity(
+                                opacity: _fadeAnimation.value,
+                                child: _buildBookTitle(context, updatedBook),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: AppConstants.lg),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: AppConstants.md,
+                    ),
+                    child: TabBar(
+                      controller: _tabController,
+                      tabs: const [
+                        Tab(text: 'Statistics'),
+                        Tab(text: 'Book Details'),
+                      ],
+                      labelColor: Theme.of(context).colorScheme.primary,
+                      unselectedLabelColor: Theme.of(
+                        context,
+                      ).colorScheme.onSurfaceVariant,
+                      indicatorColor: Theme.of(context).colorScheme.primary,
+                      indicatorWeight: 3,
+                      labelStyle: AppTextStyles.titleMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      unselectedLabelStyle: AppTextStyles.titleMedium,
+                    ),
+                  ),
+                ),
+              ];
+            },
+            body: TabBarView(
+              controller: _tabController,
+              children: [
+                // Statistics Tab
+                SingleChildScrollView(
                   padding: const EdgeInsets.all(AppConstants.md),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Animated book cover
-                      AnimatedBuilder(
-                        animation: _fadeAnimation,
-                        builder: (context, child) {
-                          return Transform.scale(
-                            scale:
-                                1.0 -
-                                ((1.0 - _fadeAnimation.value) *
-                                    0.1), // Slight scale down
-                            child: Opacity(
-                              opacity: _fadeAnimation.value,
-                              child: _buildBookCover(context, updatedBook),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: AppConstants.lg),
-                      // Animated book title and author
-                      AnimatedBuilder(
-                        animation: _fadeAnimation,
-                        builder: (context, child) {
-                          return Transform.translate(
-                            offset: Offset(
-                              0,
-                              (1.0 - _fadeAnimation.value) * 1,
-                            ), // Slight upward movement
-                            child: Opacity(
-                              opacity: _fadeAnimation.value,
-                              child: _buildBookTitle(context, updatedBook),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: AppConstants.lg),
                       _buildReadingProgress(context, updatedBook),
-                      const SizedBox(height: AppConstants.md),
+                      const SizedBox(height: AppConstants.lg),
                       _buildReadingStats(context, updatedBook),
-                      const SizedBox(height: AppConstants.md),
+                    ],
+                  ),
+                ),
+                // Book Details Tab
+                SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppConstants.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       _buildBookInfoBox(context, updatedBook),
                       const SizedBox(height: AppConstants.md),
                       _buildBookInfo(context, updatedBook),
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
