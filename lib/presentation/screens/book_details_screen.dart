@@ -47,24 +47,35 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                     child: SizedBox(height: _getHeaderHeight(context)),
                   ),
 
-                  // Scrollable content
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppConstants.md,
-                    ),
-                    sliver: SliverList(
-                      delegate: SliverChildListDelegate([
-                        _buildReadingProgress(context, updatedBook),
-                        const SizedBox(height: AppConstants.md),
-                        _buildReadingStats(context, updatedBook),
-                        const SizedBox(height: AppConstants.md),
-                        _buildBookInfoBox(context, updatedBook),
-                        const SizedBox(height: AppConstants.md),
-                        _buildBookInfo(context, updatedBook),
-                        const SizedBox(
-                          height: AppConstants.xl,
-                        ), // Extra space at bottom
-                      ]),
+                  // Scrollable content with surface background
+                  SliverToBoxAdapter(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(28),
+                          topRight: Radius.circular(28),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppConstants.md,
+                        ),
+                        child: Column(
+                          children: [
+                            _buildReadingProgress(context, updatedBook),
+                            const SizedBox(height: AppConstants.md),
+                            _buildReadingStats(context, updatedBook),
+                            const SizedBox(height: AppConstants.md),
+                            _buildBookInfoBox(context, updatedBook),
+                            const SizedBox(height: AppConstants.md),
+                            _buildBookInfo(context, updatedBook),
+                            const SizedBox(
+                              height: AppConstants.xl,
+                            ), // Extra space at bottom
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -92,9 +103,9 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Theme.of(context).colorScheme.surface,
-            Theme.of(context).colorScheme.surface.withOpacity(0.8),
-            Theme.of(context).colorScheme.surface.withOpacity(0.0),
+            Theme.of(context).scaffoldBackgroundColor,
+            Theme.of(context).scaffoldBackgroundColor.withOpacity(0.8),
+            Theme.of(context).scaffoldBackgroundColor.withOpacity(0.0),
           ],
           stops: const [0.0, 0.7, 1.0],
         ),
@@ -125,8 +136,8 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Theme.of(context).colorScheme.surface,
-            Theme.of(context).colorScheme.surface.withOpacity(0.0),
+            Theme.of(context).scaffoldBackgroundColor,
+            Theme.of(context).scaffoldBackgroundColor.withOpacity(0.0),
           ],
           stops: const [0.0, 1.0],
         ),
