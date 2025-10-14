@@ -30,7 +30,10 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Scan ISBN'),
+        title: Text(
+          'Scan ISBN',
+          style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.flash_on),

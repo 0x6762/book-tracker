@@ -75,39 +75,52 @@ class SearchResultCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   // Additional book information
-                  Row(
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       if (book.pageCount != null) ...[
-                        Icon(
-                          Icons.menu_book,
-                          size: 14,
-                          color: Colors.grey[500],
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.menu_book,
+                              size: 14,
+                              color: Colors.grey[500],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${book.pageCount} pages',
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 12,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${book.pageCount} pages',
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
                       ],
                       if (book.publishedDate != null) ...[
-                        Icon(
-                          Icons.calendar_today,
-                          size: 14,
-                          color: Colors.grey[500],
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.calendar_today,
+                              size: 14,
+                              color: Colors.grey[500],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatPublishedDate(book.publishedDate!),
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 12,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          _formatPublishedDate(book.publishedDate!),
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
                       ],
                     ],
                   ),
