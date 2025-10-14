@@ -3,6 +3,8 @@ import '../../domain/entities/book.dart';
 import '../../domain/business/book_display_service.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/text_styles.dart';
+import '../../core/di/service_locator.dart';
+import '../../application/services/simple_color_extraction_service.dart';
 import 'app_card.dart';
 
 class BookDetailsTabs extends StatefulWidget {
@@ -17,17 +19,68 @@ class BookDetailsTabs extends StatefulWidget {
 class _BookDetailsTabsState extends State<BookDetailsTabs>
     with TickerProviderStateMixin {
   late TabController _tabController;
+  Color? _bookAccentColor;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+
+    // Extract color after widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAndExtractColor();
+    });
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
+  }
+
+  void _checkAndExtractColor() async {
+    // Skip extraction for completed books; use green bar already
+    if (widget.book.isCompleted) return;
+    if (widget.book.thumbnailUrl == null || widget.book.id == null || !mounted)
+      return;
+
+    // Check if color is already cached in database
+    try {
+      final database = ServiceLocator().database;
+      final bookColor = await database.getBookColor(widget.book.id!);
+      if (bookColor?.accentColor != null) {
+        // Color is cached - use it immediately
+        final color = Color(bookColor!.accentColor!);
+        if (mounted) {
+          setState(() {
+            _bookAccentColor = color;
+          });
+        }
+        return;
+      }
+    } catch (e) {
+      print('Error checking cached color: $e');
+    }
+
+    // Color not cached - extract with a small delay for image loading
+    Future.delayed(const Duration(milliseconds: 500), _extractBookColor);
+  }
+
+  void _extractBookColor() async {
+    if (widget.book.isCompleted) return;
+    if (widget.book.thumbnailUrl != null && widget.book.id != null && mounted) {
+      final color = await SimpleColorExtractionService.extractColor(
+        widget.book.thumbnailUrl!,
+        widget.book.id!,
+      );
+
+      // Double-check mounted state after async operation
+      if (mounted) {
+        setState(() {
+          _bookAccentColor = color;
+        });
+      }
+    }
   }
 
   @override
@@ -45,7 +98,7 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                   Tab(text: 'Statistics'),
                   Tab(text: 'Book Details'),
                 ],
-                labelColor: Theme.of(context).colorScheme.primary,
+                labelColor: Theme.of(context).colorScheme.onSurface,
                 unselectedLabelColor: Theme.of(
                   context,
                 ).colorScheme.onSurfaceVariant,
@@ -53,7 +106,9 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                 indicatorWeight: 3,
                 dividerColor: Theme.of(
                   context,
-                ).colorScheme.outline.withOpacity(0.2),
+                ).colorScheme.outline.withOpacity(0.3),
+                splashFactory: NoSplash.splashFactory,
+                overlayColor: MaterialStateProperty.all(Colors.transparent),
                 labelStyle: AppTextStyles.titleMedium.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -158,9 +213,7 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                   : progressPercentage / 100,
               child: Container(
                 decoration: BoxDecoration(
-                  color: widget.book.isCompleted
-                      ? Colors.green
-                      : Theme.of(context).colorScheme.primary,
+                  color: _getProgressBarColor(),
                   borderRadius: BorderRadius.circular(
                     AppConstants.progressBarBorderRadius,
                   ),
@@ -472,5 +525,12 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
         );
       },
     );
+  }
+
+  Color _getProgressBarColor() {
+    if (widget.book.isCompleted) {
+      return Colors.green;
+    }
+    return _bookAccentColor ?? Theme.of(context).colorScheme.primary;
   }
 }
