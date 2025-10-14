@@ -22,6 +22,8 @@ class AppColorSchemes {
     inverseSurface: Color(0xFF222823), // Dark gray from your palette
     onInverseSurface: Color(0xFFF4F7F5), // Very light from your palette
     inversePrimary: Color(0xFFA7A2A9), // Light gray from your palette
+    background: Color(0xFFF4F7F5), // Very light background
+    onBackground: Color(0xFF08090A), // Very dark text on background
   );
 
   // Dark theme colors
@@ -45,6 +47,8 @@ class AppColorSchemes {
     inverseSurface: Color(0xFFF2F2F2), // Light text
     onInverseSurface: Color(0xFF19141B), // Dark background
     inversePrimary: Color(0xFF575A5E), // Medium gray from your palette
+    background: Color(0xFF19141B), // Dark background
+    onBackground: Color(0xFFF2F2F2), // Light text on background
   );
 
   // Custom colors for book tracker specific elements

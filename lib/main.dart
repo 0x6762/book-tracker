@@ -238,8 +238,13 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
             (bookListProvider.books.isNotEmpty || searchProvider.isSearching);
 
         return Scaffold(
+          backgroundColor: Theme.of(context).colorScheme.background,
           appBar: showAppBar
               ? AppBar(
+                  backgroundColor: Theme.of(context).colorScheme.background,
+                  elevation: 0,
+                  surfaceTintColor: Colors.transparent,
+                  scrolledUnderElevation: 0,
                   title: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
