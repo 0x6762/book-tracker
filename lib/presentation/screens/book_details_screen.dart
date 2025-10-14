@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/entities/book.dart';
-import '../../domain/entities/reading_progress.dart';
+import '../../domain/business/book_display_service.dart';
 import '../widgets/progress_update_bottom_sheet.dart';
 import '../widgets/app_card.dart';
 import '../providers/book_details_provider.dart';
@@ -216,7 +216,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                     context,
                     Icons.calendar_today,
                     'Published',
-                    _formatPublishedDate(book.publishedDate!),
+                    book.formattedPublishedDate,
                   ),
                 ),
                 const SizedBox(width: AppConstants.md),
@@ -268,75 +268,49 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     );
   }
 
-  String _formatPublishedDate(String date) {
-    try {
-      final parsedDate = DateTime.parse(date);
-      final now = DateTime.now();
-      final difference = now.difference(parsedDate);
-
-      if (difference.inDays < 30) {
-        return '${difference.inDays} days ago';
-      } else if (difference.inDays < 365) {
-        final months = (difference.inDays / 30).floor();
-        return '$months month${months == 1 ? '' : 's'} ago';
-      } else {
-        final years = (difference.inDays / 365).floor();
-        return '$years year${years == 1 ? '' : 's'} ago';
-      }
-    } catch (e) {
-      return date; // Return original if parsing fails
-    }
-  }
-
   Widget _buildBookInfo(BuildContext context, BookEntity book) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (book.description != null) ...[
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-              ),
-            ),
+        if (book.hasDescription) ...[
+          AppCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Description',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: AppTextStyles.titleMedium.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppConstants.sm),
                 _buildExpandableDescription(context, book),
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppConstants.md),
         ],
       ],
     );
   }
 
   Widget _buildExpandableDescription(BuildContext context, BookEntity book) {
-    final description = book.description!;
-    final needsExpansion = description.length > 200; // Approximate 3 lines
+    final needsExpansion = book.needsDescriptionExpansion;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          description,
-          style: Theme.of(context).textTheme.bodyMedium,
+          _isDescriptionExpanded ? book.description! : book.shortDescription,
+          style: AppTextStyles.bodyMedium.copyWith(
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
           maxLines: _isDescriptionExpanded ? null : 3,
           overflow: _isDescriptionExpanded ? null : TextOverflow.ellipsis,
         ),
         if (needsExpansion) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppConstants.sm),
           GestureDetector(
             onTap: () {
               setState(() {
@@ -348,12 +322,12 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
               children: [
                 Text(
                   _isDescriptionExpanded ? 'Show less' : 'Show more',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: AppConstants.xs),
                 Icon(
                   _isDescriptionExpanded
                       ? Icons.keyboard_arrow_up
@@ -467,8 +441,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
               ),
               const SizedBox(width: AppConstants.sm),
               Text(
-                'Last read: ' +
-                    _formatLastRead(progress.endDate, progress.startDate),
+                'Last read: ${progress.getLastReadFormatted()}',
                 style: AppTextStyles.bodyMedium.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -490,9 +463,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                         book,
                       ),
                       label: Text(
-                        book.hasReadingProgress
-                            ? (book.isCompleted ? 'Update Progress' : 'Update')
-                            : 'Start Reading',
+                        BookDisplayService.getProgressButtonText(book),
                       ),
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
@@ -528,56 +499,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     );
   }
 
-  String _formatLastRead(DateTime? endDate, DateTime startDate) {
-    final last = endDate ?? startDate;
-    final now = DateTime.now();
-    final difference = now.difference(last);
-
-    if (difference.inMinutes < 1) return 'just now';
-    if (difference.inMinutes < 60) return '${difference.inMinutes} min ago';
-    if (difference.inHours < 24)
-      return '${difference.inHours} hr${difference.inHours == 1 ? '' : 's'} ago';
-    if (difference.inDays < 7)
-      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
-
-    // Fallback to short date like "Oct 14, 2025"
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final m = months[last.month - 1];
-    return '$m ${last.day}, ${last.year}';
-  }
-
-  String _formatShortDate(DateTime date) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    final m = months[date.month - 1];
-    return '$m ${date.day}, ${date.year}';
-  }
-
   Widget _buildReadingStats(BuildContext context, BookEntity book) {
     if (!book.hasReadingProgress) return const SizedBox.shrink();
 
@@ -605,7 +526,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             _buildStatCard(
               context,
               'Started',
-              _formatShortDate(progress.startDate),
+              BookDisplayService.formatShortDate(progress.startDate),
               Icons.calendar_today,
             ),
             _buildStatCard(
@@ -623,27 +544,21 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             _buildStatCard(
               context,
               'Sessions/Week',
-              _calculateSessionsPerWeek(progress, book),
+              '${progress.getSessionsPerWeek()}',
               Icons.trending_up,
             ),
-            if (progress.totalReadingTimeMinutes > 0 &&
-                book.daysReading > 0 &&
-                book.pageCount != null &&
-                progress.currentPage > 0)
+            if (BookDisplayService.shouldShowAdvancedStats(book))
               _buildStatCard(
                 context,
                 'Pages/Hour',
-                _calculatePagesPerHour(progress, book),
+                '${progress.getPagesPerHour(book.pageCount!)}',
                 Icons.speed,
               ),
-            if (progress.totalReadingTimeMinutes > 0 &&
-                book.daysReading > 0 &&
-                book.pageCount != null &&
-                progress.currentPage > 0)
+            if (BookDisplayService.shouldShowAdvancedStats(book))
               _buildStatCard(
                 context,
                 'Avg. Session',
-                _calculateAverageSessionTime(progress, book),
+                progress.getAverageSessionTime(),
                 Icons.schedule,
               ),
           ],
@@ -711,66 +626,6 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         bookDetailsProvider.completeReading(book.id!);
       },
     );
-  }
-
-  String _calculateSessionsPerWeek(ReadingProgress progress, BookEntity book) {
-    if (book.daysReading <= 0 || progress.totalReadingTimeMinutes <= 0) {
-      return '0';
-    }
-
-    // Calculate how many reading sessions per week
-    // Assume each timer session is ~30 minutes on average
-    final avgSessionMinutes = 30;
-    final totalSessions = (progress.totalReadingTimeMinutes / avgSessionMinutes)
-        .round();
-
-    // Calculate weeks of reading
-    final weeksReading = (book.daysReading / 7).clamp(1.0, double.infinity);
-
-    // Sessions per week
-    final sessionsPerWeek = (totalSessions / weeksReading).round();
-
-    return '$sessionsPerWeek';
-  }
-
-  String _calculateAverageSessionTime(
-    ReadingProgress progress,
-    BookEntity book,
-  ) {
-    if (book.daysReading <= 0 || progress.totalReadingTimeMinutes <= 0) {
-      return '0m';
-    }
-
-    // Calculate average session time based on total reading time and days
-    // This gives a more realistic average since users don't read every day
-    final avgMinutes = progress.totalReadingTimeMinutes / book.daysReading;
-    final hours = avgMinutes ~/ 60;
-    final minutes = (avgMinutes % 60).round();
-
-    if (hours > 0) {
-      return minutes > 0 ? '${hours}h ${minutes}m' : '${hours}h';
-    } else {
-      return '${minutes}m';
-    }
-  }
-
-  String _calculatePagesPerHour(ReadingProgress progress, BookEntity book) {
-    if (progress.totalReadingTimeMinutes <= 0 ||
-        book.pageCount == null ||
-        progress.currentPage <= 0) {
-      return '0';
-    }
-
-    final hours = progress.totalReadingTimeMinutes / 60;
-    if (hours <= 0) return '0';
-
-    // Calculate pages per hour based on current page progress
-    // This assumes reading started from page 1 (or 0), which is typical
-    final pagesPerHour = (progress.currentPage / hours).round();
-
-    // Cap at reasonable reading speed (e.g., 100 pages/hour max)
-    final cappedPagesPerHour = pagesPerHour.clamp(0, 100);
-    return '$cappedPagesPerHour';
   }
 
   void _handleMenuAction(BuildContext context, String action, BookEntity book) {

@@ -66,6 +66,94 @@ class ReadingProgress {
     }
   }
 
+  // Calculate sessions per week
+  int getSessionsPerWeek() {
+    if (getDaysReading() <= 0 || totalReadingTimeMinutes <= 0) {
+      return 0;
+    }
+
+    // Calculate how many reading sessions per week
+    // Assume each timer session is ~30 minutes on average
+    const avgSessionMinutes = 30;
+    final totalSessions = (totalReadingTimeMinutes / avgSessionMinutes).round();
+
+    // Calculate weeks of reading
+    final weeksReading = (getDaysReading() / 7).clamp(1.0, double.infinity);
+
+    // Sessions per week
+    return (totalSessions / weeksReading).round();
+  }
+
+  // Calculate average session time
+  String getAverageSessionTime() {
+    if (getDaysReading() <= 0 || totalReadingTimeMinutes <= 0) {
+      return '0m';
+    }
+
+    // Calculate average session time based on total reading time and days
+    // This gives a more realistic average since users don't read every day
+    final avgMinutes = totalReadingTimeMinutes / getDaysReading();
+    final hours = avgMinutes ~/ 60;
+    final minutes = (avgMinutes % 60).round();
+
+    if (hours > 0) {
+      return minutes > 0 ? '${hours}h ${minutes}m' : '${hours}h';
+    } else {
+      return '${minutes}m';
+    }
+  }
+
+  // Calculate pages per hour
+  int getPagesPerHour(int totalPages) {
+    if (totalReadingTimeMinutes <= 0 || totalPages <= 0 || currentPage <= 0) {
+      return 0;
+    }
+
+    final hours = totalReadingTimeMinutes / 60;
+    if (hours <= 0) return 0;
+
+    // Calculate pages per hour based on current page progress
+    // This assumes reading started from page 1 (or 0), which is typical
+    final pagesPerHour = (currentPage / hours).round();
+
+    // Cap at reasonable reading speed (e.g., 100 pages/hour max)
+    return pagesPerHour.clamp(0, 100);
+  }
+
+  // Format last read date with relative time
+  String getLastReadFormatted() {
+    final last = endDate ?? startDate;
+    final now = DateTime.now();
+    final difference = now.difference(last);
+
+    if (difference.inMinutes < 1) return 'just now';
+    if (difference.inMinutes < 60) return '${difference.inMinutes} min ago';
+    if (difference.inHours < 24) {
+      return '${difference.inHours} hr${difference.inHours == 1 ? '' : 's'} ago';
+    }
+    if (difference.inDays < 7) {
+      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+    }
+
+    // Fallback to short date like "Oct 14, 2025"
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final m = months[last.month - 1];
+    return '$m ${last.day}, ${last.year}';
+  }
+
   // Create a copy with updated values
   ReadingProgress copyWith({
     int? id,

@@ -73,7 +73,49 @@ class BookEntity {
 
   String get fullRatingText {
     if (!hasRating) return 'No rating';
-    return '$formattedRating ${formattedRatingCount}';
+    return '$formattedRating $formattedRatingCount';
+  }
+
+  // Date formatting helpers
+  String get formattedPublishedDate {
+    if (publishedDate == null) return 'Unknown';
+    return _formatPublishedDate(publishedDate!);
+  }
+
+  String _formatPublishedDate(String date) {
+    try {
+      final parsedDate = DateTime.parse(date);
+      final now = DateTime.now();
+      final difference = now.difference(parsedDate);
+
+      if (difference.inDays < 30) {
+        return '${difference.inDays} days ago';
+      } else if (difference.inDays < 365) {
+        final months = (difference.inDays / 30).floor();
+        return '$months month${months == 1 ? '' : 's'} ago';
+      } else {
+        final years = (difference.inDays / 365).floor();
+        return '$years year${years == 1 ? '' : 's'} ago';
+      }
+    } catch (e) {
+      return date; // Return original if parsing fails
+    }
+  }
+
+  // Description helpers
+  bool get hasDescription => description != null && description!.isNotEmpty;
+
+  bool get needsDescriptionExpansion {
+    if (!hasDescription) return false;
+    return description!.length > 200; // Approximate 3 lines
+  }
+
+  String get shortDescription {
+    if (!hasDescription) return '';
+    if (needsDescriptionExpansion) {
+      return '${description!.substring(0, 200)}...';
+    }
+    return description!;
   }
 
   // Create a copy with updated fields
