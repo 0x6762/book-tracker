@@ -19,8 +19,57 @@ class BookDetailsScreen extends StatefulWidget {
   State<BookDetailsScreen> createState() => _BookDetailsScreenState();
 }
 
-class _BookDetailsScreenState extends State<BookDetailsScreen> {
+class _BookDetailsScreenState extends State<BookDetailsScreen>
+    with TickerProviderStateMixin {
   bool _isDescriptionExpanded = false;
+  late ScrollController _scrollController;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _fadeController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
+
+    // Initialize to show elements when screen first loads
+    _fadeController.value = 1.0;
+
+    // Listen to scroll changes to update fade animation
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    const double fadeStartOffset = 120.0; // Start fading
+    const double fadeEndOffset = 350.0; // Complete fade
+
+    final offset = _scrollController.offset;
+
+    if (offset <= fadeStartOffset) {
+      _fadeController.value = 1.0; // Fully visible (reverse logic)
+    } else if (offset >= fadeEndOffset) {
+      _fadeController.value = 0.0; // Fully faded (reverse logic)
+    } else {
+      // Smooth interpolation between fade start and end (reversed)
+      final progress =
+          (offset - fadeStartOffset) / (fadeEndOffset - fadeStartOffset);
+      _fadeController.value = 1.0 - progress; // Reverse the progress
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,135 +83,21 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             widget.book;
 
         return Scaffold(
-          body: Stack(
-            children: [
-              // Fixed header with book cover, title, and author
-              _buildFixedHeader(context, updatedBook),
-
-              // Scrollable content that goes over the fixed header
-              CustomScrollView(
-                slivers: [
-                  // Add space to account for the fixed header
-                  SliverToBoxAdapter(
-                    child: SizedBox(height: _getHeaderHeight(context)),
-                  ),
-
-                  // Scrollable content with surface background
-                  SliverToBoxAdapter(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(28),
-                          topRight: Radius.circular(28),
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppConstants.md,
-                        ),
-                        child: Column(
-                          children: [
-                            _buildReadingProgress(context, updatedBook),
-                            const SizedBox(height: AppConstants.md),
-                            _buildReadingStats(context, updatedBook),
-                            const SizedBox(height: AppConstants.md),
-                            _buildBookInfoBox(context, updatedBook),
-                            const SizedBox(height: AppConstants.md),
-                            _buildBookInfo(context, updatedBook),
-                            const SizedBox(
-                              height: AppConstants.xl,
-                            ), // Extra space at bottom
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              // App bar positioned on top to ensure it's tappable
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: _buildAppBar(context, updatedBook),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildFixedHeader(BuildContext context, BookEntity book) {
-    return Container(
-      height: _getHeaderHeight(context),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Theme.of(context).scaffoldBackgroundColor,
-            Theme.of(context).scaffoldBackgroundColor.withOpacity(0.8),
-            Theme.of(context).scaffoldBackgroundColor.withOpacity(0.0),
-          ],
-          stops: const [0.0, 0.7, 1.0],
-        ),
-      ),
-      child: SafeArea(
-        child: Column(
-          children: [
-            // Add space for the app bar
-            SizedBox(height: 56.0),
-
-            // Book cover
-            _buildBookCover(context, book),
-            const SizedBox(height: AppConstants.lg),
-
-            // Book title and author
-            _buildBookTitle(context, book),
-            const SizedBox(height: AppConstants.lg),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAppBar(BuildContext context, BookEntity book) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Theme.of(context).scaffoldBackgroundColor,
-            Theme.of(context).scaffoldBackgroundColor.withOpacity(0.0),
-          ],
-          stops: const [0.0, 1.0],
-        ),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppConstants.md),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              IconButton(
-                onPressed: () => Navigator.of(context).pop(),
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            actions: [
               PopupMenuButton<String>(
-                onSelected: (value) => _handleMenuAction(context, value, book),
+                onSelected: (value) =>
+                    _handleMenuAction(context, value, updatedBook),
                 icon: Icon(
                   Icons.more_vert,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 tooltip: 'More options',
-                offset: const Offset(-8, 48),
+                offset: const Offset(-8, 48), // Position below the icon
+                // Alternative: Use position to control horizontal alignment
+                // position: PopupMenuPosition.under, // or .over
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(28),
                 ),
@@ -198,21 +133,65 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
               ),
             ],
           ),
-        ),
-      ),
+          body: CustomScrollView(
+            controller: _scrollController,
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppConstants.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Animated book cover
+                      AnimatedBuilder(
+                        animation: _fadeAnimation,
+                        builder: (context, child) {
+                          return Transform.scale(
+                            scale:
+                                1.0 -
+                                ((1.0 - _fadeAnimation.value) *
+                                    0.1), // Slight scale down
+                            child: Opacity(
+                              opacity: _fadeAnimation.value,
+                              child: _buildBookCover(context, updatedBook),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: AppConstants.lg),
+                      // Animated book title and author
+                      AnimatedBuilder(
+                        animation: _fadeAnimation,
+                        builder: (context, child) {
+                          return Transform.translate(
+                            offset: Offset(
+                              0,
+                              (1.0 - _fadeAnimation.value) * 1,
+                            ), // Slight upward movement
+                            child: Opacity(
+                              opacity: _fadeAnimation.value,
+                              child: _buildBookTitle(context, updatedBook),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: AppConstants.lg),
+                      _buildReadingProgress(context, updatedBook),
+                      const SizedBox(height: AppConstants.md),
+                      _buildReadingStats(context, updatedBook),
+                      const SizedBox(height: AppConstants.md),
+                      _buildBookInfoBox(context, updatedBook),
+                      const SizedBox(height: AppConstants.md),
+                      _buildBookInfo(context, updatedBook),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
-  }
-
-  double _getHeaderHeight(BuildContext context) {
-    // Calculate the height needed for the fixed header
-    // Safe area + app bar + book cover + title + spacing
-    final safeAreaTop = MediaQuery.of(context).padding.top;
-    final appBarHeight = 56.0; // Standard app bar height
-    final bookCoverHeight = 280.0;
-    final titleHeight = 120.0; // Approximate height for title and author
-    final spacing = AppConstants.lg * 3; // Spacing between elements
-
-    return safeAreaTop + appBarHeight + bookCoverHeight + titleHeight + spacing;
   }
 
   Widget _buildBookCover(BuildContext context, BookEntity book) {
