@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../domain/entities/book.dart';
+import '../../core/utils/isbn_utils.dart';
 
 class GoogleBooksApiService {
   static const String _baseUrl = 'https://www.googleapis.com/books/v1';
@@ -86,6 +87,32 @@ class GoogleBooksApiService {
     } catch (e) {
       print('💥 Unexpected Error: $e');
       throw Exception('Unexpected error: $e');
+    }
+  }
+
+  Future<List<BookEntity>> searchBooksByIsbn(String isbn) async {
+    try {
+      final apiKey = dotenv.env['GOOGLE_BOOKS_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        throw Exception('Google Books API key not found');
+      }
+
+      final clean = cleanIsbn(isbn);
+      final response = await _dio.get(
+        '/volumes',
+        queryParameters: {'q': 'isbn:$clean', 'key': apiKey, 'maxResults': 20},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> items = response.data['items'] ?? [];
+        return items
+            .map((item) => _mapToBookEntity(item, isForSearch: true))
+            .toList();
+      } else {
+        throw Exception('Failed to search by ISBN: ${response.statusCode}');
+      }
+    } catch (e) {
+      rethrow;
     }
   }
 

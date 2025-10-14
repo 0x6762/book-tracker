@@ -11,6 +11,7 @@ class SearchInput extends StatefulWidget {
   final bool isSearchMode;
   final bool showBackButton;
   final VoidCallback? onBack;
+  final VoidCallback? onScan;
 
   const SearchInput({
     super.key,
@@ -19,6 +20,7 @@ class SearchInput extends StatefulWidget {
     this.isSearchMode = false,
     this.showBackButton = false,
     this.onBack,
+    this.onScan,
   });
 
   @override
@@ -106,7 +108,8 @@ class _SearchInputState extends State<SearchInput>
       child: Material(
         color: Colors.transparent,
         child: TextField(
-          enabled: false, // Disable interaction
+          readOnly: true,
+          onTap: widget.onTap,
           style: theme.textTheme.bodyLarge?.copyWith(
             color: theme.colorScheme.onSurface,
           ),
@@ -119,6 +122,16 @@ class _SearchInputState extends State<SearchInput>
               Icons.search,
               color: theme.colorScheme.onSurfaceVariant,
             ),
+            suffixIcon: widget.onScan != null
+                ? IconButton(
+                    icon: Icon(
+                      Icons.qr_code_scanner,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    onPressed: widget.onScan,
+                    tooltip: 'Scan ISBN',
+                  )
+                : null,
             filled: true,
             fillColor: theme.colorScheme.brightness == Brightness.light
                 ? AppColorSchemes.searchBarBackground
