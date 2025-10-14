@@ -47,7 +47,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 // Alternative: Use position to control horizontal alignment
                 // position: PopupMenuPosition.under, // or .over
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(28),
                 ),
                 elevation: 8,
                 color: Theme.of(context).colorScheme.surface,
@@ -163,6 +163,8 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
   Widget _buildBookTitle(BuildContext context, BookEntity book) {
     return Center(
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             book.title,
@@ -193,7 +195,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
         ),
@@ -310,7 +312,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(28),
               border: Border.all(
                 color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
               ),
@@ -388,7 +390,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(28),
           border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
           ),
@@ -420,7 +422,7 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
         ),
@@ -478,6 +480,26 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
                 ),
             ],
           ),
+          const SizedBox(height: 12),
+
+          // Last time read
+          Row(
+            children: [
+              Icon(
+                Icons.history,
+                size: 18,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Last read: ' +
+                    _formatLastRead(progress.endDate, progress.startDate),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
 
           // Action buttons
@@ -527,108 +549,127 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
     );
   }
 
+  String _formatLastRead(DateTime? endDate, DateTime startDate) {
+    final last = endDate ?? startDate;
+    final now = DateTime.now();
+    final difference = now.difference(last);
+
+    if (difference.inMinutes < 1) return 'just now';
+    if (difference.inMinutes < 60) return '${difference.inMinutes} min ago';
+    if (difference.inHours < 24)
+      return '${difference.inHours} hr${difference.inHours == 1 ? '' : 's'} ago';
+    if (difference.inDays < 7)
+      return '${difference.inDays} day${difference.inDays == 1 ? '' : 's'} ago';
+
+    // Fallback to short date like "Oct 14, 2025"
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final m = months[last.month - 1];
+    return '$m ${last.day}, ${last.year}';
+  }
+
+  String _formatShortDate(DateTime date) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final m = months[date.month - 1];
+    return '$m ${date.day}, ${date.year}';
+  }
+
   Widget _buildReadingStats(BuildContext context, BookEntity book) {
     if (!book.hasReadingProgress) return const SizedBox.shrink();
 
     final progress = book.readingProgress!;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Reading Statistics',
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Reading Statistics',
-            style: Theme.of(
+        const SizedBox(height: 16),
+        // Stats grid - 2 columns, each item is its own card
+        GridView.count(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 1.0,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            _buildStatCard(
               context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 16),
-
-          // Stats grid - Row 1
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  context,
-                  'Days Reading',
-                  '${book.daysReading}',
-                  Icons.calendar_today,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  context,
-                  'Reading Streak',
-                  '${book.readingStreak} days',
-                  Icons.local_fire_department,
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Stats grid - Row 2
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  context,
-                  'Total Time',
-                  progress.getFormattedReadingTime(),
-                  Icons.timer,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildStatCard(
-                  context,
-                  'Sessions/Week',
-                  _calculateSessionsPerWeek(progress, book),
-                  Icons.trending_up,
-                ),
-              ),
-            ],
-          ),
-
-          if (progress.totalReadingTimeMinutes > 0 &&
-              book.daysReading > 0 &&
-              book.pageCount != null &&
-              progress.currentPage > 0) ...[
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    'Pages/Hour',
-                    _calculatePagesPerHour(progress, book),
-                    Icons.speed,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _buildStatCard(
-                    context,
-                    'Avg. Session',
-                    _calculateAverageSessionTime(progress, book),
-                    Icons.schedule,
-                  ),
-                ),
-              ],
+              'Started',
+              _formatShortDate(progress.startDate),
+              Icons.calendar_today,
             ),
+            _buildStatCard(
+              context,
+              'Reading Streak',
+              '${book.readingStreak} days',
+              Icons.local_fire_department,
+            ),
+            _buildStatCard(
+              context,
+              'Total Time',
+              progress.getFormattedReadingTime(),
+              Icons.timer,
+            ),
+            _buildStatCard(
+              context,
+              'Sessions/Week',
+              _calculateSessionsPerWeek(progress, book),
+              Icons.trending_up,
+            ),
+            if (progress.totalReadingTimeMinutes > 0 &&
+                book.daysReading > 0 &&
+                book.pageCount != null &&
+                progress.currentPage > 0)
+              _buildStatCard(
+                context,
+                'Pages/Hour',
+                _calculatePagesPerHour(progress, book),
+                Icons.speed,
+              ),
+            if (progress.totalReadingTimeMinutes > 0 &&
+                book.daysReading > 0 &&
+                book.pageCount != null &&
+                progress.currentPage > 0)
+              _buildStatCard(
+                context,
+                'Avg. Session',
+                _calculateAverageSessionTime(progress, book),
+                Icons.schedule,
+              ),
           ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -642,31 +683,36 @@ class _BookDetailsScreenState extends State<BookDetailsScreen> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(28),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
         ),
       ),
-      child: Column(
-        children: [
-          Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
