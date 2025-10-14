@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../core/di/service_locator.dart';
 import '../../domain/entities/book.dart';
+import '../../core/utils/isbn_utils.dart';
 
 /// Provider responsible for book search functionality
 class SearchProvider with ChangeNotifier {
@@ -30,10 +31,46 @@ class SearchProvider with ChangeNotifier {
     try {
       print('🔍 Searching for: $query');
       final stopwatch = Stopwatch()..start();
+      List<BookEntity> results = [];
 
-      final results = await _serviceLocator.googleBooksApiService.searchBooks(
-        query,
-      );
+      final cleaned = cleanIsbn(query);
+      final looks13 = isIsbn13(cleaned);
+      final looks10 = isIsbn10(cleaned);
+
+      if (looks13 || looks10) {
+        // Try direct ISBN lookup(s)
+        try {
+          results = await _serviceLocator.googleBooksApiService
+              .searchBooksByIsbn(cleaned);
+        } catch (_) {}
+
+        if (results.isEmpty && looks13) {
+          final as10 = toIsbn10(cleaned);
+          if (as10 != null) {
+            try {
+              results = await _serviceLocator.googleBooksApiService
+                  .searchBooksByIsbn(as10);
+            } catch (_) {}
+          }
+        }
+
+        if (results.isEmpty && looks10) {
+          final as13 = toIsbn13(cleaned);
+          if (as13 != null) {
+            try {
+              results = await _serviceLocator.googleBooksApiService
+                  .searchBooksByIsbn(as13);
+            } catch (_) {}
+          }
+        }
+      }
+
+      // Fallback to generic search if ISBN lookups failed or it wasn't an ISBN
+      if (results.isEmpty) {
+        results = await _serviceLocator.googleBooksApiService.searchBooks(
+          query,
+        );
+      }
       _searchResults = results;
 
       stopwatch.stop();
