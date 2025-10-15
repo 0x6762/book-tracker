@@ -89,7 +89,7 @@ class BookTrackerHomePage extends StatefulWidget {
 class _BookTrackerHomePageState extends State<BookTrackerHomePage>
     with WidgetsBindingObserver {
   final TextEditingController _searchController = TextEditingController();
-  final PageController _pageController = PageController(viewportFraction: 0.9);
+  final PageController _pageController = PageController(viewportFraction: 0.92);
 
   @override
   void initState() {
@@ -273,7 +273,6 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
                         onScan: _navigateToScannerAndSearch,
                       ),
                     ),
-                    const SizedBox(height: AppConstants.lg),
                     // Content
                     Expanded(child: _buildBookList(bookListProvider)),
                   ],
@@ -373,18 +372,14 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
       itemBuilder: (context, index) {
         final book = bookListProvider.books[index];
 
-        // Calculate dimensions based on viewport fraction
-        final screenWidth = MediaQuery.of(context).size.width;
-        final cardWidth = screenWidth * 0.90;
-        final cardHeight = cardWidth * 1.6; // Book aspect ratio
+        // Width is controlled by PageView's viewportFraction; height derives from aspect ratio
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Align(
             alignment: Alignment.topCenter,
-            child: SizedBox(
-              width: cardWidth,
-              height: cardHeight,
+            child: AspectRatio(
+              aspectRatio: 1 / 1.6,
               child: BookCard(book: book, margin: EdgeInsets.zero),
             ),
           ),
