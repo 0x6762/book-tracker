@@ -89,7 +89,7 @@ class BookTrackerHomePage extends StatefulWidget {
 class _BookTrackerHomePageState extends State<BookTrackerHomePage>
     with WidgetsBindingObserver {
   final TextEditingController _searchController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
+  final PageController _pageController = PageController(viewportFraction: 0.9);
 
   @override
   void initState() {
@@ -134,15 +134,9 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
       );
 
       if (bookIndex != -1) {
-        // Calculate scroll position
-        final screenWidth = MediaQuery.of(context).size.width;
-        final cardWidth = screenWidth * 0.90;
-        final spacing = 16.0;
-        final scrollPosition = bookIndex * (cardWidth + spacing);
-
-        // Scroll to the new book
-        _scrollController.animateTo(
-          scrollPosition,
+        // Snap to the page for the new book
+        _pageController.animateToPage(
+          bookIndex,
           duration: const Duration(milliseconds: 500),
           curve: Curves.easeInOut,
         );
@@ -157,7 +151,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
-    _scrollController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -279,6 +273,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
                         onScan: _navigateToScannerAndSearch,
                       ),
                     ),
+                    const SizedBox(height: AppConstants.lg),
                     // Content
                     Expanded(child: _buildBookList(bookListProvider)),
                   ],
@@ -370,45 +365,31 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
       );
     }
 
-    return SingleChildScrollView(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: bookListProvider.books.asMap().entries.map((entry) {
-                final index = entry.key;
-                final book = entry.value;
+    return PageView.builder(
+      controller: _pageController,
+      physics: const PageScrollPhysics(),
+      itemCount: bookListProvider.books.length,
+      padEnds: true,
+      itemBuilder: (context, index) {
+        final book = bookListProvider.books[index];
 
-                // Calculate dynamic width based on screen width
-                final screenWidth = MediaQuery.of(context).size.width;
-                final cardWidth = screenWidth * 0.90; // 85% of screen width
+        // Calculate dimensions based on viewport fraction
+        final screenWidth = MediaQuery.of(context).size.width;
+        final cardWidth = screenWidth * 0.90;
+        final cardHeight = cardWidth * 1.6; // Book aspect ratio
 
-                return Row(
-                  children: [
-                    Container(
-                      width: cardWidth,
-                      height:
-                          cardWidth *
-                          1.6, // Realistic book aspect ratio (like 6" x 9")
-                      child: BookCard(
-                        book: book,
-                        margin: EdgeInsets.zero, // Remove internal card margins
-                      ),
-                    ),
-                    // Add spacing only between cards, not after the last one
-                    if (index < bookListProvider.books.length - 1)
-                      const SizedBox(width: 16),
-                  ],
-                );
-              }).toList(),
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: SizedBox(
+              width: cardWidth,
+              height: cardHeight,
+              child: BookCard(book: book, margin: EdgeInsets.zero),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
