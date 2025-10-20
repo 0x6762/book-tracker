@@ -42,6 +42,10 @@ class TimerService extends ChangeNotifier {
   // New getter for completion detection that works after _completionHandled is set
   bool get hasTimerJustCompleted => _completionHandled && _totalSeconds > 0;
 
+  // Check if timer is in error state
+  bool get isTimerInErrorState =>
+      _completionHandled && !_isTimerRunning && _totalSeconds > 0;
+
   // Timer methods
   void setTimer(int bookId, int minutes) {
     // Only reset if there's an active timer running
@@ -55,7 +59,7 @@ class TimerService extends ChangeNotifier {
     _remainingSeconds = _totalSeconds;
     _isTimerRunning = false;
     _wasManuallyStopped = false;
-    _completionHandled = false;
+    _completionHandled = false; // Clear any error state
     notifyListeners();
   }
 
@@ -82,8 +86,9 @@ class TimerService extends ChangeNotifier {
     } catch (e) {
       debugPrint('❌ Native timer failed: $e');
       _isTimerRunning = false;
+      _completionHandled = true; // Mark as error state
       notifyListeners();
-      return;
+      rethrow; // Re-throw to let UI handle the error
     }
 
     // Persist timer metadata for stateless resume (non-blocking)
@@ -135,6 +140,8 @@ class TimerService extends ChangeNotifier {
 
     _timer?.cancel();
     _timer = null;
+    _timerStateSubscription?.cancel();
+    _timerStateSubscription = null;
     _isTimerRunning = false;
     _currentBookId = null;
     _totalSeconds = 0;
@@ -143,6 +150,22 @@ class TimerService extends ChangeNotifier {
     _completionHandled = false;
     _clearPersistedTimerState();
     notifyListeners();
+  }
+
+  /// Retry starting the timer after an error
+  Future<void> retryTimer() async {
+    if (_currentBookId == null || _totalSeconds <= 0) {
+      debugPrint('❌ Cannot retry timer - no valid state');
+      return;
+    }
+
+    debugPrint('🔄 Retrying timer start...');
+
+    // Clear error state
+    _completionHandled = false;
+
+    // Try to start timer again
+    await startTimer(_currentBookId!);
   }
 
   void pauseTimer() {
@@ -169,7 +192,6 @@ class TimerService extends ChangeNotifier {
         final isRunning = nativeState['isRunning'] as bool? ?? false;
         final remainingSeconds = nativeState['remainingSeconds'] as int? ?? 0;
         final totalSeconds = nativeState['totalSeconds'] as int? ?? 0;
-        final bookTitle = nativeState['bookTitle'] as String? ?? '';
 
         debugPrint(
           '🔄 Native update: isRunning=$isRunning, remaining=$remainingSeconds, total=$totalSeconds',
@@ -194,24 +216,34 @@ class TimerService extends ChangeNotifier {
         notifyListeners();
       },
       onError: (error) {
-        debugPrint('⚠️ Native timer stream error: $error');
-        // Fallback: use Flutter timer logic
-        _startFallbackTimer();
+        debugPrint('❌ Native timer stream error: $error');
+        // Stop timer and show error state - no fallback
+        _handleNativeServiceError();
       },
     );
   }
 
-  /// Fallback timer when native service is unavailable
-  void _startFallbackTimer() {
+  /// Handle native service errors gracefully
+  void _handleNativeServiceError() {
+    debugPrint('🛑 Native timer service error - stopping timer');
+
+    // Stop any existing Flutter timer
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingSeconds > 0) {
-        _remainingSeconds--;
-        notifyListeners();
-      } else if (_totalSeconds > 0 && !_completionHandled) {
-        _handleTimerCompletion();
-      }
-    });
+    _timer = null;
+
+    // Stop listening to native updates
+    _timerStateSubscription?.cancel();
+    _timerStateSubscription = null;
+
+    // Reset timer state
+    _isTimerRunning = false;
+    _completionHandled = true; // Prevent completion handling
+
+    // Clear persisted state
+    _clearPersistedTimerState();
+
+    // Notify UI of error state
+    notifyListeners();
   }
 
   /// Handle timer completion (called when native service reports completion)
