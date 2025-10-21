@@ -31,6 +31,7 @@ class _ReadingTimerState extends State<ReadingTimer>
   late TextEditingController _pageController;
   int? _inlineCurrentPage;
   bool _forceProgressUpdate = false;
+  bool _isInvalidPageInput = false;
 
   @override
   void initState() {
@@ -45,6 +46,15 @@ class _ReadingTimerState extends State<ReadingTimer>
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  bool _isValidPageInput(int? page) {
+    // If page is null (empty field), treat as 0 which is valid
+    if (page == null) return true;
+    if (page < 0) return false;
+    if (widget.book.pageCount != null && page > widget.book.pageCount!)
+      return false;
+    return true;
   }
 
   @override
@@ -439,37 +449,59 @@ class _ReadingTimerState extends State<ReadingTimer>
               ],
               decoration: InputDecoration(
                 filled: true,
-                fillColor: Theme.of(
-                  context,
-                ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                fillColor: _isInvalidPageInput
+                    ? Theme.of(
+                        context,
+                      ).colorScheme.errorContainer.withOpacity(0.1)
+                    : Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(28),
                   borderSide: BorderSide.none,
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(28),
-                  borderSide: BorderSide.none,
+                  borderSide: _isInvalidPageInput
+                      ? BorderSide(
+                          color: Theme.of(context).colorScheme.error,
+                          width: 1,
+                        )
+                      : BorderSide.none,
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(28),
-                  borderSide: BorderSide.none,
+                  borderSide: BorderSide(
+                    color: _isInvalidPageInput
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.primary,
+                    width: 2,
+                  ),
                 ),
                 suffixText: pageCount != null ? 'of $pageCount' : null,
                 suffixStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: _isInvalidPageInput
+                      ? Theme.of(context).colorScheme.error
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
                 ),
+                errorText: _isInvalidPageInput && pageCount != null
+                    ? 'Cannot exceed $pageCount pages'
+                    : null,
               ),
               onChanged: (value) {
                 final page = int.tryParse(value);
-                if (page != null && page > 0) {
-                  setState(() {
+                setState(() {
+                  _isInvalidPageInput = !_isValidPageInput(page);
+                  if (page != null) {
                     _inlineCurrentPage = page;
-                  });
-                }
+                  } else if (value.isEmpty) {
+                    _inlineCurrentPage = 0; // Default to 0 when empty
+                  }
+                });
               },
             ),
             const SizedBox(height: 40),
@@ -477,33 +509,38 @@ class _ReadingTimerState extends State<ReadingTimer>
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      final newPage = int.tryParse(_pageController.text);
-                      if (newPage != null && newPage > 0) {
-                        // Use atomic method to update both progress and reading time
-                        // Calculate actual reading time: total time - remaining time
-                        final actualReadingSeconds =
-                            timerService.totalSeconds -
-                            timerService.remainingSeconds;
+                    onPressed: _isInvalidPageInput
+                        ? null
+                        : () {
+                            final newPage =
+                                int.tryParse(_pageController.text) ??
+                                0; // Default to 0 if empty
+                            if (newPage >= 0) {
+                              // Use atomic method to update both progress and reading time
+                              // Calculate actual reading time: total time - remaining time
+                              final actualReadingSeconds =
+                                  timerService.totalSeconds -
+                                  timerService.remainingSeconds;
 
-                        // Convert to minutes with proper rounding and minimum validation
-                        final minutesRead = _calculateReadingMinutes(
-                          actualReadingSeconds,
-                        );
-                        bookDetailsProvider.updateProgressWithTime(
-                          widget.book.id!,
-                          newPage,
-                          minutesRead,
-                        );
-                        final uiStateProvider = context.read<UIStateProvider>();
-                        uiStateProvider.hidePageUpdateModal();
-                        setState(() {
-                          _forceProgressUpdate = false;
-                        });
-                        // Reset timer after user completes the modal
-                        timerService.resetTimer();
-                      }
-                    },
+                              // Convert to minutes with proper rounding and minimum validation
+                              final minutesRead = _calculateReadingMinutes(
+                                actualReadingSeconds,
+                              );
+                              bookDetailsProvider.updateProgressWithTime(
+                                widget.book.id!,
+                                newPage,
+                                minutesRead,
+                              );
+                              final uiStateProvider = context
+                                  .read<UIStateProvider>();
+                              uiStateProvider.hidePageUpdateModal();
+                              setState(() {
+                                _forceProgressUpdate = false;
+                              });
+                              // Reset timer after user completes the modal
+                              timerService.resetTimer();
+                            }
+                          },
 
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),

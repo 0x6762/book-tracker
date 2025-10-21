@@ -23,6 +23,7 @@ class ProgressUpdateBottomSheet extends StatefulWidget {
 class _ProgressUpdateBottomSheetState extends State<ProgressUpdateBottomSheet> {
   late TextEditingController _pageController;
   late int _currentPage;
+  bool _isInvalidInput = false;
 
   @override
   void initState() {
@@ -37,9 +38,32 @@ class _ProgressUpdateBottomSheetState extends State<ProgressUpdateBottomSheet> {
     super.dispose();
   }
 
+  bool _isValidPageInput(int? page) {
+    // If page is null (empty field), treat as 0 which is valid
+    if (page == null) return true;
+    if (page < 0) return false;
+    if (widget.book.pageCount != null && page > widget.book.pageCount!)
+      return false;
+    return true;
+  }
+
   void _updateProgress() {
-    final newPage = int.tryParse(_pageController.text);
-    if (newPage != null && newPage > 0) {
+    final newPage =
+        int.tryParse(_pageController.text) ?? 0; // Default to 0 if empty
+    if (newPage >= 0) {
+      // Validate against total pages if available
+      if (widget.book.pageCount != null && newPage > widget.book.pageCount!) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Page number cannot exceed total pages (${widget.book.pageCount})',
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+        return;
+      }
+
       setState(() {
         _currentPage = newPage;
       });
@@ -114,30 +138,47 @@ class _ProgressUpdateBottomSheetState extends State<ProgressUpdateBottomSheet> {
             decoration: InputDecoration(
               labelText: 'Current Page',
               filled: true,
-              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              fillColor: _isInvalidInput
+                  ? Theme.of(
+                      context,
+                    ).colorScheme.errorContainer.withOpacity(0.1)
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+                borderSide: _isInvalidInput
+                    ? BorderSide(
+                        color: Theme.of(context).colorScheme.error,
+                        width: 1,
+                      )
+                    : BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.primary,
+                  color: _isInvalidInput
+                      ? Theme.of(context).colorScheme.error
+                      : Theme.of(context).colorScheme.primary,
                   width: 2,
                 ),
               ),
+              errorText: _isInvalidInput && widget.book.pageCount != null
+                  ? 'Cannot exceed ${widget.book.pageCount} pages'
+                  : null,
             ),
             onChanged: (value) {
               final page = int.tryParse(value);
-              if (page != null && page > 0) {
-                setState(() {
+              setState(() {
+                _isInvalidInput = !_isValidPageInput(page);
+                if (page != null) {
                   _currentPage = page;
-                });
-              }
+                } else if (value.isEmpty) {
+                  _currentPage = 0; // Default to 0 when empty
+                }
+              });
             },
           ),
 
@@ -160,7 +201,7 @@ class _ProgressUpdateBottomSheetState extends State<ProgressUpdateBottomSheet> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _updateProgress,
+              onPressed: _isInvalidInput ? null : _updateProgress,
               child: const Text('Update'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
