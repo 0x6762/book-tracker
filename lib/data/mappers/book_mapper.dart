@@ -22,6 +22,10 @@ class BookMapper {
       totalReadingTimeMinutes: Value(
         book.readingProgress?.totalReadingTimeMinutes ?? 0,
       ),
+      // Streak fields - use default values for new books
+      currentStreak: const Value(0),
+      longestStreak: const Value(0),
+      longestStreakDate: const Value.absent(),
       averageRating: Value(book.averageRating),
       ratingsCount: Value(book.ratingsCount),
     );

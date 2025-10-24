@@ -158,6 +158,42 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         requiredDuringInsert: false,
         defaultValue: const Constant(0),
       );
+  static const VerificationMeta _currentStreakMeta = const VerificationMeta(
+    'currentStreak',
+  );
+  @override
+  late final GeneratedColumn<int> currentStreak = GeneratedColumn<int>(
+    'current_streak',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _longestStreakMeta = const VerificationMeta(
+    'longestStreak',
+  );
+  @override
+  late final GeneratedColumn<int> longestStreak = GeneratedColumn<int>(
+    'longest_streak',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _longestStreakDateMeta = const VerificationMeta(
+    'longestStreakDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> longestStreakDate =
+      GeneratedColumn<DateTime>(
+        'longest_streak_date',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _averageRatingMeta = const VerificationMeta(
     'averageRating',
   );
@@ -195,6 +231,9 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     endDate,
     isCompleted,
     totalReadingTimeMinutes,
+    currentStreak,
+    longestStreak,
+    longestStreakDate,
     averageRating,
     ratingsCount,
   ];
@@ -312,6 +351,33 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         ),
       );
     }
+    if (data.containsKey('current_streak')) {
+      context.handle(
+        _currentStreakMeta,
+        currentStreak.isAcceptableOrUnknown(
+          data['current_streak']!,
+          _currentStreakMeta,
+        ),
+      );
+    }
+    if (data.containsKey('longest_streak')) {
+      context.handle(
+        _longestStreakMeta,
+        longestStreak.isAcceptableOrUnknown(
+          data['longest_streak']!,
+          _longestStreakMeta,
+        ),
+      );
+    }
+    if (data.containsKey('longest_streak_date')) {
+      context.handle(
+        _longestStreakDateMeta,
+        longestStreakDate.isAcceptableOrUnknown(
+          data['longest_streak_date']!,
+          _longestStreakDateMeta,
+        ),
+      );
+    }
     if (data.containsKey('average_rating')) {
       context.handle(
         _averageRatingMeta,
@@ -391,6 +457,18 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.int,
         data['${effectivePrefix}total_reading_time_minutes'],
       )!,
+      currentStreak: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}current_streak'],
+      )!,
+      longestStreak: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}longest_streak'],
+      )!,
+      longestStreakDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}longest_streak_date'],
+      ),
       averageRating: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}average_rating'],
@@ -422,6 +500,9 @@ class Book extends DataClass implements Insertable<Book> {
   final DateTime? endDate;
   final bool isCompleted;
   final int totalReadingTimeMinutes;
+  final int currentStreak;
+  final int longestStreak;
+  final DateTime? longestStreakDate;
   final double? averageRating;
   final int? ratingsCount;
   const Book({
@@ -438,6 +519,9 @@ class Book extends DataClass implements Insertable<Book> {
     this.endDate,
     required this.isCompleted,
     required this.totalReadingTimeMinutes,
+    required this.currentStreak,
+    required this.longestStreak,
+    this.longestStreakDate,
     this.averageRating,
     this.ratingsCount,
   });
@@ -469,6 +553,11 @@ class Book extends DataClass implements Insertable<Book> {
     }
     map['is_completed'] = Variable<bool>(isCompleted);
     map['total_reading_time_minutes'] = Variable<int>(totalReadingTimeMinutes);
+    map['current_streak'] = Variable<int>(currentStreak);
+    map['longest_streak'] = Variable<int>(longestStreak);
+    if (!nullToAbsent || longestStreakDate != null) {
+      map['longest_streak_date'] = Variable<DateTime>(longestStreakDate);
+    }
     if (!nullToAbsent || averageRating != null) {
       map['average_rating'] = Variable<double>(averageRating);
     }
@@ -505,6 +594,11 @@ class Book extends DataClass implements Insertable<Book> {
           : Value(endDate),
       isCompleted: Value(isCompleted),
       totalReadingTimeMinutes: Value(totalReadingTimeMinutes),
+      currentStreak: Value(currentStreak),
+      longestStreak: Value(longestStreak),
+      longestStreakDate: longestStreakDate == null && nullToAbsent
+          ? const Value.absent()
+          : Value(longestStreakDate),
       averageRating: averageRating == null && nullToAbsent
           ? const Value.absent()
           : Value(averageRating),
@@ -535,6 +629,11 @@ class Book extends DataClass implements Insertable<Book> {
       totalReadingTimeMinutes: serializer.fromJson<int>(
         json['totalReadingTimeMinutes'],
       ),
+      currentStreak: serializer.fromJson<int>(json['currentStreak']),
+      longestStreak: serializer.fromJson<int>(json['longestStreak']),
+      longestStreakDate: serializer.fromJson<DateTime?>(
+        json['longestStreakDate'],
+      ),
       averageRating: serializer.fromJson<double?>(json['averageRating']),
       ratingsCount: serializer.fromJson<int?>(json['ratingsCount']),
     );
@@ -558,6 +657,9 @@ class Book extends DataClass implements Insertable<Book> {
       'totalReadingTimeMinutes': serializer.toJson<int>(
         totalReadingTimeMinutes,
       ),
+      'currentStreak': serializer.toJson<int>(currentStreak),
+      'longestStreak': serializer.toJson<int>(longestStreak),
+      'longestStreakDate': serializer.toJson<DateTime?>(longestStreakDate),
       'averageRating': serializer.toJson<double?>(averageRating),
       'ratingsCount': serializer.toJson<int?>(ratingsCount),
     };
@@ -577,6 +679,9 @@ class Book extends DataClass implements Insertable<Book> {
     Value<DateTime?> endDate = const Value.absent(),
     bool? isCompleted,
     int? totalReadingTimeMinutes,
+    int? currentStreak,
+    int? longestStreak,
+    Value<DateTime?> longestStreakDate = const Value.absent(),
     Value<double?> averageRating = const Value.absent(),
     Value<int?> ratingsCount = const Value.absent(),
   }) => Book(
@@ -596,6 +701,11 @@ class Book extends DataClass implements Insertable<Book> {
     isCompleted: isCompleted ?? this.isCompleted,
     totalReadingTimeMinutes:
         totalReadingTimeMinutes ?? this.totalReadingTimeMinutes,
+    currentStreak: currentStreak ?? this.currentStreak,
+    longestStreak: longestStreak ?? this.longestStreak,
+    longestStreakDate: longestStreakDate.present
+        ? longestStreakDate.value
+        : this.longestStreakDate,
     averageRating: averageRating.present
         ? averageRating.value
         : this.averageRating,
@@ -630,6 +740,15 @@ class Book extends DataClass implements Insertable<Book> {
       totalReadingTimeMinutes: data.totalReadingTimeMinutes.present
           ? data.totalReadingTimeMinutes.value
           : this.totalReadingTimeMinutes,
+      currentStreak: data.currentStreak.present
+          ? data.currentStreak.value
+          : this.currentStreak,
+      longestStreak: data.longestStreak.present
+          ? data.longestStreak.value
+          : this.longestStreak,
+      longestStreakDate: data.longestStreakDate.present
+          ? data.longestStreakDate.value
+          : this.longestStreakDate,
       averageRating: data.averageRating.present
           ? data.averageRating.value
           : this.averageRating,
@@ -655,6 +774,9 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('endDate: $endDate, ')
           ..write('isCompleted: $isCompleted, ')
           ..write('totalReadingTimeMinutes: $totalReadingTimeMinutes, ')
+          ..write('currentStreak: $currentStreak, ')
+          ..write('longestStreak: $longestStreak, ')
+          ..write('longestStreakDate: $longestStreakDate, ')
           ..write('averageRating: $averageRating, ')
           ..write('ratingsCount: $ratingsCount')
           ..write(')'))
@@ -676,6 +798,9 @@ class Book extends DataClass implements Insertable<Book> {
     endDate,
     isCompleted,
     totalReadingTimeMinutes,
+    currentStreak,
+    longestStreak,
+    longestStreakDate,
     averageRating,
     ratingsCount,
   );
@@ -696,6 +821,9 @@ class Book extends DataClass implements Insertable<Book> {
           other.endDate == this.endDate &&
           other.isCompleted == this.isCompleted &&
           other.totalReadingTimeMinutes == this.totalReadingTimeMinutes &&
+          other.currentStreak == this.currentStreak &&
+          other.longestStreak == this.longestStreak &&
+          other.longestStreakDate == this.longestStreakDate &&
           other.averageRating == this.averageRating &&
           other.ratingsCount == this.ratingsCount);
 }
@@ -714,6 +842,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<DateTime?> endDate;
   final Value<bool> isCompleted;
   final Value<int> totalReadingTimeMinutes;
+  final Value<int> currentStreak;
+  final Value<int> longestStreak;
+  final Value<DateTime?> longestStreakDate;
   final Value<double?> averageRating;
   final Value<int?> ratingsCount;
   const BooksCompanion({
@@ -730,6 +861,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.endDate = const Value.absent(),
     this.isCompleted = const Value.absent(),
     this.totalReadingTimeMinutes = const Value.absent(),
+    this.currentStreak = const Value.absent(),
+    this.longestStreak = const Value.absent(),
+    this.longestStreakDate = const Value.absent(),
     this.averageRating = const Value.absent(),
     this.ratingsCount = const Value.absent(),
   });
@@ -747,6 +881,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.endDate = const Value.absent(),
     this.isCompleted = const Value.absent(),
     this.totalReadingTimeMinutes = const Value.absent(),
+    this.currentStreak = const Value.absent(),
+    this.longestStreak = const Value.absent(),
+    this.longestStreakDate = const Value.absent(),
     this.averageRating = const Value.absent(),
     this.ratingsCount = const Value.absent(),
   }) : googleBooksId = Value(googleBooksId),
@@ -766,6 +903,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<DateTime>? endDate,
     Expression<bool>? isCompleted,
     Expression<int>? totalReadingTimeMinutes,
+    Expression<int>? currentStreak,
+    Expression<int>? longestStreak,
+    Expression<DateTime>? longestStreakDate,
     Expression<double>? averageRating,
     Expression<int>? ratingsCount,
   }) {
@@ -784,6 +924,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
       if (isCompleted != null) 'is_completed': isCompleted,
       if (totalReadingTimeMinutes != null)
         'total_reading_time_minutes': totalReadingTimeMinutes,
+      if (currentStreak != null) 'current_streak': currentStreak,
+      if (longestStreak != null) 'longest_streak': longestStreak,
+      if (longestStreakDate != null) 'longest_streak_date': longestStreakDate,
       if (averageRating != null) 'average_rating': averageRating,
       if (ratingsCount != null) 'ratings_count': ratingsCount,
     });
@@ -803,6 +946,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<DateTime?>? endDate,
     Value<bool>? isCompleted,
     Value<int>? totalReadingTimeMinutes,
+    Value<int>? currentStreak,
+    Value<int>? longestStreak,
+    Value<DateTime?>? longestStreakDate,
     Value<double?>? averageRating,
     Value<int?>? ratingsCount,
   }) {
@@ -821,6 +967,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
       isCompleted: isCompleted ?? this.isCompleted,
       totalReadingTimeMinutes:
           totalReadingTimeMinutes ?? this.totalReadingTimeMinutes,
+      currentStreak: currentStreak ?? this.currentStreak,
+      longestStreak: longestStreak ?? this.longestStreak,
+      longestStreakDate: longestStreakDate ?? this.longestStreakDate,
       averageRating: averageRating ?? this.averageRating,
       ratingsCount: ratingsCount ?? this.ratingsCount,
     );
@@ -870,6 +1019,15 @@ class BooksCompanion extends UpdateCompanion<Book> {
         totalReadingTimeMinutes.value,
       );
     }
+    if (currentStreak.present) {
+      map['current_streak'] = Variable<int>(currentStreak.value);
+    }
+    if (longestStreak.present) {
+      map['longest_streak'] = Variable<int>(longestStreak.value);
+    }
+    if (longestStreakDate.present) {
+      map['longest_streak_date'] = Variable<DateTime>(longestStreakDate.value);
+    }
     if (averageRating.present) {
       map['average_rating'] = Variable<double>(averageRating.value);
     }
@@ -895,6 +1053,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('endDate: $endDate, ')
           ..write('isCompleted: $isCompleted, ')
           ..write('totalReadingTimeMinutes: $totalReadingTimeMinutes, ')
+          ..write('currentStreak: $currentStreak, ')
+          ..write('longestStreak: $longestStreak, ')
+          ..write('longestStreakDate: $longestStreakDate, ')
           ..write('averageRating: $averageRating, ')
           ..write('ratingsCount: $ratingsCount')
           ..write(')'))
@@ -1626,6 +1787,9 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<DateTime?> endDate,
       Value<bool> isCompleted,
       Value<int> totalReadingTimeMinutes,
+      Value<int> currentStreak,
+      Value<int> longestStreak,
+      Value<DateTime?> longestStreakDate,
       Value<double?> averageRating,
       Value<int?> ratingsCount,
     });
@@ -1644,6 +1808,9 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<DateTime?> endDate,
       Value<bool> isCompleted,
       Value<int> totalReadingTimeMinutes,
+      Value<int> currentStreak,
+      Value<int> longestStreak,
+      Value<DateTime?> longestStreakDate,
       Value<double?> averageRating,
       Value<int?> ratingsCount,
     });
@@ -1769,6 +1936,21 @@ class $$BooksTableFilterComposer extends Composer<_$BookDatabase, $BooksTable> {
 
   ColumnFilters<int> get totalReadingTimeMinutes => $composableBuilder(
     column: $table.totalReadingTimeMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get currentStreak => $composableBuilder(
+    column: $table.currentStreak,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get longestStreak => $composableBuilder(
+    column: $table.longestStreak,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get longestStreakDate => $composableBuilder(
+    column: $table.longestStreakDate,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1907,6 +2089,21 @@ class $$BooksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get currentStreak => $composableBuilder(
+    column: $table.currentStreak,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get longestStreak => $composableBuilder(
+    column: $table.longestStreak,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get longestStreakDate => $composableBuilder(
+    column: $table.longestStreakDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get averageRating => $composableBuilder(
     column: $table.averageRating,
     builder: (column) => ColumnOrderings(column),
@@ -1977,6 +2174,21 @@ class $$BooksTableAnnotationComposer
 
   GeneratedColumn<int> get totalReadingTimeMinutes => $composableBuilder(
     column: $table.totalReadingTimeMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get currentStreak => $composableBuilder(
+    column: $table.currentStreak,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get longestStreak => $composableBuilder(
+    column: $table.longestStreak,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get longestStreakDate => $composableBuilder(
+    column: $table.longestStreakDate,
     builder: (column) => column,
   );
 
@@ -2086,6 +2298,9 @@ class $$BooksTableTableManager
                 Value<DateTime?> endDate = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
                 Value<int> totalReadingTimeMinutes = const Value.absent(),
+                Value<int> currentStreak = const Value.absent(),
+                Value<int> longestStreak = const Value.absent(),
+                Value<DateTime?> longestStreakDate = const Value.absent(),
                 Value<double?> averageRating = const Value.absent(),
                 Value<int?> ratingsCount = const Value.absent(),
               }) => BooksCompanion(
@@ -2102,6 +2317,9 @@ class $$BooksTableTableManager
                 endDate: endDate,
                 isCompleted: isCompleted,
                 totalReadingTimeMinutes: totalReadingTimeMinutes,
+                currentStreak: currentStreak,
+                longestStreak: longestStreak,
+                longestStreakDate: longestStreakDate,
                 averageRating: averageRating,
                 ratingsCount: ratingsCount,
               ),
@@ -2120,6 +2338,9 @@ class $$BooksTableTableManager
                 Value<DateTime?> endDate = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
                 Value<int> totalReadingTimeMinutes = const Value.absent(),
+                Value<int> currentStreak = const Value.absent(),
+                Value<int> longestStreak = const Value.absent(),
+                Value<DateTime?> longestStreakDate = const Value.absent(),
                 Value<double?> averageRating = const Value.absent(),
                 Value<int?> ratingsCount = const Value.absent(),
               }) => BooksCompanion.insert(
@@ -2136,6 +2357,9 @@ class $$BooksTableTableManager
                 endDate: endDate,
                 isCompleted: isCompleted,
                 totalReadingTimeMinutes: totalReadingTimeMinutes,
+                currentStreak: currentStreak,
+                longestStreak: longestStreak,
+                longestStreakDate: longestStreakDate,
                 averageRating: averageRating,
                 ratingsCount: ratingsCount,
               ),

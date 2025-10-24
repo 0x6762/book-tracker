@@ -53,6 +53,9 @@ class ReadingProgressService {
       minutesRead: minutesRead,
       pagesRead: pagesRead,
     );
+
+    // Update streak calculations after recording activity
+    await _database.updateBookStreaks(bookId);
   }
 
   /// Get book reading streak
@@ -63,5 +66,11 @@ class ReadingProgressService {
   /// Get global reading streak
   Future<int> getGlobalStreak() async {
     return await _database.calculateGlobalStreak();
+  }
+
+  /// Get book's longest streak
+  Future<int> getBookLongestStreak(int bookId) async {
+    final book = await _database.getBookById(bookId);
+    return book?.longestStreak ?? 0;
   }
 }

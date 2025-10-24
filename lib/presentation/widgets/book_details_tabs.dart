@@ -83,6 +83,19 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
     }
   }
 
+  Future<int> _getLongestStreak() async {
+    if (widget.book.id == null) return 0;
+
+    try {
+      final database = ServiceLocator().database;
+      final book = await database.getBookById(widget.book.id!);
+      return book?.longestStreak ?? 0;
+    } catch (e) {
+      print('Error getting longest streak: $e');
+      return 0;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -306,10 +319,16 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildStatCard(
-                      'Longest Streak',
-                      '${widget.book.readingStreak} days', // TODO: Add longest streak calculation
-                      Icons.emoji_events,
+                    child: FutureBuilder<int>(
+                      future: _getLongestStreak(),
+                      builder: (context, snapshot) {
+                        final longestStreak = snapshot.data ?? 0;
+                        return _buildStatCard(
+                          'Longest Streak',
+                          '$longestStreak days',
+                          Icons.emoji_events,
+                        );
+                      },
                     ),
                   ),
                 ],

@@ -30,6 +30,11 @@ class Books extends Table {
   IntColumn get totalReadingTimeMinutes =>
       integer().withDefault(const Constant(0))();
 
+  // Streak tracking
+  IntColumn get currentStreak => integer().withDefault(const Constant(0))();
+  IntColumn get longestStreak => integer().withDefault(const Constant(0))();
+  DateTimeColumn get longestStreakDate => dateTime().nullable()();
+
   // Book ratings
   RealColumn get averageRating => real().nullable()();
   IntColumn get ratingsCount => integer().nullable()();
@@ -72,7 +77,7 @@ class BookDatabase extends _$BookDatabase {
   BookDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -92,6 +97,21 @@ class BookDatabase extends _$BookDatabase {
       if (from < 4) {
         // Add BookColors table
         await m.createTable(bookColors);
+      }
+      if (from < 5) {
+        // Add daily reading activity table
+        await m.createTable(dailyReadingActivity);
+      }
+      if (from < 6) {
+        // Add streak tracking columns
+        await m.addColumn(books, books.currentStreak);
+        await m.addColumn(books, books.longestStreak);
+        await m.addColumn(books, books.longestStreakDate);
+
+        // Initialize streak values for existing books
+        await customStatement(
+          'UPDATE books SET current_streak = 0, longest_streak = 0 WHERE current_streak IS NULL',
+        );
       }
     },
   );
@@ -443,22 +463,90 @@ class BookDatabase extends _$BookDatabase {
 
     return streak;
   }
+
+  Future<int> calculateLongestStreak(int bookId) async {
+    final activities = await getDailyActivity(bookId: bookId);
+
+    if (activities.isEmpty) return 0;
+
+    // Sort activities by date
+    activities.sort((a, b) => a.activityDate.compareTo(b.activityDate));
+
+    int longestStreak = 0;
+    int currentStreak = 0;
+    DateTime? lastDate;
+
+    for (final activity in activities) {
+      final activityDate = DateTime(
+        activity.activityDate.year,
+        activity.activityDate.month,
+        activity.activityDate.day,
+      );
+
+      if (lastDate == null) {
+        // First activity
+        currentStreak = 1;
+        longestStreak = 1;
+      } else {
+        final daysDiff = activityDate.difference(lastDate).inDays;
+
+        if (daysDiff == 1) {
+          // Consecutive day
+          currentStreak++;
+          longestStreak = currentStreak > longestStreak
+              ? currentStreak
+              : longestStreak;
+        } else if (daysDiff > 1) {
+          // Gap found, reset current streak
+          currentStreak = 1;
+        }
+        // If daysDiff == 0, it's the same day, don't change streak
+      }
+
+      lastDate = activityDate;
+    }
+
+    return longestStreak;
+  }
+
+  Future<void> updateBookStreaks(int bookId) async {
+    final currentStreak = await calculateBookStreak(bookId);
+
+    // Get current book data
+    final book = await (select(
+      books,
+    )..where((tbl) => tbl.id.equals(bookId))).getSingleOrNull();
+    if (book == null) return;
+
+    // Only update longest streak if current streak is higher
+    final newLongestStreak = currentStreak > book.longestStreak
+        ? currentStreak
+        : book.longestStreak;
+    final newLongestStreakDate = currentStreak > book.longestStreak
+        ? DateTime.now()
+        : book.longestStreakDate;
+
+    await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
+      BooksCompanion(
+        currentStreak: Value(currentStreak),
+        longestStreak: Value(newLongestStreak),
+        longestStreakDate: Value(newLongestStreakDate),
+      ),
+    );
+  }
+
+  Future<Book?> getBookById(int bookId) async {
+    return await (select(
+      books,
+    )..where((tbl) => tbl.id.equals(bookId))).getSingleOrNull();
+  }
 }
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
-    print('🔌 Opening book database connection...');
-    final stopwatch = Stopwatch()..start();
-
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'book_tracker.db'));
-    final database = NativeDatabase(file);
-
-    stopwatch.stop();
-    print(
-      '🔌 Book database connection opened in ${stopwatch.elapsedMilliseconds}ms',
-    );
-    return database;
+    return NativeDatabase(file);
   });
 }
 
@@ -483,6 +571,7 @@ extension BookToEntity on Book {
               endDate: endDate,
               isCompleted: isCompleted,
               totalReadingTimeMinutes: totalReadingTimeMinutes,
+              readingStreak: currentStreak, // Use currentStreak from database
             )
           : null,
       // Map rating fields
