@@ -180,12 +180,28 @@ class _ReadingTimerState extends State<ReadingTimer>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
-                  timeText,
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      timeText,
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    if (timerService.isTimerPaused &&
+                        timerService.currentBookId == widget.bookId) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Paused',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               Row(
@@ -201,10 +217,17 @@ class _ReadingTimerState extends State<ReadingTimer>
                   ),
                   const SizedBox(width: 8),
                   IconButton(
-                    onPressed: isRunning
-                        ? () => timerService.pauseTimer()
-                        : () => timerService.resumeTimer(),
-                    icon: Icon(isRunning ? Icons.pause : Icons.play_arrow),
+                    onPressed:
+                        (timerService.isTimerPaused &&
+                            timerService.currentBookId == widget.bookId)
+                        ? () => timerService.resumeTimer()
+                        : () => timerService.pauseTimer(),
+                    icon: Icon(
+                      (timerService.isTimerPaused &&
+                              timerService.currentBookId == widget.bookId)
+                          ? Icons.play_arrow
+                          : Icons.pause,
+                    ),
                     style: IconButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,
