@@ -51,12 +51,28 @@ class BookColors extends Table {
   Set<Column> get primaryKey => {bookId};
 }
 
-@DriftDatabase(tables: [Books, BookColors])
+// Daily reading activity tracking for accurate streak calculation
+class DailyReadingActivity extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get bookId =>
+      integer().references(Books, #id).nullable()(); // null = global activity
+  DateTimeColumn get activityDate => dateTime()(); // Date only (no time)
+  IntColumn get minutesRead => integer().withDefault(const Constant(0))();
+  IntColumn get pagesRead => integer().withDefault(const Constant(0))();
+  IntColumn get sessionCount => integer().withDefault(const Constant(0))();
+
+  Set<Index> get indexes => {
+    Index('idx_activity_date', 'activityDate'),
+    Index('idx_book_activity', 'bookId, activityDate'),
+  };
+}
+
+@DriftDatabase(tables: [Books, BookColors, DailyReadingActivity])
 class BookDatabase extends _$BookDatabase {
   BookDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -270,6 +286,163 @@ class BookDatabase extends _$BookDatabase {
 
   Future<int> deleteBookColor(int bookId) =>
       (delete(bookColors)..where((tbl) => tbl.bookId.equals(bookId))).go();
+
+  // Daily reading activity DAO methods
+  Future<void> recordDailyActivity({
+    required int? bookId, // null for global activity
+    required DateTime date,
+    required int minutesRead,
+    required int pagesRead,
+  }) async {
+    final activityDate = DateTime(date.year, date.month, date.day);
+
+    // Check if activity already exists for this date and book
+    final existing =
+        await (select(dailyReadingActivity)..where(
+              (tbl) =>
+                  (bookId == null
+                      ? tbl.bookId.isNull()
+                      : tbl.bookId.equals(bookId)) &
+                  tbl.activityDate.equals(activityDate),
+            ))
+            .getSingleOrNull();
+
+    if (existing != null) {
+      // Update existing activity
+      await (update(
+        dailyReadingActivity,
+      )..where((tbl) => tbl.id.equals(existing.id))).write(
+        DailyReadingActivityCompanion(
+          minutesRead: Value(existing.minutesRead + minutesRead),
+          pagesRead: Value(existing.pagesRead + pagesRead),
+          sessionCount: Value(existing.sessionCount + 1),
+        ),
+      );
+    } else {
+      // Insert new activity
+      await into(dailyReadingActivity).insert(
+        DailyReadingActivityCompanion(
+          bookId: Value(bookId),
+          activityDate: Value(activityDate),
+          minutesRead: Value(minutesRead),
+          pagesRead: Value(pagesRead),
+          sessionCount: const Value(1),
+        ),
+      );
+    }
+  }
+
+  Future<List<DailyReadingActivityData>> getDailyActivity({
+    int? bookId,
+    DateTime? fromDate,
+    DateTime? toDate,
+  }) async {
+    // Build query with all conditions
+    final query = select(dailyReadingActivity)
+      ..where((tbl) {
+        Expression<bool> condition = const Constant(true);
+
+        if (bookId != null) {
+          condition = condition & tbl.bookId.equals(bookId);
+        }
+
+        if (fromDate != null) {
+          final from = DateTime(fromDate.year, fromDate.month, fromDate.day);
+          condition = condition & tbl.activityDate.isBiggerOrEqualValue(from);
+        }
+
+        if (toDate != null) {
+          final to = DateTime(toDate.year, toDate.month, toDate.day);
+          condition = condition & tbl.activityDate.isSmallerOrEqualValue(to);
+        }
+
+        return condition;
+      })
+      ..orderBy([(tbl) => OrderingTerm.desc(tbl.activityDate)]);
+
+    return await query.get();
+  }
+
+  Future<int> calculateBookStreak(int bookId, {DateTime? asOf}) async {
+    final endDate = asOf ?? DateTime.now();
+    final startDate = endDate.subtract(
+      const Duration(days: 365),
+    ); // Look back 1 year max
+
+    final activities = await getDailyActivity(
+      bookId: bookId,
+      fromDate: startDate,
+      toDate: endDate,
+    );
+
+    if (activities.isEmpty) return 0;
+
+    // Sort by date descending
+    activities.sort((a, b) => b.activityDate.compareTo(a.activityDate));
+
+    int streak = 0;
+    DateTime currentDate = DateTime(endDate.year, endDate.month, endDate.day);
+
+    for (final activity in activities) {
+      final activityDate = DateTime(
+        activity.activityDate.year,
+        activity.activityDate.month,
+        activity.activityDate.day,
+      );
+
+      final daysDiff = currentDate.difference(activityDate).inDays;
+
+      if (daysDiff == streak) {
+        // Consecutive day found
+        streak++;
+        currentDate = currentDate.subtract(const Duration(days: 1));
+      } else if (daysDiff > streak) {
+        // Gap found, streak broken
+        break;
+      }
+    }
+
+    return streak;
+  }
+
+  Future<int> calculateGlobalStreak({DateTime? asOf}) async {
+    final endDate = asOf ?? DateTime.now();
+    final startDate = endDate.subtract(
+      const Duration(days: 365),
+    ); // Look back 1 year max
+
+    final activities = await getDailyActivity(
+      fromDate: startDate,
+      toDate: endDate,
+    );
+
+    if (activities.isEmpty) return 0;
+
+    // Group by date and check for any reading activity per day
+    final dailyActivity = <DateTime, bool>{};
+    for (final activity in activities) {
+      final date = DateTime(
+        activity.activityDate.year,
+        activity.activityDate.month,
+        activity.activityDate.day,
+      );
+      dailyActivity[date] = true;
+    }
+
+    int streak = 0;
+    DateTime currentDate = DateTime(endDate.year, endDate.month, endDate.day);
+
+    for (int i = 0; i < 365; i++) {
+      if (dailyActivity.containsKey(currentDate)) {
+        streak++;
+        currentDate = currentDate.subtract(const Duration(days: 1));
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  }
 }
 
 LazyDatabase _openConnection() {

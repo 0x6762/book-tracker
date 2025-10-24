@@ -6,6 +6,7 @@ class ReadingProgress {
   final DateTime? endDate;
   final bool isCompleted;
   final int totalReadingTimeMinutes;
+  final int? readingStreak; // Accurate streak from daily activity tracking
 
   const ReadingProgress({
     this.id,
@@ -15,6 +16,7 @@ class ReadingProgress {
     this.endDate,
     this.isCompleted = false,
     this.totalReadingTimeMinutes = 0,
+    this.readingStreak,
   });
 
   // Calculate progress percentage
@@ -31,25 +33,25 @@ class ReadingProgress {
     return end.difference(startDate).inDays + 1;
   }
 
-  // Calculate reading streak (consecutive days with reading activity)
+  // Get reading streak (now uses accurate daily activity tracking)
   int getReadingStreak() {
-    // For now, we'll use a simple calculation based on total reading time
-    // In a more advanced implementation, this would track daily reading sessions
-    if (totalReadingTimeMinutes <= 0) return 0;
+    // Use accurate streak from daily activity tracking if available
+    if (readingStreak != null) {
+      return readingStreak!;
+    }
 
-    // Estimate streak based on reading consistency
-    // If user has been reading for multiple days with good time, assume streak
+    // Fallback to simple calculation for backward compatibility
+    if (totalReadingTimeMinutes <= 0) return 0;
     final daysReading = getDaysReading();
     if (daysReading <= 1) return 1;
 
-    // Simple heuristic: if reading time is substantial and spread over days
+    // Simple heuristic fallback
     final avgMinutesPerDay = totalReadingTimeMinutes / daysReading;
     if (avgMinutesPerDay >= 15) {
-      // At least 15 minutes per day average
-      return daysReading; // Assume they've been reading consistently
+      return daysReading;
     }
 
-    return 1; // At least 1 day if they have any reading time
+    return 1;
   }
 
   // Format reading time as human-readable string
@@ -163,6 +165,7 @@ class ReadingProgress {
     DateTime? endDate,
     bool? isCompleted,
     int? totalReadingTimeMinutes,
+    int? readingStreak,
   }) {
     return ReadingProgress(
       id: id ?? this.id,
@@ -173,6 +176,7 @@ class ReadingProgress {
       isCompleted: isCompleted ?? this.isCompleted,
       totalReadingTimeMinutes:
           totalReadingTimeMinutes ?? this.totalReadingTimeMinutes,
+      readingStreak: readingStreak ?? this.readingStreak,
     );
   }
 

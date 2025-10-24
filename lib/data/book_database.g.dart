@@ -1169,16 +1169,446 @@ class BookColorsCompanion extends UpdateCompanion<BookColor> {
   }
 }
 
+class $DailyReadingActivityTable extends DailyReadingActivity
+    with TableInfo<$DailyReadingActivityTable, DailyReadingActivityData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DailyReadingActivityTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<int> bookId = GeneratedColumn<int>(
+    'book_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES books (id)',
+    ),
+  );
+  static const VerificationMeta _activityDateMeta = const VerificationMeta(
+    'activityDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> activityDate = GeneratedColumn<DateTime>(
+    'activity_date',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _minutesReadMeta = const VerificationMeta(
+    'minutesRead',
+  );
+  @override
+  late final GeneratedColumn<int> minutesRead = GeneratedColumn<int>(
+    'minutes_read',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _pagesReadMeta = const VerificationMeta(
+    'pagesRead',
+  );
+  @override
+  late final GeneratedColumn<int> pagesRead = GeneratedColumn<int>(
+    'pages_read',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _sessionCountMeta = const VerificationMeta(
+    'sessionCount',
+  );
+  @override
+  late final GeneratedColumn<int> sessionCount = GeneratedColumn<int>(
+    'session_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    bookId,
+    activityDate,
+    minutesRead,
+    pagesRead,
+    sessionCount,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'daily_reading_activity';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DailyReadingActivityData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    }
+    if (data.containsKey('activity_date')) {
+      context.handle(
+        _activityDateMeta,
+        activityDate.isAcceptableOrUnknown(
+          data['activity_date']!,
+          _activityDateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_activityDateMeta);
+    }
+    if (data.containsKey('minutes_read')) {
+      context.handle(
+        _minutesReadMeta,
+        minutesRead.isAcceptableOrUnknown(
+          data['minutes_read']!,
+          _minutesReadMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pages_read')) {
+      context.handle(
+        _pagesReadMeta,
+        pagesRead.isAcceptableOrUnknown(data['pages_read']!, _pagesReadMeta),
+      );
+    }
+    if (data.containsKey('session_count')) {
+      context.handle(
+        _sessionCountMeta,
+        sessionCount.isAcceptableOrUnknown(
+          data['session_count']!,
+          _sessionCountMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  DailyReadingActivityData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DailyReadingActivityData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}book_id'],
+      ),
+      activityDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}activity_date'],
+      )!,
+      minutesRead: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}minutes_read'],
+      )!,
+      pagesRead: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}pages_read'],
+      )!,
+      sessionCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}session_count'],
+      )!,
+    );
+  }
+
+  @override
+  $DailyReadingActivityTable createAlias(String alias) {
+    return $DailyReadingActivityTable(attachedDatabase, alias);
+  }
+}
+
+class DailyReadingActivityData extends DataClass
+    implements Insertable<DailyReadingActivityData> {
+  final int id;
+  final int? bookId;
+  final DateTime activityDate;
+  final int minutesRead;
+  final int pagesRead;
+  final int sessionCount;
+  const DailyReadingActivityData({
+    required this.id,
+    this.bookId,
+    required this.activityDate,
+    required this.minutesRead,
+    required this.pagesRead,
+    required this.sessionCount,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    if (!nullToAbsent || bookId != null) {
+      map['book_id'] = Variable<int>(bookId);
+    }
+    map['activity_date'] = Variable<DateTime>(activityDate);
+    map['minutes_read'] = Variable<int>(minutesRead);
+    map['pages_read'] = Variable<int>(pagesRead);
+    map['session_count'] = Variable<int>(sessionCount);
+    return map;
+  }
+
+  DailyReadingActivityCompanion toCompanion(bool nullToAbsent) {
+    return DailyReadingActivityCompanion(
+      id: Value(id),
+      bookId: bookId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bookId),
+      activityDate: Value(activityDate),
+      minutesRead: Value(minutesRead),
+      pagesRead: Value(pagesRead),
+      sessionCount: Value(sessionCount),
+    );
+  }
+
+  factory DailyReadingActivityData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DailyReadingActivityData(
+      id: serializer.fromJson<int>(json['id']),
+      bookId: serializer.fromJson<int?>(json['bookId']),
+      activityDate: serializer.fromJson<DateTime>(json['activityDate']),
+      minutesRead: serializer.fromJson<int>(json['minutesRead']),
+      pagesRead: serializer.fromJson<int>(json['pagesRead']),
+      sessionCount: serializer.fromJson<int>(json['sessionCount']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'bookId': serializer.toJson<int?>(bookId),
+      'activityDate': serializer.toJson<DateTime>(activityDate),
+      'minutesRead': serializer.toJson<int>(minutesRead),
+      'pagesRead': serializer.toJson<int>(pagesRead),
+      'sessionCount': serializer.toJson<int>(sessionCount),
+    };
+  }
+
+  DailyReadingActivityData copyWith({
+    int? id,
+    Value<int?> bookId = const Value.absent(),
+    DateTime? activityDate,
+    int? minutesRead,
+    int? pagesRead,
+    int? sessionCount,
+  }) => DailyReadingActivityData(
+    id: id ?? this.id,
+    bookId: bookId.present ? bookId.value : this.bookId,
+    activityDate: activityDate ?? this.activityDate,
+    minutesRead: minutesRead ?? this.minutesRead,
+    pagesRead: pagesRead ?? this.pagesRead,
+    sessionCount: sessionCount ?? this.sessionCount,
+  );
+  DailyReadingActivityData copyWithCompanion(
+    DailyReadingActivityCompanion data,
+  ) {
+    return DailyReadingActivityData(
+      id: data.id.present ? data.id.value : this.id,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      activityDate: data.activityDate.present
+          ? data.activityDate.value
+          : this.activityDate,
+      minutesRead: data.minutesRead.present
+          ? data.minutesRead.value
+          : this.minutesRead,
+      pagesRead: data.pagesRead.present ? data.pagesRead.value : this.pagesRead,
+      sessionCount: data.sessionCount.present
+          ? data.sessionCount.value
+          : this.sessionCount,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyReadingActivityData(')
+          ..write('id: $id, ')
+          ..write('bookId: $bookId, ')
+          ..write('activityDate: $activityDate, ')
+          ..write('minutesRead: $minutesRead, ')
+          ..write('pagesRead: $pagesRead, ')
+          ..write('sessionCount: $sessionCount')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    bookId,
+    activityDate,
+    minutesRead,
+    pagesRead,
+    sessionCount,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DailyReadingActivityData &&
+          other.id == this.id &&
+          other.bookId == this.bookId &&
+          other.activityDate == this.activityDate &&
+          other.minutesRead == this.minutesRead &&
+          other.pagesRead == this.pagesRead &&
+          other.sessionCount == this.sessionCount);
+}
+
+class DailyReadingActivityCompanion
+    extends UpdateCompanion<DailyReadingActivityData> {
+  final Value<int> id;
+  final Value<int?> bookId;
+  final Value<DateTime> activityDate;
+  final Value<int> minutesRead;
+  final Value<int> pagesRead;
+  final Value<int> sessionCount;
+  const DailyReadingActivityCompanion({
+    this.id = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.activityDate = const Value.absent(),
+    this.minutesRead = const Value.absent(),
+    this.pagesRead = const Value.absent(),
+    this.sessionCount = const Value.absent(),
+  });
+  DailyReadingActivityCompanion.insert({
+    this.id = const Value.absent(),
+    this.bookId = const Value.absent(),
+    required DateTime activityDate,
+    this.minutesRead = const Value.absent(),
+    this.pagesRead = const Value.absent(),
+    this.sessionCount = const Value.absent(),
+  }) : activityDate = Value(activityDate);
+  static Insertable<DailyReadingActivityData> custom({
+    Expression<int>? id,
+    Expression<int>? bookId,
+    Expression<DateTime>? activityDate,
+    Expression<int>? minutesRead,
+    Expression<int>? pagesRead,
+    Expression<int>? sessionCount,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (bookId != null) 'book_id': bookId,
+      if (activityDate != null) 'activity_date': activityDate,
+      if (minutesRead != null) 'minutes_read': minutesRead,
+      if (pagesRead != null) 'pages_read': pagesRead,
+      if (sessionCount != null) 'session_count': sessionCount,
+    });
+  }
+
+  DailyReadingActivityCompanion copyWith({
+    Value<int>? id,
+    Value<int?>? bookId,
+    Value<DateTime>? activityDate,
+    Value<int>? minutesRead,
+    Value<int>? pagesRead,
+    Value<int>? sessionCount,
+  }) {
+    return DailyReadingActivityCompanion(
+      id: id ?? this.id,
+      bookId: bookId ?? this.bookId,
+      activityDate: activityDate ?? this.activityDate,
+      minutesRead: minutesRead ?? this.minutesRead,
+      pagesRead: pagesRead ?? this.pagesRead,
+      sessionCount: sessionCount ?? this.sessionCount,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<int>(bookId.value);
+    }
+    if (activityDate.present) {
+      map['activity_date'] = Variable<DateTime>(activityDate.value);
+    }
+    if (minutesRead.present) {
+      map['minutes_read'] = Variable<int>(minutesRead.value);
+    }
+    if (pagesRead.present) {
+      map['pages_read'] = Variable<int>(pagesRead.value);
+    }
+    if (sessionCount.present) {
+      map['session_count'] = Variable<int>(sessionCount.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyReadingActivityCompanion(')
+          ..write('id: $id, ')
+          ..write('bookId: $bookId, ')
+          ..write('activityDate: $activityDate, ')
+          ..write('minutesRead: $minutesRead, ')
+          ..write('pagesRead: $pagesRead, ')
+          ..write('sessionCount: $sessionCount')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$BookDatabase extends GeneratedDatabase {
   _$BookDatabase(QueryExecutor e) : super(e);
   $BookDatabaseManager get managers => $BookDatabaseManager(this);
   late final $BooksTable books = $BooksTable(this);
   late final $BookColorsTable bookColors = $BookColorsTable(this);
+  late final $DailyReadingActivityTable dailyReadingActivity =
+      $DailyReadingActivityTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [books, bookColors];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+    books,
+    bookColors,
+    dailyReadingActivity,
+  ];
 }
 
 typedef $$BooksTableCreateCompanionBuilder =
@@ -1235,6 +1665,34 @@ final class $$BooksTableReferences
     ).filter((f) => f.bookId.id.sqlEquals($_itemColumn<int>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_bookColorsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $DailyReadingActivityTable,
+    List<DailyReadingActivityData>
+  >
+  _dailyReadingActivityRefsTable(_$BookDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.dailyReadingActivity,
+        aliasName: $_aliasNameGenerator(
+          db.books.id,
+          db.dailyReadingActivity.bookId,
+        ),
+      );
+
+  $$DailyReadingActivityTableProcessedTableManager
+  get dailyReadingActivityRefs {
+    final manager = $$DailyReadingActivityTableTableManager(
+      $_db,
+      $_db.dailyReadingActivity,
+    ).filter((f) => f.bookId.id.sqlEquals($_itemColumn<int>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _dailyReadingActivityRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -1340,6 +1798,31 @@ class $$BooksTableFilterComposer extends Composer<_$BookDatabase, $BooksTable> {
           }) => $$BookColorsTableFilterComposer(
             $db: $db,
             $table: $db.bookColors,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> dailyReadingActivityRefs(
+    Expression<bool> Function($$DailyReadingActivityTableFilterComposer f) f,
+  ) {
+    final $$DailyReadingActivityTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.dailyReadingActivity,
+      getReferencedColumn: (t) => t.bookId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$DailyReadingActivityTableFilterComposer(
+            $db: $db,
+            $table: $db.dailyReadingActivity,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -1531,6 +2014,32 @@ class $$BooksTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> dailyReadingActivityRefs<T extends Object>(
+    Expression<T> Function($$DailyReadingActivityTableAnnotationComposer a) f,
+  ) {
+    final $$DailyReadingActivityTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.dailyReadingActivity,
+          getReferencedColumn: (t) => t.bookId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$DailyReadingActivityTableAnnotationComposer(
+                $db: $db,
+                $table: $db.dailyReadingActivity,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$BooksTableTableManager
@@ -1546,7 +2055,10 @@ class $$BooksTableTableManager
           $$BooksTableUpdateCompanionBuilder,
           (Book, $$BooksTableReferences),
           Book,
-          PrefetchHooks Function({bool bookColorsRefs})
+          PrefetchHooks Function({
+            bool bookColorsRefs,
+            bool dailyReadingActivityRefs,
+          })
         > {
   $$BooksTableTableManager(_$BookDatabase db, $BooksTable table)
     : super(
@@ -1633,28 +2145,59 @@ class $$BooksTableTableManager
                     (e.readTable(table), $$BooksTableReferences(db, table, e)),
               )
               .toList(),
-          prefetchHooksCallback: ({bookColorsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (bookColorsRefs) db.bookColors],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (bookColorsRefs)
-                    await $_getPrefetchedData<Book, $BooksTable, BookColor>(
-                      currentTable: table,
-                      referencedTable: $$BooksTableReferences
-                          ._bookColorsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$BooksTableReferences(db, table, p0).bookColorsRefs,
-                      referencedItemsForCurrentItem: (item, referencedItems) =>
-                          referencedItems.where((e) => e.bookId == item.id),
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({bookColorsRefs = false, dailyReadingActivityRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (bookColorsRefs) db.bookColors,
+                    if (dailyReadingActivityRefs) db.dailyReadingActivity,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (bookColorsRefs)
+                        await $_getPrefetchedData<Book, $BooksTable, BookColor>(
+                          currentTable: table,
+                          referencedTable: $$BooksTableReferences
+                              ._bookColorsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BooksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).bookColorsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.bookId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (dailyReadingActivityRefs)
+                        await $_getPrefetchedData<
+                          Book,
+                          $BooksTable,
+                          DailyReadingActivityData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$BooksTableReferences
+                              ._dailyReadingActivityRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$BooksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).dailyReadingActivityRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.bookId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -1671,7 +2214,10 @@ typedef $$BooksTableProcessedTableManager =
       $$BooksTableUpdateCompanionBuilder,
       (Book, $$BooksTableReferences),
       Book,
-      PrefetchHooks Function({bool bookColorsRefs})
+      PrefetchHooks Function({
+        bool bookColorsRefs,
+        bool dailyReadingActivityRefs,
+      })
     >;
 typedef $$BookColorsTableCreateCompanionBuilder =
     BookColorsCompanion Function({
@@ -1951,6 +2497,362 @@ typedef $$BookColorsTableProcessedTableManager =
       BookColor,
       PrefetchHooks Function({bool bookId})
     >;
+typedef $$DailyReadingActivityTableCreateCompanionBuilder =
+    DailyReadingActivityCompanion Function({
+      Value<int> id,
+      Value<int?> bookId,
+      required DateTime activityDate,
+      Value<int> minutesRead,
+      Value<int> pagesRead,
+      Value<int> sessionCount,
+    });
+typedef $$DailyReadingActivityTableUpdateCompanionBuilder =
+    DailyReadingActivityCompanion Function({
+      Value<int> id,
+      Value<int?> bookId,
+      Value<DateTime> activityDate,
+      Value<int> minutesRead,
+      Value<int> pagesRead,
+      Value<int> sessionCount,
+    });
+
+final class $$DailyReadingActivityTableReferences
+    extends
+        BaseReferences<
+          _$BookDatabase,
+          $DailyReadingActivityTable,
+          DailyReadingActivityData
+        > {
+  $$DailyReadingActivityTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $BooksTable _bookIdTable(_$BookDatabase db) => db.books.createAlias(
+    $_aliasNameGenerator(db.dailyReadingActivity.bookId, db.books.id),
+  );
+
+  $$BooksTableProcessedTableManager? get bookId {
+    final $_column = $_itemColumn<int>('book_id');
+    if ($_column == null) return null;
+    final manager = $$BooksTableTableManager(
+      $_db,
+      $_db.books,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_bookIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$DailyReadingActivityTableFilterComposer
+    extends Composer<_$BookDatabase, $DailyReadingActivityTable> {
+  $$DailyReadingActivityTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get activityDate => $composableBuilder(
+    column: $table.activityDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get minutesRead => $composableBuilder(
+    column: $table.minutesRead,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get pagesRead => $composableBuilder(
+    column: $table.pagesRead,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sessionCount => $composableBuilder(
+    column: $table.sessionCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$BooksTableFilterComposer get bookId {
+    final $$BooksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableFilterComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DailyReadingActivityTableOrderingComposer
+    extends Composer<_$BookDatabase, $DailyReadingActivityTable> {
+  $$DailyReadingActivityTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get activityDate => $composableBuilder(
+    column: $table.activityDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get minutesRead => $composableBuilder(
+    column: $table.minutesRead,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get pagesRead => $composableBuilder(
+    column: $table.pagesRead,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sessionCount => $composableBuilder(
+    column: $table.sessionCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$BooksTableOrderingComposer get bookId {
+    final $$BooksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableOrderingComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DailyReadingActivityTableAnnotationComposer
+    extends Composer<_$BookDatabase, $DailyReadingActivityTable> {
+  $$DailyReadingActivityTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get activityDate => $composableBuilder(
+    column: $table.activityDate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get minutesRead => $composableBuilder(
+    column: $table.minutesRead,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get pagesRead =>
+      $composableBuilder(column: $table.pagesRead, builder: (column) => column);
+
+  GeneratedColumn<int> get sessionCount => $composableBuilder(
+    column: $table.sessionCount,
+    builder: (column) => column,
+  );
+
+  $$BooksTableAnnotationComposer get bookId {
+    final $$BooksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.bookId,
+      referencedTable: $db.books,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$BooksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.books,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$DailyReadingActivityTableTableManager
+    extends
+        RootTableManager<
+          _$BookDatabase,
+          $DailyReadingActivityTable,
+          DailyReadingActivityData,
+          $$DailyReadingActivityTableFilterComposer,
+          $$DailyReadingActivityTableOrderingComposer,
+          $$DailyReadingActivityTableAnnotationComposer,
+          $$DailyReadingActivityTableCreateCompanionBuilder,
+          $$DailyReadingActivityTableUpdateCompanionBuilder,
+          (DailyReadingActivityData, $$DailyReadingActivityTableReferences),
+          DailyReadingActivityData,
+          PrefetchHooks Function({bool bookId})
+        > {
+  $$DailyReadingActivityTableTableManager(
+    _$BookDatabase db,
+    $DailyReadingActivityTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DailyReadingActivityTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DailyReadingActivityTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$DailyReadingActivityTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int?> bookId = const Value.absent(),
+                Value<DateTime> activityDate = const Value.absent(),
+                Value<int> minutesRead = const Value.absent(),
+                Value<int> pagesRead = const Value.absent(),
+                Value<int> sessionCount = const Value.absent(),
+              }) => DailyReadingActivityCompanion(
+                id: id,
+                bookId: bookId,
+                activityDate: activityDate,
+                minutesRead: minutesRead,
+                pagesRead: pagesRead,
+                sessionCount: sessionCount,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<int?> bookId = const Value.absent(),
+                required DateTime activityDate,
+                Value<int> minutesRead = const Value.absent(),
+                Value<int> pagesRead = const Value.absent(),
+                Value<int> sessionCount = const Value.absent(),
+              }) => DailyReadingActivityCompanion.insert(
+                id: id,
+                bookId: bookId,
+                activityDate: activityDate,
+                minutesRead: minutesRead,
+                pagesRead: pagesRead,
+                sessionCount: sessionCount,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$DailyReadingActivityTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({bookId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (bookId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.bookId,
+                                referencedTable:
+                                    $$DailyReadingActivityTableReferences
+                                        ._bookIdTable(db),
+                                referencedColumn:
+                                    $$DailyReadingActivityTableReferences
+                                        ._bookIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$DailyReadingActivityTableProcessedTableManager =
+    ProcessedTableManager<
+      _$BookDatabase,
+      $DailyReadingActivityTable,
+      DailyReadingActivityData,
+      $$DailyReadingActivityTableFilterComposer,
+      $$DailyReadingActivityTableOrderingComposer,
+      $$DailyReadingActivityTableAnnotationComposer,
+      $$DailyReadingActivityTableCreateCompanionBuilder,
+      $$DailyReadingActivityTableUpdateCompanionBuilder,
+      (DailyReadingActivityData, $$DailyReadingActivityTableReferences),
+      DailyReadingActivityData,
+      PrefetchHooks Function({bool bookId})
+    >;
 
 class $BookDatabaseManager {
   final _$BookDatabase _db;
@@ -1959,4 +2861,6 @@ class $BookDatabaseManager {
       $$BooksTableTableManager(_db, _db.books);
   $$BookColorsTableTableManager get bookColors =>
       $$BookColorsTableTableManager(_db, _db.bookColors);
+  $$DailyReadingActivityTableTableManager get dailyReadingActivity =>
+      $$DailyReadingActivityTableTableManager(_db, _db.dailyReadingActivity);
 }
