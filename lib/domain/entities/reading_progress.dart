@@ -68,24 +68,6 @@ class ReadingProgress {
     }
   }
 
-  // Calculate sessions per week
-  int getSessionsPerWeek() {
-    if (getDaysReading() <= 0 || totalReadingTimeMinutes <= 0) {
-      return 0;
-    }
-
-    // Calculate how many reading sessions per week
-    // Assume each timer session is ~30 minutes on average
-    const avgSessionMinutes = 30;
-    final totalSessions = (totalReadingTimeMinutes / avgSessionMinutes).round();
-
-    // Calculate weeks of reading
-    final weeksReading = (getDaysReading() / 7).clamp(1.0, double.infinity);
-
-    // Sessions per week
-    return (totalSessions / weeksReading).round();
-  }
-
   // Calculate average session time
   String getAverageSessionTime() {
     if (getDaysReading() <= 0 || totalReadingTimeMinutes <= 0) {

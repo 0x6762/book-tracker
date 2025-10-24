@@ -282,44 +282,84 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
           ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        // Stats grid - 2 columns, each item is its own card
-        GridView.count(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.0,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
+        // Stats grid with custom layout
+        Column(
           children: [
-            _buildStatCard(
-              'Started',
-              BookDisplayService.formatShortDate(progress.startDate),
-              Icons.calendar_today,
+            // First row: Streak stats (3 boxes)
+            IntrinsicHeight(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'Last Read',
+                      progress.getLastReadFormatted(),
+                      Icons.history,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Current Streak',
+                      '${widget.book.readingStreak} days',
+                      Icons.local_fire_department,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Longest Streak',
+                      '${widget.book.readingStreak} days', // TODO: Add longest streak calculation
+                      Icons.emoji_events,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            _buildStatCard(
-              'Reading Streak',
-              '${widget.book.readingStreak} days',
-              Icons.local_fire_department,
+            const SizedBox(height: 12),
+            // Second row: Started date and Total time (2 boxes)
+            IntrinsicHeight(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'Started',
+                      BookDisplayService.formatShortDate(progress.startDate),
+                      Icons.calendar_today,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Total Time',
+                      progress.getFormattedReadingTime(),
+                      Icons.timer,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            _buildStatCard(
-              'Total Time',
-              progress.getFormattedReadingTime(),
-              Icons.timer,
-            ),
-            _buildStatCard(
-              'Sessions/Week',
-              '${progress.getSessionsPerWeek()}',
-              Icons.trending_up,
-            ),
-            _buildStatCard(
-              'Pages/Hour',
-              '${progress.getPagesPerHour(widget.book.pageCount!)}',
-              Icons.speed,
-            ),
-            _buildStatCard(
-              'Avg. Session',
-              progress.getAverageSessionTime(),
-              Icons.schedule,
+            const SizedBox(height: 12),
+            // Third row: Pages/Hour and Avg Session (2 boxes)
+            IntrinsicHeight(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _buildStatCard(
+                      'Pages/Hour',
+                      '${progress.getPagesPerHour(widget.book.pageCount!)}',
+                      Icons.speed,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Avg. Session',
+                      progress.getAverageSessionTime(),
+                      Icons.schedule,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
