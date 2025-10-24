@@ -26,6 +26,14 @@ class MainActivity : FlutterActivity() {
                     startTimerService(totalSeconds, bookTitle)
                     result.success(null)
                 }
+                "pauseTimer" -> {
+                    pauseTimerService()
+                    result.success(null)
+                }
+                "resumeTimer" -> {
+                    resumeTimerService()
+                    result.success(null)
+                }
                 "stopTimer" -> {
                     stopTimerService()
                     result.success(null)
@@ -57,9 +65,10 @@ class MainActivity : FlutterActivity() {
     }
     
     // Method to send timer updates to Flutter
-    fun sendTimerUpdate(isRunning: Boolean, remainingSeconds: Int, totalSeconds: Int, bookTitle: String) {
+    fun sendTimerUpdate(isRunning: Boolean, isPaused: Boolean, remainingSeconds: Int, totalSeconds: Int, bookTitle: String) {
         eventSink?.success(mapOf(
             "isRunning" to isRunning,
+            "isPaused" to isPaused,
             "remainingSeconds" to remainingSeconds,
             "totalSeconds" to totalSeconds,
             "bookTitle" to bookTitle
@@ -70,9 +79,10 @@ class MainActivity : FlutterActivity() {
     companion object {
         private var staticEventSink: EventSink? = null
         
-        fun sendTimerUpdateStatic(isRunning: Boolean, remainingSeconds: Int, totalSeconds: Int, bookTitle: String) {
+        fun sendTimerUpdateStatic(isRunning: Boolean, isPaused: Boolean, remainingSeconds: Int, totalSeconds: Int, bookTitle: String) {
             staticEventSink?.success(mapOf(
                 "isRunning" to isRunning,
+                "isPaused" to isPaused,
                 "remainingSeconds" to remainingSeconds,
                 "totalSeconds" to totalSeconds,
                 "bookTitle" to bookTitle
@@ -89,6 +99,20 @@ class MainActivity : FlutterActivity() {
         startForegroundService(intent)
     }
 
+    private fun pauseTimerService() {
+        val intent = Intent(this, ReadingTimerService::class.java).apply {
+            action = "PAUSE_TIMER"
+        }
+        startService(intent)
+    }
+
+    private fun resumeTimerService() {
+        val intent = Intent(this, ReadingTimerService::class.java).apply {
+            action = "RESUME_TIMER"
+        }
+        startService(intent)
+    }
+
     private fun stopTimerService() {
         val intent = Intent(this, ReadingTimerService::class.java).apply {
             action = "STOP_TIMER"
@@ -103,16 +127,22 @@ class MainActivity : FlutterActivity() {
             // Check if service is running by looking at SharedPreferences
             val prefs = getSharedPreferences("reading_timer_service", Context.MODE_PRIVATE)
             val isRunning = prefs.getBoolean("is_running", false)
+            val isPaused = prefs.getBoolean("is_paused", false)
             val totalSeconds = prefs.getInt("total_seconds", 0)
             val startTime = prefs.getLong("start_time", 0)
             val bookTitle = prefs.getString("book_title", "") ?: ""
             
             if (isRunning && startTime > 0 && totalSeconds > 0) {
-                val elapsedSeconds = ((System.currentTimeMillis() - startTime) / 1000).toInt()
-                val remainingSeconds = (totalSeconds - elapsedSeconds).coerceAtLeast(0)
+                val remainingSeconds = if (isPaused) {
+                    prefs.getInt("remaining_seconds", totalSeconds)
+                } else {
+                    val elapsedSeconds = ((System.currentTimeMillis() - startTime) / 1000).toInt()
+                    (totalSeconds - elapsedSeconds).coerceAtLeast(0)
+                }
                 
                 mapOf(
                     "isRunning" to (remainingSeconds > 0),
+                    "isPaused" to isPaused,
                     "remainingSeconds" to remainingSeconds,
                     "totalSeconds" to totalSeconds,
                     "bookTitle" to bookTitle
@@ -120,6 +150,7 @@ class MainActivity : FlutterActivity() {
             } else {
                 mapOf(
                     "isRunning" to false,
+                    "isPaused" to false,
                     "remainingSeconds" to 0,
                     "totalSeconds" to 0,
                     "bookTitle" to ""
@@ -128,6 +159,7 @@ class MainActivity : FlutterActivity() {
         } catch (e: Exception) {
             mapOf(
                 "isRunning" to false,
+                "isPaused" to false,
                 "remainingSeconds" to 0,
                 "totalSeconds" to 0,
                 "bookTitle" to ""

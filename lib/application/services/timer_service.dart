@@ -15,6 +15,7 @@ class TimerService extends ChangeNotifier {
   int _remainingSeconds = 0;
   int _totalSeconds = 0;
   bool _isTimerRunning = false;
+  bool _isTimerPaused = false;
   int? _currentBookId;
   bool _wasManuallyStopped = false;
   bool _completionHandled = false;
@@ -26,6 +27,7 @@ class TimerService extends ChangeNotifier {
   int get remainingSeconds => _remainingSeconds;
   int get totalSeconds => _totalSeconds;
   bool get isTimerRunning => _isTimerRunning;
+  bool get isTimerPaused => _isTimerPaused;
   int? get currentBookId => _currentBookId;
   bool get isTimerCompleted =>
       _remainingSeconds <= 0 && _totalSeconds > 0 && !_completionHandled;
@@ -142,6 +144,36 @@ class TimerService extends ChangeNotifier {
     await startTimer(_currentBookId!);
   }
 
+  /// Pause the timer
+  Future<void> pauseTimer() async {
+    if (!_isTimerRunning || _isTimerPaused) {
+      return; // Already paused or not running
+    }
+
+    try {
+      await _nativeTimerService.pauseTimer();
+      debugPrint('⏸️ Timer paused');
+    } catch (e) {
+      debugPrint('❌ Failed to pause timer: $e');
+      rethrow;
+    }
+  }
+
+  /// Resume the timer
+  Future<void> resumeTimer() async {
+    if (!_isTimerRunning || !_isTimerPaused) {
+      return; // Not paused or not running
+    }
+
+    try {
+      await _nativeTimerService.resumeTimer();
+      debugPrint('▶️ Timer resumed');
+    } catch (e) {
+      debugPrint('❌ Failed to resume timer: $e');
+      rethrow;
+    }
+  }
+
   /// Start listening to native timer updates via EventChannel
   void _startNativeTimerListener() {
     _timerStateSubscription?.cancel(); // Cancel any existing subscription
@@ -149,16 +181,18 @@ class TimerService extends ChangeNotifier {
     _timerStateSubscription = _nativeTimerService.timerStateStream.listen(
       (nativeState) {
         final isRunning = nativeState['isRunning'] as bool? ?? false;
+        final isPaused = nativeState['isPaused'] as bool? ?? false;
         final remainingSeconds = nativeState['remainingSeconds'] as int? ?? 0;
         final totalSeconds = nativeState['totalSeconds'] as int? ?? 0;
 
         debugPrint(
-          '🔄 Native update: isRunning=$isRunning, remaining=$remainingSeconds, total=$totalSeconds',
+          '🔄 Native update: isRunning=$isRunning, isPaused=$isPaused, remaining=$remainingSeconds, total=$totalSeconds',
         );
 
         // Update Flutter state to match native
         _remainingSeconds = remainingSeconds;
         _isTimerRunning = isRunning;
+        _isTimerPaused = isPaused;
         if (totalSeconds > 0) {
           _totalSeconds = totalSeconds;
         }

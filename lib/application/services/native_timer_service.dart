@@ -29,6 +29,28 @@ class NativeTimerService {
     }
   }
 
+  /// Pause timer using native Android service
+  Future<void> pauseTimer() async {
+    try {
+      await _channel.invokeMethod('pauseTimer');
+      debugPrint('⏸️ Native timer service paused');
+    } catch (e) {
+      debugPrint('❌ Failed to pause native timer: $e');
+      rethrow;
+    }
+  }
+
+  /// Resume timer using native Android service
+  Future<void> resumeTimer() async {
+    try {
+      await _channel.invokeMethod('resumeTimer');
+      debugPrint('▶️ Native timer service resumed');
+    } catch (e) {
+      debugPrint('❌ Failed to resume native timer: $e');
+      rethrow;
+    }
+  }
+
   /// Stop timer using native Android service
   Future<void> stopTimer() async {
     try {

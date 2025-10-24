@@ -29,6 +29,7 @@ class ReadingTimerService : Service() {
         // SharedPreferences keys
         private const val PREFS_NAME = "reading_timer_service"
         private const val KEY_IS_RUNNING = "is_running"
+        private const val KEY_IS_PAUSED = "is_paused"
         private const val KEY_START_TIME = "start_time"
         private const val KEY_TOTAL_SECONDS = "total_seconds"
         private const val KEY_BOOK_TITLE = "book_title"
@@ -40,6 +41,7 @@ class ReadingTimerService : Service() {
     private var remainingSeconds = 0
     private var bookTitle = ""
     private var isRunning = false
+    private var isPaused = false
     private var isStopped = false // Guard against double-stop
     private var channelsCreated = false // Track if channels are already created
     
@@ -66,6 +68,12 @@ class ReadingTimerService : Service() {
                 val bookTitle = intent.getStringExtra("book_title") ?: ""
                 startTimer(totalSeconds, bookTitle)
             }
+            "PAUSE_TIMER" -> {
+                pauseTimer()
+            }
+            "RESUME_TIMER" -> {
+                resumeTimer()
+            }
             "STOP_TIMER" -> {
                 stopTimer()
             }
@@ -82,6 +90,7 @@ class ReadingTimerService : Service() {
         this.remainingSeconds = totalSeconds
         this.bookTitle = bookTitle
         this.isRunning = true
+        this.isPaused = false
         this.isStopped = false
 
         // Create notification channels first (only once)
@@ -108,6 +117,44 @@ class ReadingTimerService : Service() {
                 onTimerCompleted()
             }
         }.start()
+    }
+
+    private fun pauseTimer() {
+        if (!isRunning || isPaused || isStopped) return
+        
+        isPaused = true
+        countDownTimer?.cancel()
+        countDownTimer = null
+        
+        // Update notification to show paused state
+        updateNotification()
+        
+        // Send update to Flutter
+        sendUpdateToFlutter()
+        
+        android.util.Log.d("ReadingTimerService", "⏸️ Timer paused")
+    }
+
+    private fun resumeTimer() {
+        if (!isRunning || !isPaused || isStopped) return
+        
+        isPaused = false
+        
+        // Resume countdown timer with remaining time
+        countDownTimer = object : CountDownTimer(remainingSeconds * 1000L, 1000L) {
+            override fun onTick(millisUntilFinished: Long) {
+                remainingSeconds = (millisUntilFinished / 1000).toInt()
+                updateNotification()
+                // Send update to Flutter
+                sendUpdateToFlutter()
+            }
+
+            override fun onFinish() {
+                onTimerCompleted()
+            }
+        }.start()
+        
+        android.util.Log.d("ReadingTimerService", "▶️ Timer resumed")
     }
 
     private fun stopTimer() {
@@ -198,11 +245,12 @@ class ReadingTimerService : Service() {
         val minutes = remainingSeconds / 60
         val seconds = remainingSeconds % 60
         val timeText = String.format("%02d:%02d remaining", minutes, seconds)
+        val statusText = if (isPaused) " (Paused)" else ""
         
         return if (bookTitle.isNotEmpty()) {
-            "Reading: $bookTitle - $timeText"
+            "Reading: $bookTitle - $timeText$statusText"
         } else {
-            "Reading Timer - $timeText"
+            "Reading Timer - $timeText$statusText"
         }
     }
 
@@ -244,12 +292,13 @@ class ReadingTimerService : Service() {
     fun getRemainingSeconds(): Int = remainingSeconds
     fun getTotalSeconds(): Int = totalSeconds
     fun isTimerRunning(): Boolean = isRunning
+    fun isTimerPaused(): Boolean = isPaused
     fun getBookTitle(): String = bookTitle
 
     // Send update to Flutter via static reference
     private fun sendUpdateToFlutter() {
         try {
-            MainActivity.sendTimerUpdateStatic(isRunning, remainingSeconds, totalSeconds, bookTitle)
+            MainActivity.sendTimerUpdateStatic(isRunning, isPaused, remainingSeconds, totalSeconds, bookTitle)
         } catch (e: Exception) {
             // MainActivity might not be available, that's okay
         }
@@ -259,6 +308,7 @@ class ReadingTimerService : Service() {
     private fun saveTimerState() {
         prefs.edit().apply {
             putBoolean(KEY_IS_RUNNING, isRunning)
+            putBoolean(KEY_IS_PAUSED, isPaused)
             putLong(KEY_START_TIME, System.currentTimeMillis())
             putInt(KEY_TOTAL_SECONDS, totalSeconds)
             putString(KEY_BOOK_TITLE, bookTitle)
@@ -272,6 +322,7 @@ class ReadingTimerService : Service() {
 
     private fun restoreTimerState() {
         val wasRunning = prefs.getBoolean(KEY_IS_RUNNING, false)
+        val wasPaused = prefs.getBoolean(KEY_IS_PAUSED, false)
         if (!wasRunning) return
 
         val startTime = prefs.getLong(KEY_START_TIME, 0)
@@ -280,10 +331,23 @@ class ReadingTimerService : Service() {
 
         if (startTime == 0L || savedTotalSeconds == 0) return
 
-        val elapsedSeconds = ((System.currentTimeMillis() - startTime) / 1000).toInt()
-        val remaining = savedTotalSeconds - elapsedSeconds
+        // Restore timer state
+        this.totalSeconds = savedTotalSeconds
+        this.bookTitle = savedBookTitle
+        this.isRunning = true
+        this.isPaused = wasPaused
+        this.isStopped = false
 
-        if (remaining <= 0) {
+        if (wasPaused) {
+            // If was paused, restore the remaining time as-is
+            this.remainingSeconds = prefs.getInt("remaining_seconds", savedTotalSeconds)
+        } else {
+            // If was running, calculate elapsed time
+            val elapsedSeconds = ((System.currentTimeMillis() - startTime) / 1000).toInt()
+            this.remainingSeconds = (savedTotalSeconds - elapsedSeconds).coerceAtLeast(0)
+        }
+
+        if (remainingSeconds <= 0) {
             // Timer should have completed
             clearTimerState()
             showCompletionNotification()
@@ -291,26 +355,21 @@ class ReadingTimerService : Service() {
             return
         }
 
-        // Restore timer with remaining time
-        this.totalSeconds = savedTotalSeconds
-        this.remainingSeconds = remaining
-        this.bookTitle = savedBookTitle
-        this.isRunning = true
-        this.isStopped = false
-
         // Start foreground service
         startForeground(NOTIFICATION_ID, buildNotification())
 
-        // Start countdown timer with remaining time
-        countDownTimer = object : CountDownTimer(remaining * 1000L, 1000L) {
-            override fun onTick(millisUntilFinished: Long) {
-                remainingSeconds = (millisUntilFinished / 1000).toInt()
-                updateNotification()
-            }
+        if (!wasPaused) {
+            // Start countdown timer with remaining time
+            countDownTimer = object : CountDownTimer(remainingSeconds * 1000L, 1000L) {
+                override fun onTick(millisUntilFinished: Long) {
+                    remainingSeconds = (millisUntilFinished / 1000).toInt()
+                    updateNotification()
+                }
 
-            override fun onFinish() {
-                onTimerCompleted()
-            }
-        }.start()
+                override fun onFinish() {
+                    onTimerCompleted()
+                }
+            }.start()
+        }
     }
 }

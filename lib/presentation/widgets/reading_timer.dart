@@ -180,21 +180,60 @@ class _ReadingTimerState extends State<ReadingTimer>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Text(
-                  timeText,
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      timeText,
+                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    if (timerService.isTimerPaused &&
+                        timerService.currentBookId == widget.bookId) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'Paused',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              IconButton(
-                onPressed: () => timerService.stopTimer(),
-                icon: const Icon(Icons.stop),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.grey.withOpacity(0.2),
-                  foregroundColor: const Color(0xFFDD4B41),
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () => timerService.stopTimer(),
+                    icon: const Icon(Icons.stop),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.grey.withOpacity(0.2),
+                      foregroundColor: const Color(0xFFDD4B41),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed:
+                        (timerService.isTimerPaused &&
+                            timerService.currentBookId == widget.bookId)
+                        ? () => timerService.resumeTimer()
+                        : () => timerService.pauseTimer(),
+                    icon: Icon(
+                      (timerService.isTimerPaused &&
+                              timerService.currentBookId == widget.bookId)
+                          ? Icons.play_arrow
+                          : Icons.pause,
+                    ),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
