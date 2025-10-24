@@ -8,9 +8,9 @@ A Flutter book tracking application for Android that helps users manage their re
 lib/
 ├── application/
 │   └── services/          # App-level services (timer, notifications, book management)
-│       ├── timer_service.dart           # Flutter UI sync service
+│       ├── timer_service.dart           # Flutter UI coordination (native-first)
 │       ├── native_timer_service.dart    # Native service bridge
-│       ├── notification_service.dart    # Flutter notification fallback
+│       ├── notification_service.dart    # App-level notifications (timer handled by native)
 │       └── simple_color_extraction_service.dart # Book cover color extraction
 ├── core/
 │   ├── constants/         # App constants and configuration
@@ -48,7 +48,7 @@ android/app/src/main/kotlin/
 - **Database**: Drift (SQLite)
 - **HTTP**: Dio + HTTP
 - **UI**: Material Design with custom theming
-- **Notifications**: flutter_local_notifications + Native Android service
+- **Notifications**: Native Android service (primary) + flutter_local_notifications (app-level)
 - **Audio**: audioplayers
 - **Images**: cached_network_image, palette_generator
 - **Environment**: flutter_dotenv
@@ -132,6 +132,7 @@ android/app/src/main/kotlin/
 - **Notifications**: Silent in-progress, loud completion notifications
 - **Flow**: Start → Running → Complete → Progress Update Modal
 - **Key Pattern**: Native pushes updates, Flutter receives and updates UI reactively
+- **Flutter Role**: UI coordination only - no timer logic or duplicate notifications
 
 ## Before Making Changes
 1. **Check existing patterns** in similar files
@@ -145,6 +146,7 @@ android/app/src/main/kotlin/
 9. **Keep database layer pure** - no business logic
 10. **Avoid over-engineering** - prefer simple solutions over complex ones
 11. **Color extraction** - Use `SimpleColorExtractionService` with database caching
+12. **Timer implementation** - Use native-first architecture, avoid Flutter timer logic
 
 ## Code Quality
 - Use `flutter_lints` rules

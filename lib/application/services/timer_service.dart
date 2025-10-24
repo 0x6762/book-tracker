@@ -1,19 +1,17 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'notification_service.dart';
 import 'native_timer_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
+/// Simplified timer service that coordinates with native Android service
+/// All timer logic and notifications are handled by the native service
 class TimerService extends ChangeNotifier {
   static final TimerService _instance = TimerService._internal();
   factory TimerService() => _instance;
   TimerService._internal();
 
-  final NotificationService _notificationService = NotificationService();
   final NativeTimerService _nativeTimerService = NativeTimerService();
 
-  // Timer state
-  Timer? _timer;
+  // Timer state (synced from native service)
   int _remainingSeconds = 0;
   int _totalSeconds = 0;
   bool _isTimerRunning = false;
@@ -24,12 +22,6 @@ class TimerService extends ChangeNotifier {
   // Stream subscription for native timer updates
   StreamSubscription<Map<String, dynamic>>? _timerStateSubscription;
 
-  // Persistence keys
-  static const String _prefsKeyIsRunning = 'timer_is_running';
-  static const String _prefsKeyStartEpochMs = 'timer_start_epoch_ms';
-  static const String _prefsKeyTotalSeconds = 'timer_total_seconds';
-  static const String _prefsKeyBookId = 'timer_book_id';
-
   // Timer getters
   int get remainingSeconds => _remainingSeconds;
   int get totalSeconds => _totalSeconds;
@@ -38,11 +30,7 @@ class TimerService extends ChangeNotifier {
   bool get isTimerCompleted =>
       _remainingSeconds <= 0 && _totalSeconds > 0 && !_completionHandled;
   bool get wasManuallyStopped => _wasManuallyStopped && !_completionHandled;
-
-  // New getter for completion detection that works after _completionHandled is set
   bool get hasTimerJustCompleted => _completionHandled && _totalSeconds > 0;
-
-  // Check if timer is in error state
   bool get isTimerInErrorState =>
       _completionHandled && !_isTimerRunning && _totalSeconds > 0;
 
@@ -91,14 +79,6 @@ class TimerService extends ChangeNotifier {
       rethrow; // Re-throw to let UI handle the error
     }
 
-    // Persist timer metadata for stateless resume (non-blocking)
-    _persistTimerState(
-      isRunning: true,
-      startEpochMs: DateTime.now().millisecondsSinceEpoch,
-      totalSeconds: _totalSeconds,
-      bookId: _currentBookId!,
-    );
-
     // Start listening to native timer updates
     _startNativeTimerListener();
 
@@ -123,9 +103,6 @@ class TimerService extends ChangeNotifier {
       debugPrint('⚠️ Failed to stop native timer: $e');
     });
 
-    // Clear persisted state
-    _clearPersistedTimerState();
-
     // Trigger completion flow for manual stop
     _handleTimerCompletion();
 
@@ -138,8 +115,6 @@ class TimerService extends ChangeNotifier {
       debugPrint('⚠️ Failed to stop native timer: $e');
     });
 
-    _timer?.cancel();
-    _timer = null;
     _timerStateSubscription?.cancel();
     _timerStateSubscription = null;
     _isTimerRunning = false;
@@ -148,7 +123,6 @@ class TimerService extends ChangeNotifier {
     _remainingSeconds = 0;
     _wasManuallyStopped = false;
     _completionHandled = false;
-    _clearPersistedTimerState();
     notifyListeners();
   }
 
@@ -166,21 +140,6 @@ class TimerService extends ChangeNotifier {
 
     // Try to start timer again
     await startTimer(_currentBookId!);
-  }
-
-  void pauseTimer() {
-    if (_isTimerRunning) {
-      _timer?.cancel();
-      _timer = null;
-      _isTimerRunning = false;
-      notifyListeners();
-    }
-  }
-
-  void resumeTimer() {
-    if (!_isTimerRunning && _remainingSeconds > 0 && _currentBookId != null) {
-      startTimer(_currentBookId!);
-    }
   }
 
   /// Start listening to native timer updates via EventChannel
@@ -227,10 +186,6 @@ class TimerService extends ChangeNotifier {
   void _handleNativeServiceError() {
     debugPrint('🛑 Native timer service error - stopping timer');
 
-    // Stop any existing Flutter timer
-    _timer?.cancel();
-    _timer = null;
-
     // Stop listening to native updates
     _timerStateSubscription?.cancel();
     _timerStateSubscription = null;
@@ -238,9 +193,6 @@ class TimerService extends ChangeNotifier {
     // Reset timer state
     _isTimerRunning = false;
     _completionHandled = true; // Prevent completion handling
-
-    // Clear persisted state
-    _clearPersistedTimerState();
 
     // Notify UI of error state
     notifyListeners();
@@ -252,13 +204,8 @@ class TimerService extends ChangeNotifier {
 
     _completionHandled = true;
     _isTimerRunning = false;
-    _timer?.cancel();
-    _timer = null;
 
     debugPrint('⏰ Reading session completed!');
-
-    // Clear persisted state
-    _clearPersistedTimerState();
 
     // Trigger progress update modal
     _triggerProgressUpdateModal();
@@ -313,72 +260,7 @@ class TimerService extends ChangeNotifier {
 
   @override
   void dispose() {
-    _timer?.cancel();
     _timerStateSubscription?.cancel();
-    _notificationService.dispose();
     super.dispose();
-  }
-
-  // --- Persistence & Restore ---
-  Future<void> _persistTimerState({
-    required bool isRunning,
-    required int startEpochMs,
-    required int totalSeconds,
-    required int bookId,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_prefsKeyIsRunning, isRunning);
-    await prefs.setInt(_prefsKeyStartEpochMs, startEpochMs);
-    await prefs.setInt(_prefsKeyTotalSeconds, totalSeconds);
-    await prefs.setInt(_prefsKeyBookId, bookId);
-  }
-
-  Future<void> _clearPersistedTimerState() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_prefsKeyIsRunning);
-    await prefs.remove(_prefsKeyStartEpochMs);
-    await prefs.remove(_prefsKeyTotalSeconds);
-    await prefs.remove(_prefsKeyBookId);
-  }
-
-  Future<void> restoreFromPersistedState() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isRunning = prefs.getBool(_prefsKeyIsRunning) ?? false;
-    final startEpochMs = prefs.getInt(_prefsKeyStartEpochMs);
-    final totalSeconds = prefs.getInt(_prefsKeyTotalSeconds);
-    final bookId = prefs.getInt(_prefsKeyBookId);
-
-    if (!isRunning ||
-        startEpochMs == null ||
-        totalSeconds == null ||
-        bookId == null) {
-      return;
-    }
-
-    final start = DateTime.fromMillisecondsSinceEpoch(startEpochMs);
-    final elapsed = DateTime.now().difference(start).inSeconds;
-    final remaining = totalSeconds - elapsed;
-
-    if (remaining <= 0) {
-      // Consider it completed
-      _currentBookId = bookId;
-      _totalSeconds = totalSeconds;
-      _remainingSeconds = 0;
-      _isTimerRunning = false;
-      _handleTimerCompletion();
-      notifyListeners();
-      return;
-    }
-
-    // Restore in-memory state
-    _currentBookId = bookId;
-    _totalSeconds = totalSeconds;
-    _remainingSeconds = remaining;
-    _isTimerRunning = true;
-
-    // Start listening to native timer updates
-    _startNativeTimerListener();
-
-    notifyListeners();
   }
 }

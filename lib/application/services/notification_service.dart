@@ -1,7 +1,8 @@
-import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+/// Simplified notification service for app-level notifications
+/// Timer notifications are handled by the native Android service
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
@@ -9,11 +10,6 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
-
-  // Timer state for notifications
-  Timer? _timer;
-  int _remainingSeconds = 0;
-  bool _isRunning = false;
 
   /// Initialize the notification service
   Future<void> initialize() async {
@@ -34,8 +30,6 @@ class NotificationService {
 
     // Create notification channels for Android
     await _createNotificationChannels();
-
-    // Timer service is now handled internally
 
     // Request notification permissions
     await _requestNotificationPermissions();
@@ -128,28 +122,23 @@ class NotificationService {
     }
   }
 
-  /// Show timer start notification (now handled by foreground service)
-  Future<void> showTimerStartNotification() async {
-    // Timer start notification is now handled by the foreground service
-    // which shows a persistent notification with timer progress
-    debugPrint('🔔 Timer start notification handled by foreground service');
-  }
-
-  /// Show timer completion notification
-  Future<void> showTimerCompleteNotification() async {
+  /// Show a general app notification (for non-timer use cases)
+  Future<void> showNotification({
+    required int id,
+    required String title,
+    required String body,
+    String? channelId,
+  }) async {
     try {
-      // Ensure the static timer notification is cleared to avoid duplicates
-      await cancelTimerNotification();
-
       await _notifications.show(
-        888, // Timer completion notification ID
-        'Reading Session Complete!',
-        'Your reading timer has finished. Tap to update your progress.',
-        const NotificationDetails(
+        id,
+        title,
+        body,
+        NotificationDetails(
           android: AndroidNotificationDetails(
-            'reading_timer_complete',
-            'Reading Timer Complete',
-            channelDescription: 'Notifications for reading timer completion',
+            channelId ?? 'general',
+            'General Notifications',
+            channelDescription: 'General app notifications',
             importance: Importance.high,
             priority: Priority.high,
             icon: '@drawable/ic_stat_name',
@@ -160,146 +149,29 @@ class NotificationService {
           ),
         ),
       );
-      debugPrint('🔔 Timer completion notification shown');
+      debugPrint('🔔 Notification shown: $title');
     } catch (e) {
-      debugPrint('❌ Completion notification failed: $e');
+      debugPrint('❌ Notification failed: $e');
     }
   }
 
-  /// Schedule notification for timer completion
-  Future<void> scheduleTimerNotification(
-    int totalSeconds, {
-    String bookTitle = '',
-  }) async {
+  /// Cancel a specific notification
+  Future<void> cancelNotification(int id) async {
     try {
-      if (_isRunning) {
-        await cancelTimerNotification();
-      }
-
-      _remainingSeconds = totalSeconds;
-      _isRunning = true;
-
-      // Show initial notification
-      await _showTimerNotification(bookTitle);
-
-      // Start countdown timer that updates notification
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (_remainingSeconds > 0) {
-          _remainingSeconds--;
-          _updateTimerNotification(bookTitle);
-        } else {
-          _onTimerCompleted();
-        }
-      });
-
-      debugPrint('🔔 Started reading timer notification');
+      await _notifications.cancel(id);
+      debugPrint('🔔 Notification cancelled: $id');
     } catch (e) {
-      debugPrint('⚠️ Could not start reading timer: $e');
-      debugPrint(
-        '📱 Timer service unavailable - reading session will continue without timer',
-      );
+      debugPrint('❌ Failed to cancel notification: $e');
     }
   }
 
-  /// Show the in-progress timer notification
-  Future<void> _showTimerNotification(String bookTitle) async {
+  /// Cancel all notifications
+  Future<void> cancelAllNotifications() async {
     try {
-      await _notifications.show(
-        1001, // Timer notification ID
-        '📚 Reading Timer',
-        _getTimerNotificationText(bookTitle),
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'reading_timer_foreground',
-            'Reading Timer',
-            channelDescription: 'Ongoing reading timer notifications',
-            importance: Importance.low,
-            priority: Priority.low,
-            ongoing: true,
-            showWhen: false,
-            icon: '@drawable/ic_stat_name',
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: false,
-            presentBadge: false,
-          ),
-        ),
-      );
+      await _notifications.cancelAll();
+      debugPrint('🔔 All notifications cancelled');
     } catch (e) {
-      debugPrint('❌ Failed to show timer notification: $e');
+      debugPrint('❌ Failed to cancel all notifications: $e');
     }
-  }
-
-  /// Update the timer notification with current time
-  Future<void> _updateTimerNotification(String bookTitle) async {
-    try {
-      await _notifications.show(
-        1001, // Same ID to update existing notification
-        '📚 Reading Timer',
-        _getTimerNotificationText(bookTitle),
-        const NotificationDetails(
-          android: AndroidNotificationDetails(
-            'reading_timer_foreground',
-            'Reading Timer',
-            channelDescription: 'Ongoing reading timer notifications',
-            importance: Importance.low,
-            priority: Priority.low,
-            ongoing: true,
-            showWhen: false,
-            icon: '@drawable/ic_stat_name',
-          ),
-          iOS: DarwinNotificationDetails(
-            presentAlert: false,
-            presentBadge: false,
-          ),
-        ),
-      );
-    } catch (e) {
-      debugPrint('❌ Failed to update timer notification: $e');
-    }
-  }
-
-  /// Get notification text with current time
-  String _getTimerNotificationText(String bookTitle) {
-    final minutes = _remainingSeconds ~/ 60;
-    final seconds = _remainingSeconds % 60;
-    final timeText =
-        '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')} remaining';
-
-    if (bookTitle.isNotEmpty) {
-      return 'Reading: $bookTitle - $timeText';
-    } else {
-      return 'Reading Timer - $timeText';
-    }
-  }
-
-  /// Cancel timer notification
-  Future<void> cancelTimerNotification() async {
-    _isRunning = false;
-    _timer?.cancel();
-    _timer = null;
-
-    // Actually cancel the notification
-    try {
-      await _notifications.cancel(1001);
-      debugPrint('🔔 Timer notification cancelled');
-    } catch (e) {
-      debugPrint('❌ Failed to cancel timer notification: $e');
-    }
-  }
-
-  /// Handle timer completion
-  void _onTimerCompleted() {
-    _timer?.cancel();
-    _timer = null;
-    _isRunning = false;
-    debugPrint('⏰ Reading timer completed');
-    // The completion notification will be handled by TimerService
-  }
-
-  /// Dispose resources
-  void dispose() {
-    _timer?.cancel();
-    _timer = null;
   }
 }

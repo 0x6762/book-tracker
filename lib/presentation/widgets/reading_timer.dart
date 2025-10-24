@@ -188,29 +188,13 @@ class _ReadingTimerState extends State<ReadingTimer>
                   ),
                 ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    onPressed: () => timerService.stopTimer(),
-                    icon: const Icon(Icons.stop),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.grey.withOpacity(0.2),
-                      foregroundColor: const Color(0xFFDD4B41),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: isRunning
-                        ? () => timerService.pauseTimer()
-                        : () => timerService.resumeTimer(),
-                    icon: Icon(isRunning ? Icons.pause : Icons.play_arrow),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                ],
+              IconButton(
+                onPressed: () => timerService.stopTimer(),
+                icon: const Icon(Icons.stop),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.grey.withOpacity(0.2),
+                  foregroundColor: const Color(0xFFDD4B41),
+                ),
               ),
             ],
           ),

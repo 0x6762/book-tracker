@@ -95,12 +95,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    // Attempt restore after first frame (covers cold start)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        context.read<TimerService>().restoreFromPersistedState();
-      }
-    });
+    // Timer state is automatically restored by native service
     // Delay book loading to let UI render first
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -157,10 +152,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // Recompute remaining time and resume timer if needed
-      context.read<TimerService>().restoreFromPersistedState();
-    }
+    // Timer state is automatically managed by native service
     super.didChangeAppLifecycleState(state);
   }
 
