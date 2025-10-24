@@ -183,9 +183,8 @@ class BookDatabase extends _$BookDatabase {
             : const Value.absent(),
         // Update completion status based on current page
         isCompleted: Value(shouldBeCompleted),
-        endDate: shouldBeCompleted
-            ? Value(DateTime.now())
-            : const Value.absent(),
+        // Always update endDate to track last reading activity
+        endDate: Value(DateTime.now()),
       ),
     );
   }
@@ -229,9 +228,8 @@ class BookDatabase extends _$BookDatabase {
               : const Value.absent(),
           // Update completion status based on current page
           isCompleted: Value(shouldBeCompleted),
-          endDate: shouldBeCompleted
-              ? Value(DateTime.now())
-              : const Value.absent(),
+          // Always update endDate to track last reading activity
+          endDate: Value(DateTime.now()),
         ),
       );
     });
@@ -292,7 +290,11 @@ class BookDatabase extends _$BookDatabase {
     );
 
     await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
-      BooksCompanion(totalReadingTimeMinutes: Value(newTotalTime)),
+      BooksCompanion(
+        totalReadingTimeMinutes: Value(newTotalTime),
+        // Always update endDate to track last reading activity
+        endDate: Value(DateTime.now()),
+      ),
     );
   }
 

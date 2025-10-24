@@ -256,25 +256,6 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                 ),
             ],
           ),
-          const SizedBox(height: AppConstants.sm + AppConstants.xs),
-
-          // Last time read
-          Row(
-            children: [
-              Icon(
-                Icons.history,
-                size: 18,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: AppConstants.sm),
-              Text(
-                'Last read: ${progress.getLastReadFormatted()}',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
         ],
       ),
     );
