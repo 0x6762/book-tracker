@@ -32,6 +32,7 @@ class _ReadingTimerState extends State<ReadingTimer>
   int? _inlineCurrentPage;
   bool _forceProgressUpdate = false;
   bool _isInvalidPageInput = false;
+  double? _lockedCardWidth; // Store card width to prevent resizing when keyboard appears
 
   @override
   void initState() {
@@ -90,8 +91,15 @@ class _ReadingTimerState extends State<ReadingTimer>
           });
         }
 
+        // Reset locked width when not in completed state
+        if (!isCompleted && !_forceProgressUpdate) {
+          _lockedCardWidth = null;
+        }
+        
         Widget childContent;
-        if (isCompleted || _forceProgressUpdate) {
+        final bool isInCompletedState = isCompleted || _forceProgressUpdate;
+        
+        if (isInCompletedState) {
           childContent = _buildCompletedState(
             context,
             bookDetailsProvider,
@@ -115,8 +123,11 @@ class _ReadingTimerState extends State<ReadingTimer>
           childContent = _buildStartButton(context);
         }
 
+        // Disable AnimatedSize animation when in completed state to prevent resizing on keyboard
         return AnimatedSize(
-          duration: const Duration(milliseconds: 200),
+          duration: isInCompletedState 
+              ? Duration.zero // No animation when keyboard appears in completed state
+              : const Duration(milliseconds: 200),
           curve: Curves.easeInOut,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 180),
@@ -435,17 +446,33 @@ class _ReadingTimerState extends State<ReadingTimer>
     TimerService timerService,
   ) {
     final pageCount = widget.book.pageCount;
-    return Container(
-      key: const ValueKey('completed'),
-      margin: const EdgeInsets.only(top: 16),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: SingleChildScrollView(
+    
+    // Calculate width based on PageView structure (viewportFraction 0.92, padding 8px each side)
+    // This prevents resizing when keyboard appears because we use MediaQuery instead of constraints
+    final screenWidth = MediaQuery.of(context).size.width;
+    final pageViewWidth = screenWidth * 0.92; // PageView viewportFraction
+    final cardWidth = pageViewWidth - 16; // Minus 8px padding on each side
+    
+    // Lock the width on first build to prevent resizing when keyboard appears
+    if (_lockedCardWidth == null) {
+      _lockedCardWidth = cardWidth;
+    }
+    
+    // Wrap in SizedBox to enforce explicit width and prevent AnimatedSize from affecting it
+    return SizedBox(
+      width: _lockedCardWidth, // Explicit width that won't change
+      child: Container(
+        key: const ValueKey('completed'),
+        margin: const EdgeInsets.only(top: 16),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(28),
+        ),
+          child: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // Prevent column from expanding unnecessarily
           children: [
             Text(
               'Session finished.',
@@ -559,6 +586,7 @@ class _ReadingTimerState extends State<ReadingTimer>
                               uiStateProvider.hidePageUpdateModal();
                               setState(() {
                                 _forceProgressUpdate = false;
+                                _lockedCardWidth = null; // Reset locked width for next time
                               });
                               // Reset timer after user completes the modal
                               timerService.resetTimer();
@@ -575,6 +603,7 @@ class _ReadingTimerState extends State<ReadingTimer>
             ),
           ],
         ),
+      ),
       ),
     );
   }

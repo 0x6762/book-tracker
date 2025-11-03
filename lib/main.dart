@@ -356,6 +356,12 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
       );
     }
 
+    // Calculate card dimensions from screen width (which doesn't change on keyboard)
+    final screenWidth = MediaQuery.of(context).size.width;
+    final pageViewWidth = screenWidth * 0.92; // viewportFraction
+    final cardWidth = pageViewWidth;
+    final cardHeight = cardWidth * 1.6; // aspect ratio
+    
     return PageView.builder(
       controller: _pageController,
       physics: const PageScrollPhysics(),
@@ -364,14 +370,14 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
       itemBuilder: (context, index) {
         final book = bookListProvider.books[index];
 
-        // Width is controlled by PageView's viewportFraction; height derives from aspect ratio
-
+        // Use explicit sizes based on screen width to prevent resizing on keyboard
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Align(
             alignment: Alignment.topCenter,
-            child: AspectRatio(
-              aspectRatio: 1 / 1.6,
+            child: SizedBox(
+              width: cardWidth,
+              height: cardHeight,
               child: BookCard(book: book, margin: EdgeInsets.zero),
             ),
           ),
