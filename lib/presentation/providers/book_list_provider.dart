@@ -28,7 +28,13 @@ class BookListProvider with ChangeNotifier {
       print('🔄 Loading books...');
       final stopwatch = Stopwatch()..start();
 
-      _books = await _serviceLocator.bookManagementService.getAllBooks();
+      final allBooks = await _serviceLocator.bookManagementService.getAllBooks();
+      
+      // Sort books: active books first, completed books last
+      _books = [
+        ...allBooks.where((book) => !book.isCompleted).toList(),
+        ...allBooks.where((book) => book.isCompleted).toList(),
+      ];
 
       stopwatch.stop();
       print(

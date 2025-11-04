@@ -125,6 +125,9 @@ class _ReadingTimerState extends State<ReadingTimer>
             bookDetailsProvider,
             timerService,
           );
+        } else if (widget.book.isCompleted) {
+          // No button for completed books - clean minimal look
+          childContent = const SizedBox.shrink();
         } else {
           childContent = _buildStartButton(context);
         }
