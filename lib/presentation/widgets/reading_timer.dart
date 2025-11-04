@@ -70,6 +70,7 @@ class _ReadingTimerState extends State<ReadingTimer>
             isCurrentBook;
         final timeText = isCurrentBook ? timerService.formattedTime : '';
         final hasTimer = timerService.totalSeconds > 0 && isCurrentBook;
+        final uiStateProvider = context.read<UIStateProvider>();
 
         // If timer moved to another book, collapse setup (ignore when no current book)
         if (!hasTimer &&
@@ -78,10 +79,15 @@ class _ReadingTimerState extends State<ReadingTimer>
             timerService.currentBookId != null &&
             timerService.currentBookId != widget.bookId) {
           _showSetup = false;
+          // End session for this book since timer moved elsewhere
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              uiStateProvider.endReadingSession();
+            }
+          });
         }
 
         // Show page update modal after completion
-        final uiStateProvider = context.read<UIStateProvider>();
         if (uiStateProvider.shouldShowPageUpdateModal && isCurrentBook) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             uiStateProvider.hidePageUpdateModal();
@@ -147,6 +153,8 @@ class _ReadingTimerState extends State<ReadingTimer>
         width: double.infinity,
         child: ElevatedButton.icon(
           onPressed: () {
+            final uiStateProvider = context.read<UIStateProvider>();
+            uiStateProvider.startReadingSession();
             setState(() {
               _showSetup = true;
             });
@@ -387,6 +395,8 @@ class _ReadingTimerState extends State<ReadingTimer>
             children: [
               IconButton(
                 onPressed: () {
+                  final uiStateProvider = context.read<UIStateProvider>();
+                  uiStateProvider.endReadingSession();
                   setState(() {
                     _showSetup = false;
                   });
@@ -584,6 +594,7 @@ class _ReadingTimerState extends State<ReadingTimer>
                               final uiStateProvider = context
                                   .read<UIStateProvider>();
                               uiStateProvider.hidePageUpdateModal();
+                              uiStateProvider.endReadingSession();
                               setState(() {
                                 _forceProgressUpdate = false;
                                 _lockedCardWidth = null; // Reset locked width for next time

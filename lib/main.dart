@@ -363,9 +363,16 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
     final cardWidth = pageViewWidth;
     final cardHeight = cardWidth * 1.6; // aspect ratio
 
+    // Get reading session state to disable scrolling during entire reading flow
+    final uiStateProvider = context.watch<UIStateProvider>();
+    final isReadingSessionActive = uiStateProvider.isReadingSessionActive;
+
     return PageView.builder(
       controller: _pageController,
-      physics: const PageScrollPhysics(),
+      // Disable swiping when reading session is active (setup → timer → progress update)
+      physics: isReadingSessionActive
+          ? const NeverScrollableScrollPhysics()
+          : const PageScrollPhysics(),
       itemCount: bookListProvider.books.length,
       padEnds: true,
       itemBuilder: (context, index) {
