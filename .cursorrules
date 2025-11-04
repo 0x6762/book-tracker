@@ -130,7 +130,7 @@ android/app/src/main/kotlin/
 - **EventChannel**: Real-time updates via EventChannel stream (no polling)
 - **Background Persistence**: Native service survives app termination
 - **Notifications**: Silent in-progress, loud completion notifications
-- **Flow**: Start → Running → Complete → Progress Update Modal
+- **Flow**: Start → Running → Complete → Embedded Progress Update Form
 - **Key Pattern**: Native pushes updates, Flutter receives and updates UI reactively
 - **Flutter Role**: UI coordination only - no timer logic or duplicate notifications
 
