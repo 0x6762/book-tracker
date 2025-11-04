@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-/// Provider responsible for UI state management (modals, loading states, etc.)
+/// Provider responsible for UI state management (progress update forms, loading states, etc.)
 class UIStateProvider with ChangeNotifier {
   bool _isAddingBook = false;
   bool _shouldShowPageUpdateModal = false;
@@ -17,14 +17,15 @@ class UIStateProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Show page update modal for a specific book
+  /// Trigger embedded progress update form for a specific book
+  /// Note: Despite the name "modal", this shows an embedded form in ReadingTimer widget
   void showPageUpdateModal(int bookId) {
     _shouldShowPageUpdateModal = true;
     _bookIdForPageUpdate = bookId;
     notifyListeners();
   }
 
-  /// Hide page update modal
+  /// Hide embedded progress update form
   void hidePageUpdateModal() {
     _shouldShowPageUpdateModal = false;
     _bookIdForPageUpdate = null;

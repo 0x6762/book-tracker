@@ -241,17 +241,17 @@ class TimerService extends ChangeNotifier {
 
     debugPrint('⏰ Reading session completed!');
 
-    // Trigger progress update modal
-    _triggerProgressUpdateModal();
+    // Trigger embedded progress update form
+    _triggerProgressUpdateForm();
 
     notifyListeners();
   }
 
-  /// Trigger progress update modal
-  void _triggerProgressUpdateModal() {
-    // This will be handled by the UI layer
+  /// Trigger embedded progress update form in ReadingTimer widget
+  void _triggerProgressUpdateForm() {
+    // This will be handled by the UI layer (ReadingTimer widget)
     // We just need to notify that completion happened
-    debugPrint('📝 Triggering progress update modal for book $_currentBookId');
+    debugPrint('📝 Triggering progress update form for book $_currentBookId');
   }
 
   // Mark completion as handled to prevent multiple triggers
@@ -267,7 +267,7 @@ class TimerService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Clear just completed state (called after modal is shown)
+  // Clear just completed state (called after progress update form is shown)
   void clearJustCompletedState() {
     _completionHandled = false;
     notifyListeners();

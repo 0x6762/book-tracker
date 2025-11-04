@@ -113,7 +113,8 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
     UIStateProvider uiStateProvider,
     TimerService timerService,
   ) {
-    // Show page update modal (reading time will be added when user updates progress)
+    // Trigger embedded progress update form in ReadingTimer widget
+    // (reading time will be added when user updates progress)
     if (timerService.currentBookId != null) {
       uiStateProvider.showPageUpdateModal(timerService.currentBookId!);
       // Clear the just completed state to prevent multiple triggers
@@ -361,7 +362,7 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
     final pageViewWidth = screenWidth * 0.92; // viewportFraction
     final cardWidth = pageViewWidth;
     final cardHeight = cardWidth * 1.6; // aspect ratio
-    
+
     return PageView.builder(
       controller: _pageController,
       physics: const PageScrollPhysics(),
