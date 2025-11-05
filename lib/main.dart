@@ -278,58 +278,73 @@ class _BookTrackerHomePageState extends State<BookTrackerHomePage>
 
   Widget _buildEmptyStateWithSearch(BookListProvider bookListProvider) {
     return SingleChildScrollView(
-      child: Column(
-        children: [
-          // 30% from top spacing
-          SizedBox(height: MediaQuery.of(context).size.height * 0.1),
-          // Book cover carousel at the top
-          const BookCoverCarousel(
-            height: 250,
-            width: 180,
-            scrollSpeed: 20.0,
-            opacity: 0.6,
-          ),
-
-          const SizedBox(height: 56),
-
-          // Title and subtitle
-          Text(
-            'Welcome to Readr',
-            style: TextStyle(
-              fontSize: AppConstants.emptyStateTitleSize,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
-          ),
-          const SizedBox(height: AppConstants.mediumSpacing),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              'Add books to your reading list and start tracking your reading progress.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: AppConstants.emptyStateBodySize,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                height: 1.5,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: MediaQuery.of(context).size.height,
+        ),
+        child: IntrinsicHeight(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // App logo centered at the top
+              Center(
+                child: SvgPicture.asset(
+                  'assets/icon/ic_readr.svg',
+                  height: 48,
+                  width: 48,
+                ),
               ),
-            ),
-          ),
-
-          // Search bar positioned below text
-          const SizedBox(height: 32),
-          Hero(
-            tag: 'search_bar',
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SearchInput(
-                controller: _searchController,
-                onTap: _navigateToSearch,
-                isSearchMode: false,
-                onScan: _navigateToScannerAndSearch,
+              const SizedBox(height: 64),
+              // Book cover carousel
+              const BookCoverCarousel(
+                height: 250,
+                width: 180,
+                scrollSpeed: 20.0,
+                opacity: 0.6,
               ),
-            ),
+
+              const SizedBox(height: 56),
+
+              // Title and subtitle
+              Text(
+                'Welcome to Readr',
+                style: TextStyle(
+                  fontSize: AppConstants.emptyStateTitleSize,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: AppConstants.mediumSpacing),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: Text(
+                  'Add books to your reading list and start tracking your reading progress.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: AppConstants.emptyStateBodySize,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+
+              // Search bar positioned below text
+              const SizedBox(height: 32),
+              Hero(
+                tag: 'search_bar',
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SearchInput(
+                    controller: _searchController,
+                    onTap: _navigateToSearch,
+                    isSearchMode: false,
+                    onScan: _navigateToScannerAndSearch,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
