@@ -140,7 +140,7 @@ class _BookCoverCarouselState extends State<BookCoverCarousel>
 
   Widget _buildBookCover(String imagePath) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(8.0),
+      borderRadius: BorderRadius.circular(28.0),
       child: Image.asset(
         imagePath,
         width: widget.width,

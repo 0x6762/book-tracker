@@ -31,20 +31,20 @@ class WelcomeView extends StatelessWidget {
               Center(
                 child: SvgPicture.asset(
                   'assets/icon/ic_readr.svg',
-                  height: 48,
-                  width: 48,
+                  height: 32,
+                  width: 32,
                 ),
               ),
-              const SizedBox(height: 64),
+              const SizedBox(height: 40),
               // Book cover carousel
               const BookCoverCarousel(
-                height: 250,
-                width: 180,
+                height: 400,
+                width: 288,
                 scrollSpeed: 20.0,
                 opacity: 0.6,
               ),
 
-              const SizedBox(height: 56),
+              const SizedBox(height: 32),
 
               // Title and subtitle
               Text(
@@ -57,14 +57,13 @@ class WelcomeView extends StatelessWidget {
               ),
               const SizedBox(height: AppConstants.mediumSpacing),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
+                padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Text(
                   'Add books to your reading list and start tracking your reading progress.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: AppConstants.emptyStateBodySize,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    height: 1.5,
                   ),
                 ),
               ),
@@ -73,14 +72,11 @@ class WelcomeView extends StatelessWidget {
               const SizedBox(height: 32),
               Hero(
                 tag: 'search_bar',
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SearchInput(
-                    controller: searchController,
-                    onTap: onSearchTap,
-                    isSearchMode: false,
-                    onScan: onScanTap,
-                  ),
+                child: SearchInput(
+                  controller: searchController,
+                  onTap: onSearchTap,
+                  isSearchMode: false,
+                  onScan: onScanTap,
                 ),
               ),
             ],

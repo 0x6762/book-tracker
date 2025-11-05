@@ -156,7 +156,7 @@ class _SearchInputState extends State<SearchInput>
             ),
             contentPadding: const EdgeInsets.symmetric(
               horizontal: 20,
-              vertical: 12,
+              vertical: 16,
             ),
           ),
         ),
