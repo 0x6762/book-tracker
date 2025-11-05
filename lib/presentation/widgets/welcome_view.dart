@@ -18,6 +18,12 @@ class WelcomeView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Calculate responsive carousel dimensions
+    final screenWidth = MediaQuery.of(context).size.width;
+    final carouselWidth = screenWidth * 0.65; // 65% of screen width
+    final carouselHeight =
+        carouselWidth * 1.6; // 1.6 aspect ratio (matches main book cards)
+
     return SingleChildScrollView(
       child: ConstrainedBox(
         constraints: BoxConstraints(
@@ -35,12 +41,12 @@ class WelcomeView extends StatelessWidget {
                   width: 32,
                 ),
               ),
-              const SizedBox(height: 40),
-              // Book cover carousel
-              const BookCoverCarousel(
-                height: 400,
-                width: 288,
-                scrollSpeed: 20.0,
+              const SizedBox(height: 32),
+              // Book cover carousel (responsive)
+              BookCoverCarousel(
+                height: carouselHeight,
+                width: carouselWidth,
+                durationSeconds: 60,
                 opacity: 0.6,
               ),
 

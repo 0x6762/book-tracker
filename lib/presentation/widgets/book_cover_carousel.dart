@@ -5,15 +5,15 @@ class BookCoverCarousel extends StatefulWidget {
   final double height;
   final double width;
   final double spacing;
-  final double scrollSpeed; // pixels per second
+  final int durationSeconds; // seconds for one complete scroll cycle
   final double opacity; // opacity for the carousel
 
   const BookCoverCarousel({
     super.key,
     required this.height,
     required this.width,
+    required this.durationSeconds,
     this.spacing = 16.0,
-    this.scrollSpeed = 50.0, // 50 pixels per second
     this.opacity = 1.0,
   });
 
@@ -68,13 +68,8 @@ class _BookCoverCarouselState extends State<BookCoverCarousel>
   }
 
   void _startContinuousAnimation() {
-    // Calculate the total width of one complete cycle
-    final totalWidth = (_bookCovers.length * (widget.width + widget.spacing));
-
-    // Calculate duration based on scroll speed
-    final duration = Duration(
-      milliseconds: (totalWidth / widget.scrollSpeed * 1000).round(),
-    );
+    // Use fixed duration for consistent speed across all devices
+    final duration = Duration(seconds: widget.durationSeconds);
 
     _animationController.duration = duration;
     _animationController.repeat();
@@ -158,7 +153,7 @@ class _BookCoverCarouselState extends State<BookCoverCarousel>
             height: widget.height,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.surfaceVariant,
-              borderRadius: BorderRadius.circular(8.0),
+              borderRadius: BorderRadius.circular(28.0),
             ),
             child: Icon(
               Icons.book,
