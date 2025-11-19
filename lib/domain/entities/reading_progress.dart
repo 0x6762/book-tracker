@@ -112,6 +112,27 @@ class ReadingProgress {
     return pagesPerHour.clamp(0, 100);
   }
 
+  // Calculate estimated time left to finish book
+  String getEstimatedTimeLeft(int totalPages) {
+    if (isCompleted) return 'Finished';
+    
+    final speed = getPagesPerHour(totalPages);
+    if (speed <= 0) return 'Unknown';
+    
+    final remainingPages = totalPages - currentPage;
+    if (remainingPages <= 0) return 'Finished';
+    
+    final hoursLeft = remainingPages / speed;
+    final hours = hoursLeft.floor();
+    final minutes = ((hoursLeft - hours) * 60).round();
+    
+    if (hours > 0) {
+      return minutes > 0 ? '${hours}h ${minutes}m left' : '${hours}h left';
+    } else {
+      return '${minutes}m left';
+    }
+  }
+
   // Format last read date with relative time
   String getLastReadFormatted() {
     final last = endDate ?? startDate;

@@ -352,11 +352,17 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _buildStatCard(
-                      'Avg. Session',
-                      progress.getAverageSessionTime(),
-                      Icons.schedule,
-                    ),
+                    child: !widget.book.isCompleted && widget.book.pageCount != null
+                      ? _buildStatCard(
+                          'Time Left',
+                          progress.getEstimatedTimeLeft(widget.book.pageCount!),
+                          Icons.hourglass_bottom,
+                        )
+                      : _buildStatCard(
+                          'Avg. Session',
+                          progress.getAverageSessionTime(),
+                          Icons.schedule,
+                        ),
                   ),
                 ],
               ),
