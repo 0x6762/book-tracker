@@ -151,7 +151,7 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildReadingProgress(),
-          const SizedBox(height: AppConstants.lg),
+          const SizedBox(height: AppConstants.md),
           _buildReadingStats(),
         ],
       ),
@@ -271,17 +271,28 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Reading Statistics',
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16),
+        // Weekly Activity Heatmap (Top Section)
+        if (widget.book.id != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppConstants.md),
+            child: FutureBuilder<int>(
+              future: _getLongestStreak(),
+              builder: (context, snapshot) {
+                final longestStreak = snapshot.data ?? 0;
+                return WeeklyActivityWidget(
+                  bookId: widget.book.id!,
+                  accentColor: _getProgressBarColor(),
+                  currentStreak: widget.book.readingStreak,
+                  bestStreak: longestStreak,
+                );
+              },
+            ),
+          ),
+
         // Stats grid with custom layout
         Column(
           children: [
-            // First row: Streak stats (3 boxes)
+            // Grid Row 1: Last Read and Time Left (2 boxes)
             IntrinsicHeight(
               child: Row(
                 children: [
@@ -292,45 +303,7 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                       Icons.history,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildStatCard(
-                      'Reading Streak',
-                      '${widget.book.readingStreak} days',
-                      Icons.local_fire_department,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: FutureBuilder<int>(
-                      future: _getLongestStreak(),
-                      builder: (context, snapshot) {
-                        final longestStreak = snapshot.data ?? 0;
-                        return _buildStatCard(
-                          'Best Streak',
-                          '$longestStreak days',
-                          Icons.emoji_events,
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            // Weekly Activity Heatmap
-            if (widget.book.id != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: WeeklyActivityWidget(
-                  bookId: widget.book.id!,
-                  accentColor: _getProgressBarColor(),
-                ),
-              ),
-            // Second row: Time Left (or Avg Session) and Total time (2 boxes)
-            IntrinsicHeight(
-              child: Row(
-                children: [
+                  const SizedBox(width: AppConstants.md),
                   Expanded(
                     child:
                         !widget.book.isCompleted &&
@@ -348,7 +321,14 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                             Icons.schedule,
                           ),
                   ),
-                  const SizedBox(width: 12),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppConstants.md),
+            // Grid Row 2: Total Time and Pages/Hour (2 boxes)
+            IntrinsicHeight(
+              child: Row(
+                children: [
                   Expanded(
                     child: _buildStatCard(
                       'Total Time',
@@ -356,22 +336,30 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                       Icons.timer,
                     ),
                   ),
+                  const SizedBox(width: AppConstants.md),
+                  Expanded(
+                    child: _buildStatCard(
+                      'Pages / Hour',
+                      '${progress.getPagesPerHour(widget.book.pageCount!)}',
+                      Icons.speed,
+                    ),
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            // Third row: Pages/Hour and Started Date (2 boxes)
+            const SizedBox(height: AppConstants.md),
+            // Grid Row 3: Avg Session and Started Date (2 boxes)
             IntrinsicHeight(
               child: Row(
                 children: [
                   Expanded(
                     child: _buildStatCard(
-                      'Pages/Hour',
-                      '${progress.getPagesPerHour(widget.book.pageCount!)}',
-                      Icons.speed,
+                      'Avg. Session',
+                      progress.getAverageSessionTime(),
+                      Icons.schedule,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppConstants.md),
                   Expanded(
                     child: _buildStatCard(
                       'Started',
@@ -390,39 +378,57 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
 
   Widget _buildStatCard(String label, String value, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
         ),
       ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
+            child: Icon(
+              icon,
+              size: 20,
+              color: Theme.of(context).colorScheme.primary,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    height: 1.1,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

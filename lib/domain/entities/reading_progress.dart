@@ -49,7 +49,7 @@ class ReadingProgress {
       final diff = DateTime.now().difference(endDate!).inHours;
       if (diff < 48) return 1; // Read recently (within 2 days)
     }
-    
+
     return 0;
   }
 
@@ -110,17 +110,17 @@ class ReadingProgress {
   // Calculate estimated time left to finish book
   String getEstimatedTimeLeft(int totalPages) {
     if (isCompleted) return 'Finished';
-    
+
     final speed = getPagesPerHour(totalPages);
     if (speed <= 0) return 'Unknown';
-    
+
     final remainingPages = totalPages - currentPage;
     if (remainingPages <= 0) return 'Finished';
-    
+
     final hoursLeft = remainingPages / speed;
     final hours = hoursLeft.floor();
     final minutes = ((hoursLeft - hours) * 60).round();
-    
+
     if (hours > 0) {
       return minutes > 0 ? '${hours}h ${minutes}m left' : '${hours}h left';
     } else {

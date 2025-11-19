@@ -5,11 +5,15 @@ import '../../data/book_database.dart';
 class WeeklyActivityWidget extends StatelessWidget {
   final int bookId;
   final Color? accentColor;
+  final int currentStreak;
+  final int bestStreak;
 
   const WeeklyActivityWidget({
     super.key,
     required this.bookId,
     this.accentColor,
+    required this.currentStreak,
+    required this.bestStreak,
   });
 
   Future<List<DailyReadingActivityData>> _getWeeklyActivity() async {
@@ -43,14 +47,10 @@ class WeeklyActivityWidget extends StatelessWidget {
     return FutureBuilder<List<DailyReadingActivityData>>(
       future: _getWeeklyActivity(),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SizedBox(
-            height: 60,
-            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-          );
-        }
-
+        // Prepare data or use defaults/empty if loading
         final activities = snapshot.data ?? [];
+        final isLoading = snapshot.connectionState == ConnectionState.waiting;
+
         final now = DateTime.now();
         // Monday of current week
         final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
@@ -62,14 +62,15 @@ class WeeklyActivityWidget extends StatelessWidget {
 
         // Create a map of date -> minutes read
         final activityMap = <DateTime, int>{};
-        for (final activity in activities) {
-          // Normalize date to midnight
-          final date = DateTime(
-            activity.activityDate.year,
-            activity.activityDate.month,
-            activity.activityDate.day,
-          );
-          activityMap[date] = activity.minutesRead;
+        if (!isLoading) {
+          for (final activity in activities) {
+            final date = DateTime(
+              activity.activityDate.year,
+              activity.activityDate.month,
+              activity.activityDate.day,
+            );
+            activityMap[date] = activity.minutesRead;
+          }
         }
 
         final weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -86,13 +87,48 @@ class WeeklyActivityWidget extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'This Week\'s Activity',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Reading Streak',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.local_fire_department,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$currentStreak day${currentStreak == 1 ? '' : 's'}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(
+                        Icons.emoji_events,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$bestStreak best',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(7, (index) {
