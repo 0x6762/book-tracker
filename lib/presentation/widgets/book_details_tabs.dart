@@ -333,13 +333,13 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                     child: _buildStatCard(
                       'Total Time',
                       progress.getFormattedReadingTime(),
-                      Icons.timer,
+                      Icons.schedule,
                     ),
                   ),
                   const SizedBox(width: AppConstants.md),
                   Expanded(
                     child: _buildStatCard(
-                      'Pages / Hour',
+                      'Pages/Hour',
                       '${progress.getPagesPerHour(widget.book.pageCount!)}',
                       Icons.speed,
                     ),
@@ -356,7 +356,7 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                     child: _buildStatCard(
                       'Avg. Session',
                       progress.getAverageSessionTime(),
-                      Icons.schedule,
+                      Icons.menu_book,
                     ),
                   ),
                   const SizedBox(width: AppConstants.md),
@@ -364,7 +364,7 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                     child: _buildStatCard(
                       'Started',
                       BookDisplayService.formatShortDate(progress.startDate),
-                      Icons.calendar_today,
+                      Icons.event,
                     ),
                   ),
                 ],
@@ -378,7 +378,7 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
 
   Widget _buildStatCard(String label, String value, IconData icon) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
