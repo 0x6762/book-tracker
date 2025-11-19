@@ -182,8 +182,12 @@ class ReadingTimerService : Service() {
         
         isStopped = true
         isRunning = false
+        remainingSeconds = 0 // Ensure it shows 0
         countDownTimer?.cancel()
         countDownTimer = null
+        
+        // Send final update to Flutter before stopping
+        sendUpdateToFlutter()
         
         // Clear persisted state
         clearTimerState()
