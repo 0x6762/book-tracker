@@ -8,6 +8,7 @@ class ReadingProgress {
   final int totalReadingTimeMinutes;
   final int? readingStreak; // Accurate streak from daily activity tracking
   final int sessionsCount; // Accurate session count for average calculation
+  final int averagePagesPerHour; // Accurate speed from daily activity tracking
 
   const ReadingProgress({
     this.id,
@@ -19,6 +20,7 @@ class ReadingProgress {
     this.totalReadingTimeMinutes = 0,
     this.readingStreak,
     this.sessionsCount = 0,
+    this.averagePagesPerHour = 0,
   });
 
   // Calculate progress percentage
@@ -90,6 +92,11 @@ class ReadingProgress {
 
   // Calculate pages per hour
   int getPagesPerHour(int totalPages) {
+    // Prefer accurate calculation from database if available
+    if (averagePagesPerHour > 0) {
+      return averagePagesPerHour;
+    }
+
     if (totalReadingTimeMinutes <= 0 || totalPages <= 0 || currentPage <= 0) {
       return 0;
     }
@@ -150,6 +157,7 @@ class ReadingProgress {
     int? totalReadingTimeMinutes,
     int? readingStreak,
     int? sessionsCount,
+    int? averagePagesPerHour,
   }) {
     return ReadingProgress(
       id: id ?? this.id,
@@ -162,6 +170,7 @@ class ReadingProgress {
           totalReadingTimeMinutes ?? this.totalReadingTimeMinutes,
       readingStreak: readingStreak ?? this.readingStreak,
       sessionsCount: sessionsCount ?? this.sessionsCount,
+      averagePagesPerHour: averagePagesPerHour ?? this.averagePagesPerHour,
     );
   }
 

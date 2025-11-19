@@ -30,6 +30,7 @@ class Books extends Table {
   IntColumn get totalReadingTimeMinutes =>
       integer().withDefault(const Constant(0))();
   IntColumn get sessionsCount => integer().withDefault(const Constant(0))();
+  IntColumn get averagePagesPerHour => integer().withDefault(const Constant(0))();
 
   // Streak tracking
   IntColumn get currentStreak => integer().withDefault(const Constant(0))();
@@ -78,7 +79,7 @@ class BookDatabase extends _$BookDatabase {
   BookDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -121,6 +122,10 @@ class BookDatabase extends _$BookDatabase {
         await customStatement(
           'UPDATE books SET sessions_count = CASE WHEN start_date IS NOT NULL THEN 1 ELSE 0 END',
         );
+      }
+      if (from < 8) {
+        // Add averagePagesPerHour column
+        await m.addColumn(books, books.averagePagesPerHour);
       }
     },
   );
@@ -198,6 +203,30 @@ class BookDatabase extends _$BookDatabase {
     );
   }
 
+  // New helper to calculate average reading speed from daily activity
+  Future<int> calculateAverageReadingSpeed(int bookId) async {
+    final activities = await getDailyActivity(bookId: bookId);
+    
+    if (activities.isEmpty) return 0;
+    
+    int totalMinutes = 0;
+    int totalPages = 0;
+    
+    for (final activity in activities) {
+      // Only count activities where actual reading happened
+      if (activity.minutesRead > 0 && activity.pagesRead > 0) {
+        totalMinutes += activity.minutesRead;
+        totalPages += activity.pagesRead;
+      }
+    }
+    
+    if (totalMinutes <= 0) return 0;
+    
+    // Calculate pages per hour
+    final hours = totalMinutes / 60.0;
+    return (totalPages / hours).round();
+  }
+
   // Transactional method to update progress and reading time atomically
   Future<void> updateProgressWithTime(
     int bookId,
@@ -234,11 +263,26 @@ class BookDatabase extends _$BookDatabase {
           ? book.sessionsCount + 1 
           : book.sessionsCount;
           
+      // Recalculate average speed if we have new data
+      int newAverageSpeed = book.averagePagesPerHour;
+      if (minutesRead > 0) {
+        // We need to wait for the activity record to be updated first in the service layer
+        // But since we're in a transaction and service layer calls this, we might not have the latest activity yet
+        // So we'll do a best-effort estimation here or rely on a separate update
+        
+        // Actually, the cleaner way is: 
+        // 1. The service calls recordDailyActivity
+        // 2. The service calls this method
+        // So we can query the calculateAverageReadingSpeed here
+        newAverageSpeed = await calculateAverageReadingSpeed(bookId);
+      }
+
       await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
         BooksCompanion(
           currentPage: Value(currentPage),
           totalReadingTimeMinutes: Value(newTotalTime),
           sessionsCount: Value(newSessionsCount),
+          averagePagesPerHour: Value(newAverageSpeed),
           startDate: shouldSetStartDate
               ? Value(DateTime.now())
               : const Value.absent(),
@@ -309,11 +353,18 @@ class BookDatabase extends _$BookDatabase {
     final newSessionsCount = minutes > 0 
         ? book.sessionsCount + 1 
         : book.sessionsCount;
+        
+    // Recalculate average speed
+    int newAverageSpeed = book.averagePagesPerHour;
+    if (minutes > 0) {
+      newAverageSpeed = await calculateAverageReadingSpeed(bookId);
+    }
 
     await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
       BooksCompanion(
         totalReadingTimeMinutes: Value(newTotalTime),
         sessionsCount: Value(newSessionsCount),
+        averagePagesPerHour: Value(newAverageSpeed),
         // Always update endDate to track last reading activity
         endDate: Value(DateTime.now()),
       ),
@@ -597,6 +648,7 @@ extension BookToEntity on Book {
               totalReadingTimeMinutes: totalReadingTimeMinutes,
               readingStreak: currentStreak, // Use currentStreak from database
               sessionsCount: sessionsCount,
+              averagePagesPerHour: averagePagesPerHour,
             )
           : null,
       // Map rating fields

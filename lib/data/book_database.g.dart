@@ -170,6 +170,17 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _averagePagesPerHourMeta =
+      const VerificationMeta('averagePagesPerHour');
+  @override
+  late final GeneratedColumn<int> averagePagesPerHour = GeneratedColumn<int>(
+    'average_pages_per_hour',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _currentStreakMeta = const VerificationMeta(
     'currentStreak',
   );
@@ -244,6 +255,7 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     isCompleted,
     totalReadingTimeMinutes,
     sessionsCount,
+    averagePagesPerHour,
     currentStreak,
     longestStreak,
     longestStreakDate,
@@ -373,6 +385,15 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         ),
       );
     }
+    if (data.containsKey('average_pages_per_hour')) {
+      context.handle(
+        _averagePagesPerHourMeta,
+        averagePagesPerHour.isAcceptableOrUnknown(
+          data['average_pages_per_hour']!,
+          _averagePagesPerHourMeta,
+        ),
+      );
+    }
     if (data.containsKey('current_streak')) {
       context.handle(
         _currentStreakMeta,
@@ -483,6 +504,10 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.int,
         data['${effectivePrefix}sessions_count'],
       )!,
+      averagePagesPerHour: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}average_pages_per_hour'],
+      )!,
       currentStreak: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}current_streak'],
@@ -527,6 +552,7 @@ class Book extends DataClass implements Insertable<Book> {
   final bool isCompleted;
   final int totalReadingTimeMinutes;
   final int sessionsCount;
+  final int averagePagesPerHour;
   final int currentStreak;
   final int longestStreak;
   final DateTime? longestStreakDate;
@@ -547,6 +573,7 @@ class Book extends DataClass implements Insertable<Book> {
     required this.isCompleted,
     required this.totalReadingTimeMinutes,
     required this.sessionsCount,
+    required this.averagePagesPerHour,
     required this.currentStreak,
     required this.longestStreak,
     this.longestStreakDate,
@@ -582,6 +609,7 @@ class Book extends DataClass implements Insertable<Book> {
     map['is_completed'] = Variable<bool>(isCompleted);
     map['total_reading_time_minutes'] = Variable<int>(totalReadingTimeMinutes);
     map['sessions_count'] = Variable<int>(sessionsCount);
+    map['average_pages_per_hour'] = Variable<int>(averagePagesPerHour);
     map['current_streak'] = Variable<int>(currentStreak);
     map['longest_streak'] = Variable<int>(longestStreak);
     if (!nullToAbsent || longestStreakDate != null) {
@@ -624,6 +652,7 @@ class Book extends DataClass implements Insertable<Book> {
       isCompleted: Value(isCompleted),
       totalReadingTimeMinutes: Value(totalReadingTimeMinutes),
       sessionsCount: Value(sessionsCount),
+      averagePagesPerHour: Value(averagePagesPerHour),
       currentStreak: Value(currentStreak),
       longestStreak: Value(longestStreak),
       longestStreakDate: longestStreakDate == null && nullToAbsent
@@ -660,6 +689,9 @@ class Book extends DataClass implements Insertable<Book> {
         json['totalReadingTimeMinutes'],
       ),
       sessionsCount: serializer.fromJson<int>(json['sessionsCount']),
+      averagePagesPerHour: serializer.fromJson<int>(
+        json['averagePagesPerHour'],
+      ),
       currentStreak: serializer.fromJson<int>(json['currentStreak']),
       longestStreak: serializer.fromJson<int>(json['longestStreak']),
       longestStreakDate: serializer.fromJson<DateTime?>(
@@ -689,6 +721,7 @@ class Book extends DataClass implements Insertable<Book> {
         totalReadingTimeMinutes,
       ),
       'sessionsCount': serializer.toJson<int>(sessionsCount),
+      'averagePagesPerHour': serializer.toJson<int>(averagePagesPerHour),
       'currentStreak': serializer.toJson<int>(currentStreak),
       'longestStreak': serializer.toJson<int>(longestStreak),
       'longestStreakDate': serializer.toJson<DateTime?>(longestStreakDate),
@@ -712,6 +745,7 @@ class Book extends DataClass implements Insertable<Book> {
     bool? isCompleted,
     int? totalReadingTimeMinutes,
     int? sessionsCount,
+    int? averagePagesPerHour,
     int? currentStreak,
     int? longestStreak,
     Value<DateTime?> longestStreakDate = const Value.absent(),
@@ -735,6 +769,7 @@ class Book extends DataClass implements Insertable<Book> {
     totalReadingTimeMinutes:
         totalReadingTimeMinutes ?? this.totalReadingTimeMinutes,
     sessionsCount: sessionsCount ?? this.sessionsCount,
+    averagePagesPerHour: averagePagesPerHour ?? this.averagePagesPerHour,
     currentStreak: currentStreak ?? this.currentStreak,
     longestStreak: longestStreak ?? this.longestStreak,
     longestStreakDate: longestStreakDate.present
@@ -777,6 +812,9 @@ class Book extends DataClass implements Insertable<Book> {
       sessionsCount: data.sessionsCount.present
           ? data.sessionsCount.value
           : this.sessionsCount,
+      averagePagesPerHour: data.averagePagesPerHour.present
+          ? data.averagePagesPerHour.value
+          : this.averagePagesPerHour,
       currentStreak: data.currentStreak.present
           ? data.currentStreak.value
           : this.currentStreak,
@@ -812,6 +850,7 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('isCompleted: $isCompleted, ')
           ..write('totalReadingTimeMinutes: $totalReadingTimeMinutes, ')
           ..write('sessionsCount: $sessionsCount, ')
+          ..write('averagePagesPerHour: $averagePagesPerHour, ')
           ..write('currentStreak: $currentStreak, ')
           ..write('longestStreak: $longestStreak, ')
           ..write('longestStreakDate: $longestStreakDate, ')
@@ -837,6 +876,7 @@ class Book extends DataClass implements Insertable<Book> {
     isCompleted,
     totalReadingTimeMinutes,
     sessionsCount,
+    averagePagesPerHour,
     currentStreak,
     longestStreak,
     longestStreakDate,
@@ -861,6 +901,7 @@ class Book extends DataClass implements Insertable<Book> {
           other.isCompleted == this.isCompleted &&
           other.totalReadingTimeMinutes == this.totalReadingTimeMinutes &&
           other.sessionsCount == this.sessionsCount &&
+          other.averagePagesPerHour == this.averagePagesPerHour &&
           other.currentStreak == this.currentStreak &&
           other.longestStreak == this.longestStreak &&
           other.longestStreakDate == this.longestStreakDate &&
@@ -883,6 +924,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<bool> isCompleted;
   final Value<int> totalReadingTimeMinutes;
   final Value<int> sessionsCount;
+  final Value<int> averagePagesPerHour;
   final Value<int> currentStreak;
   final Value<int> longestStreak;
   final Value<DateTime?> longestStreakDate;
@@ -903,6 +945,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.isCompleted = const Value.absent(),
     this.totalReadingTimeMinutes = const Value.absent(),
     this.sessionsCount = const Value.absent(),
+    this.averagePagesPerHour = const Value.absent(),
     this.currentStreak = const Value.absent(),
     this.longestStreak = const Value.absent(),
     this.longestStreakDate = const Value.absent(),
@@ -924,6 +967,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.isCompleted = const Value.absent(),
     this.totalReadingTimeMinutes = const Value.absent(),
     this.sessionsCount = const Value.absent(),
+    this.averagePagesPerHour = const Value.absent(),
     this.currentStreak = const Value.absent(),
     this.longestStreak = const Value.absent(),
     this.longestStreakDate = const Value.absent(),
@@ -947,6 +991,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<bool>? isCompleted,
     Expression<int>? totalReadingTimeMinutes,
     Expression<int>? sessionsCount,
+    Expression<int>? averagePagesPerHour,
     Expression<int>? currentStreak,
     Expression<int>? longestStreak,
     Expression<DateTime>? longestStreakDate,
@@ -969,6 +1014,8 @@ class BooksCompanion extends UpdateCompanion<Book> {
       if (totalReadingTimeMinutes != null)
         'total_reading_time_minutes': totalReadingTimeMinutes,
       if (sessionsCount != null) 'sessions_count': sessionsCount,
+      if (averagePagesPerHour != null)
+        'average_pages_per_hour': averagePagesPerHour,
       if (currentStreak != null) 'current_streak': currentStreak,
       if (longestStreak != null) 'longest_streak': longestStreak,
       if (longestStreakDate != null) 'longest_streak_date': longestStreakDate,
@@ -992,6 +1039,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<bool>? isCompleted,
     Value<int>? totalReadingTimeMinutes,
     Value<int>? sessionsCount,
+    Value<int>? averagePagesPerHour,
     Value<int>? currentStreak,
     Value<int>? longestStreak,
     Value<DateTime?>? longestStreakDate,
@@ -1014,6 +1062,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
       totalReadingTimeMinutes:
           totalReadingTimeMinutes ?? this.totalReadingTimeMinutes,
       sessionsCount: sessionsCount ?? this.sessionsCount,
+      averagePagesPerHour: averagePagesPerHour ?? this.averagePagesPerHour,
       currentStreak: currentStreak ?? this.currentStreak,
       longestStreak: longestStreak ?? this.longestStreak,
       longestStreakDate: longestStreakDate ?? this.longestStreakDate,
@@ -1069,6 +1118,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
     if (sessionsCount.present) {
       map['sessions_count'] = Variable<int>(sessionsCount.value);
     }
+    if (averagePagesPerHour.present) {
+      map['average_pages_per_hour'] = Variable<int>(averagePagesPerHour.value);
+    }
     if (currentStreak.present) {
       map['current_streak'] = Variable<int>(currentStreak.value);
     }
@@ -1104,6 +1156,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('isCompleted: $isCompleted, ')
           ..write('totalReadingTimeMinutes: $totalReadingTimeMinutes, ')
           ..write('sessionsCount: $sessionsCount, ')
+          ..write('averagePagesPerHour: $averagePagesPerHour, ')
           ..write('currentStreak: $currentStreak, ')
           ..write('longestStreak: $longestStreak, ')
           ..write('longestStreakDate: $longestStreakDate, ')
@@ -1839,6 +1892,7 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<bool> isCompleted,
       Value<int> totalReadingTimeMinutes,
       Value<int> sessionsCount,
+      Value<int> averagePagesPerHour,
       Value<int> currentStreak,
       Value<int> longestStreak,
       Value<DateTime?> longestStreakDate,
@@ -1861,6 +1915,7 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<bool> isCompleted,
       Value<int> totalReadingTimeMinutes,
       Value<int> sessionsCount,
+      Value<int> averagePagesPerHour,
       Value<int> currentStreak,
       Value<int> longestStreak,
       Value<DateTime?> longestStreakDate,
@@ -1994,6 +2049,11 @@ class $$BooksTableFilterComposer extends Composer<_$BookDatabase, $BooksTable> {
 
   ColumnFilters<int> get sessionsCount => $composableBuilder(
     column: $table.sessionsCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get averagePagesPerHour => $composableBuilder(
+    column: $table.averagePagesPerHour,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2152,6 +2212,11 @@ class $$BooksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get averagePagesPerHour => $composableBuilder(
+    column: $table.averagePagesPerHour,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get currentStreak => $composableBuilder(
     column: $table.currentStreak,
     builder: (column) => ColumnOrderings(column),
@@ -2242,6 +2307,11 @@ class $$BooksTableAnnotationComposer
 
   GeneratedColumn<int> get sessionsCount => $composableBuilder(
     column: $table.sessionsCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get averagePagesPerHour => $composableBuilder(
+    column: $table.averagePagesPerHour,
     builder: (column) => column,
   );
 
@@ -2367,6 +2437,7 @@ class $$BooksTableTableManager
                 Value<bool> isCompleted = const Value.absent(),
                 Value<int> totalReadingTimeMinutes = const Value.absent(),
                 Value<int> sessionsCount = const Value.absent(),
+                Value<int> averagePagesPerHour = const Value.absent(),
                 Value<int> currentStreak = const Value.absent(),
                 Value<int> longestStreak = const Value.absent(),
                 Value<DateTime?> longestStreakDate = const Value.absent(),
@@ -2387,6 +2458,7 @@ class $$BooksTableTableManager
                 isCompleted: isCompleted,
                 totalReadingTimeMinutes: totalReadingTimeMinutes,
                 sessionsCount: sessionsCount,
+                averagePagesPerHour: averagePagesPerHour,
                 currentStreak: currentStreak,
                 longestStreak: longestStreak,
                 longestStreakDate: longestStreakDate,
@@ -2409,6 +2481,7 @@ class $$BooksTableTableManager
                 Value<bool> isCompleted = const Value.absent(),
                 Value<int> totalReadingTimeMinutes = const Value.absent(),
                 Value<int> sessionsCount = const Value.absent(),
+                Value<int> averagePagesPerHour = const Value.absent(),
                 Value<int> currentStreak = const Value.absent(),
                 Value<int> longestStreak = const Value.absent(),
                 Value<DateTime?> longestStreakDate = const Value.absent(),
@@ -2429,6 +2502,7 @@ class $$BooksTableTableManager
                 isCompleted: isCompleted,
                 totalReadingTimeMinutes: totalReadingTimeMinutes,
                 sessionsCount: sessionsCount,
+                averagePagesPerHour: averagePagesPerHour,
                 currentStreak: currentStreak,
                 longestStreak: longestStreak,
                 longestStreakDate: longestStreakDate,
