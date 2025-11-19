@@ -7,6 +7,8 @@ import '../../core/di/service_locator.dart';
 import '../../application/services/simple_color_extraction_service.dart';
 import 'app_card.dart';
 
+import 'weekly_activity_widget.dart';
+
 class BookDetailsTabs extends StatefulWidget {
   final BookEntity book;
 
@@ -293,7 +295,7 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                   const SizedBox(width: 12),
                   Expanded(
                     child: _buildStatCard(
-                      'Current Streak',
+                      'Reading Streak',
                       '${widget.book.readingStreak} days',
                       Icons.local_fire_department,
                     ),
@@ -305,7 +307,7 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                       builder: (context, snapshot) {
                         final longestStreak = snapshot.data ?? 0;
                         return _buildStatCard(
-                          'Longest Streak',
+                          'Best Streak',
                           '$longestStreak days',
                           Icons.emoji_events,
                         );
@@ -316,16 +318,35 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
               ),
             ),
             const SizedBox(height: 12),
-            // Second row: Started date and Total time (2 boxes)
+            // Weekly Activity Heatmap
+            if (widget.book.id != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: WeeklyActivityWidget(
+                  bookId: widget.book.id!,
+                  accentColor: _getProgressBarColor(),
+                ),
+              ),
+            // Second row: Time Left (or Avg Session) and Total time (2 boxes)
             IntrinsicHeight(
               child: Row(
                 children: [
                   Expanded(
-                    child: _buildStatCard(
-                      'Started',
-                      BookDisplayService.formatShortDate(progress.startDate),
-                      Icons.calendar_today,
-                    ),
+                    child:
+                        !widget.book.isCompleted &&
+                            widget.book.pageCount != null
+                        ? _buildStatCard(
+                            'Time Left',
+                            progress.getEstimatedTimeLeft(
+                              widget.book.pageCount!,
+                            ),
+                            Icons.hourglass_bottom,
+                          )
+                        : _buildStatCard(
+                            'Avg. Session',
+                            progress.getAverageSessionTime(),
+                            Icons.schedule,
+                          ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -339,7 +360,7 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
               ),
             ),
             const SizedBox(height: 12),
-            // Third row: Pages/Hour and Avg Session (2 boxes)
+            // Third row: Pages/Hour and Started Date (2 boxes)
             IntrinsicHeight(
               child: Row(
                 children: [
@@ -352,17 +373,11 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: !widget.book.isCompleted && widget.book.pageCount != null
-                      ? _buildStatCard(
-                          'Time Left',
-                          progress.getEstimatedTimeLeft(widget.book.pageCount!),
-                          Icons.hourglass_bottom,
-                        )
-                      : _buildStatCard(
-                          'Avg. Session',
-                          progress.getAverageSessionTime(),
-                          Icons.schedule,
-                        ),
+                    child: _buildStatCard(
+                      'Started',
+                      BookDisplayService.formatShortDate(progress.startDate),
+                      Icons.calendar_today,
+                    ),
                   ),
                 ],
               ),
