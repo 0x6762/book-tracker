@@ -55,13 +55,16 @@ class ReadingTimerService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        android.util.Log.d("ReadingTimerService", "🚀 onCreate called at ${System.currentTimeMillis()}")
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        
+        // Create notification channels immediately when service is created
+        // This ensures channels exist before any notification is built
+        createNotificationChannel()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Start foreground immediately to avoid timeout
-        startForeground(NOTIFICATION_ID, buildNotification())
-        
+        android.util.Log.d("ReadingTimerService", "🚀 onStartCommand called at ${System.currentTimeMillis()} with action: ${intent?.action}")
         when (intent?.action) {
             "START_TIMER" -> {
                 val totalSeconds = intent.getIntExtra("total_seconds", 0)
@@ -86,15 +89,13 @@ class ReadingTimerService : Service() {
     }
 
     private fun startTimer(totalSeconds: Int, bookTitle: String) {
+        android.util.Log.d("ReadingTimerService", "⏱️ startTimer called at ${System.currentTimeMillis()}")
         this.totalSeconds = totalSeconds
         this.remainingSeconds = totalSeconds
         this.bookTitle = bookTitle
         this.isRunning = true
         this.isPaused = false
         this.isStopped = false
-
-        // Create notification channels first (only once)
-        createNotificationChannel()
 
         // Start foreground service with initial notification
         val notification = buildNotification()
@@ -260,6 +261,7 @@ class ReadingTimerService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            android.util.Log.d("ReadingTimerService", "📣 createNotificationChannel called at ${System.currentTimeMillis()}")
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             
             // Always recreate channels to ensure they're updated
