@@ -44,18 +44,13 @@ class ReadingProgress {
       return readingStreak!;
     }
 
-    // Fallback to simple calculation for backward compatibility
-    if (totalReadingTimeMinutes <= 0) return 0;
-    final daysReading = getDaysReading();
-    if (daysReading <= 1) return 1;
-
-    // Simple heuristic fallback
-    final avgMinutesPerDay = totalReadingTimeMinutes / daysReading;
-    if (avgMinutesPerDay >= 15) {
-      return daysReading;
+    // No guessing - if database hasn't calculated it yet, assume 1 if recent activity exists, else 0
+    if (endDate != null) {
+      final diff = DateTime.now().difference(endDate!).inHours;
+      if (diff < 48) return 1; // Read recently (within 2 days)
     }
-
-    return 1;
+    
+    return 0;
   }
 
   // Format reading time as human-readable string
