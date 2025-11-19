@@ -158,6 +158,18 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         requiredDuringInsert: false,
         defaultValue: const Constant(0),
       );
+  static const VerificationMeta _sessionsCountMeta = const VerificationMeta(
+    'sessionsCount',
+  );
+  @override
+  late final GeneratedColumn<int> sessionsCount = GeneratedColumn<int>(
+    'sessions_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _currentStreakMeta = const VerificationMeta(
     'currentStreak',
   );
@@ -231,6 +243,7 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
     endDate,
     isCompleted,
     totalReadingTimeMinutes,
+    sessionsCount,
     currentStreak,
     longestStreak,
     longestStreakDate,
@@ -351,6 +364,15 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         ),
       );
     }
+    if (data.containsKey('sessions_count')) {
+      context.handle(
+        _sessionsCountMeta,
+        sessionsCount.isAcceptableOrUnknown(
+          data['sessions_count']!,
+          _sessionsCountMeta,
+        ),
+      );
+    }
     if (data.containsKey('current_streak')) {
       context.handle(
         _currentStreakMeta,
@@ -457,6 +479,10 @@ class $BooksTable extends Books with TableInfo<$BooksTable, Book> {
         DriftSqlType.int,
         data['${effectivePrefix}total_reading_time_minutes'],
       )!,
+      sessionsCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sessions_count'],
+      )!,
       currentStreak: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}current_streak'],
@@ -500,6 +526,7 @@ class Book extends DataClass implements Insertable<Book> {
   final DateTime? endDate;
   final bool isCompleted;
   final int totalReadingTimeMinutes;
+  final int sessionsCount;
   final int currentStreak;
   final int longestStreak;
   final DateTime? longestStreakDate;
@@ -519,6 +546,7 @@ class Book extends DataClass implements Insertable<Book> {
     this.endDate,
     required this.isCompleted,
     required this.totalReadingTimeMinutes,
+    required this.sessionsCount,
     required this.currentStreak,
     required this.longestStreak,
     this.longestStreakDate,
@@ -553,6 +581,7 @@ class Book extends DataClass implements Insertable<Book> {
     }
     map['is_completed'] = Variable<bool>(isCompleted);
     map['total_reading_time_minutes'] = Variable<int>(totalReadingTimeMinutes);
+    map['sessions_count'] = Variable<int>(sessionsCount);
     map['current_streak'] = Variable<int>(currentStreak);
     map['longest_streak'] = Variable<int>(longestStreak);
     if (!nullToAbsent || longestStreakDate != null) {
@@ -594,6 +623,7 @@ class Book extends DataClass implements Insertable<Book> {
           : Value(endDate),
       isCompleted: Value(isCompleted),
       totalReadingTimeMinutes: Value(totalReadingTimeMinutes),
+      sessionsCount: Value(sessionsCount),
       currentStreak: Value(currentStreak),
       longestStreak: Value(longestStreak),
       longestStreakDate: longestStreakDate == null && nullToAbsent
@@ -629,6 +659,7 @@ class Book extends DataClass implements Insertable<Book> {
       totalReadingTimeMinutes: serializer.fromJson<int>(
         json['totalReadingTimeMinutes'],
       ),
+      sessionsCount: serializer.fromJson<int>(json['sessionsCount']),
       currentStreak: serializer.fromJson<int>(json['currentStreak']),
       longestStreak: serializer.fromJson<int>(json['longestStreak']),
       longestStreakDate: serializer.fromJson<DateTime?>(
@@ -657,6 +688,7 @@ class Book extends DataClass implements Insertable<Book> {
       'totalReadingTimeMinutes': serializer.toJson<int>(
         totalReadingTimeMinutes,
       ),
+      'sessionsCount': serializer.toJson<int>(sessionsCount),
       'currentStreak': serializer.toJson<int>(currentStreak),
       'longestStreak': serializer.toJson<int>(longestStreak),
       'longestStreakDate': serializer.toJson<DateTime?>(longestStreakDate),
@@ -679,6 +711,7 @@ class Book extends DataClass implements Insertable<Book> {
     Value<DateTime?> endDate = const Value.absent(),
     bool? isCompleted,
     int? totalReadingTimeMinutes,
+    int? sessionsCount,
     int? currentStreak,
     int? longestStreak,
     Value<DateTime?> longestStreakDate = const Value.absent(),
@@ -701,6 +734,7 @@ class Book extends DataClass implements Insertable<Book> {
     isCompleted: isCompleted ?? this.isCompleted,
     totalReadingTimeMinutes:
         totalReadingTimeMinutes ?? this.totalReadingTimeMinutes,
+    sessionsCount: sessionsCount ?? this.sessionsCount,
     currentStreak: currentStreak ?? this.currentStreak,
     longestStreak: longestStreak ?? this.longestStreak,
     longestStreakDate: longestStreakDate.present
@@ -740,6 +774,9 @@ class Book extends DataClass implements Insertable<Book> {
       totalReadingTimeMinutes: data.totalReadingTimeMinutes.present
           ? data.totalReadingTimeMinutes.value
           : this.totalReadingTimeMinutes,
+      sessionsCount: data.sessionsCount.present
+          ? data.sessionsCount.value
+          : this.sessionsCount,
       currentStreak: data.currentStreak.present
           ? data.currentStreak.value
           : this.currentStreak,
@@ -774,6 +811,7 @@ class Book extends DataClass implements Insertable<Book> {
           ..write('endDate: $endDate, ')
           ..write('isCompleted: $isCompleted, ')
           ..write('totalReadingTimeMinutes: $totalReadingTimeMinutes, ')
+          ..write('sessionsCount: $sessionsCount, ')
           ..write('currentStreak: $currentStreak, ')
           ..write('longestStreak: $longestStreak, ')
           ..write('longestStreakDate: $longestStreakDate, ')
@@ -798,6 +836,7 @@ class Book extends DataClass implements Insertable<Book> {
     endDate,
     isCompleted,
     totalReadingTimeMinutes,
+    sessionsCount,
     currentStreak,
     longestStreak,
     longestStreakDate,
@@ -821,6 +860,7 @@ class Book extends DataClass implements Insertable<Book> {
           other.endDate == this.endDate &&
           other.isCompleted == this.isCompleted &&
           other.totalReadingTimeMinutes == this.totalReadingTimeMinutes &&
+          other.sessionsCount == this.sessionsCount &&
           other.currentStreak == this.currentStreak &&
           other.longestStreak == this.longestStreak &&
           other.longestStreakDate == this.longestStreakDate &&
@@ -842,6 +882,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
   final Value<DateTime?> endDate;
   final Value<bool> isCompleted;
   final Value<int> totalReadingTimeMinutes;
+  final Value<int> sessionsCount;
   final Value<int> currentStreak;
   final Value<int> longestStreak;
   final Value<DateTime?> longestStreakDate;
@@ -861,6 +902,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.endDate = const Value.absent(),
     this.isCompleted = const Value.absent(),
     this.totalReadingTimeMinutes = const Value.absent(),
+    this.sessionsCount = const Value.absent(),
     this.currentStreak = const Value.absent(),
     this.longestStreak = const Value.absent(),
     this.longestStreakDate = const Value.absent(),
@@ -881,6 +923,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     this.endDate = const Value.absent(),
     this.isCompleted = const Value.absent(),
     this.totalReadingTimeMinutes = const Value.absent(),
+    this.sessionsCount = const Value.absent(),
     this.currentStreak = const Value.absent(),
     this.longestStreak = const Value.absent(),
     this.longestStreakDate = const Value.absent(),
@@ -903,6 +946,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Expression<DateTime>? endDate,
     Expression<bool>? isCompleted,
     Expression<int>? totalReadingTimeMinutes,
+    Expression<int>? sessionsCount,
     Expression<int>? currentStreak,
     Expression<int>? longestStreak,
     Expression<DateTime>? longestStreakDate,
@@ -924,6 +968,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
       if (isCompleted != null) 'is_completed': isCompleted,
       if (totalReadingTimeMinutes != null)
         'total_reading_time_minutes': totalReadingTimeMinutes,
+      if (sessionsCount != null) 'sessions_count': sessionsCount,
       if (currentStreak != null) 'current_streak': currentStreak,
       if (longestStreak != null) 'longest_streak': longestStreak,
       if (longestStreakDate != null) 'longest_streak_date': longestStreakDate,
@@ -946,6 +991,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
     Value<DateTime?>? endDate,
     Value<bool>? isCompleted,
     Value<int>? totalReadingTimeMinutes,
+    Value<int>? sessionsCount,
     Value<int>? currentStreak,
     Value<int>? longestStreak,
     Value<DateTime?>? longestStreakDate,
@@ -967,6 +1013,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
       isCompleted: isCompleted ?? this.isCompleted,
       totalReadingTimeMinutes:
           totalReadingTimeMinutes ?? this.totalReadingTimeMinutes,
+      sessionsCount: sessionsCount ?? this.sessionsCount,
       currentStreak: currentStreak ?? this.currentStreak,
       longestStreak: longestStreak ?? this.longestStreak,
       longestStreakDate: longestStreakDate ?? this.longestStreakDate,
@@ -1019,6 +1066,9 @@ class BooksCompanion extends UpdateCompanion<Book> {
         totalReadingTimeMinutes.value,
       );
     }
+    if (sessionsCount.present) {
+      map['sessions_count'] = Variable<int>(sessionsCount.value);
+    }
     if (currentStreak.present) {
       map['current_streak'] = Variable<int>(currentStreak.value);
     }
@@ -1053,6 +1103,7 @@ class BooksCompanion extends UpdateCompanion<Book> {
           ..write('endDate: $endDate, ')
           ..write('isCompleted: $isCompleted, ')
           ..write('totalReadingTimeMinutes: $totalReadingTimeMinutes, ')
+          ..write('sessionsCount: $sessionsCount, ')
           ..write('currentStreak: $currentStreak, ')
           ..write('longestStreak: $longestStreak, ')
           ..write('longestStreakDate: $longestStreakDate, ')
@@ -1787,6 +1838,7 @@ typedef $$BooksTableCreateCompanionBuilder =
       Value<DateTime?> endDate,
       Value<bool> isCompleted,
       Value<int> totalReadingTimeMinutes,
+      Value<int> sessionsCount,
       Value<int> currentStreak,
       Value<int> longestStreak,
       Value<DateTime?> longestStreakDate,
@@ -1808,6 +1860,7 @@ typedef $$BooksTableUpdateCompanionBuilder =
       Value<DateTime?> endDate,
       Value<bool> isCompleted,
       Value<int> totalReadingTimeMinutes,
+      Value<int> sessionsCount,
       Value<int> currentStreak,
       Value<int> longestStreak,
       Value<DateTime?> longestStreakDate,
@@ -1936,6 +1989,11 @@ class $$BooksTableFilterComposer extends Composer<_$BookDatabase, $BooksTable> {
 
   ColumnFilters<int> get totalReadingTimeMinutes => $composableBuilder(
     column: $table.totalReadingTimeMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sessionsCount => $composableBuilder(
+    column: $table.sessionsCount,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2089,6 +2147,11 @@ class $$BooksTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get sessionsCount => $composableBuilder(
+    column: $table.sessionsCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get currentStreak => $composableBuilder(
     column: $table.currentStreak,
     builder: (column) => ColumnOrderings(column),
@@ -2174,6 +2237,11 @@ class $$BooksTableAnnotationComposer
 
   GeneratedColumn<int> get totalReadingTimeMinutes => $composableBuilder(
     column: $table.totalReadingTimeMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sessionsCount => $composableBuilder(
+    column: $table.sessionsCount,
     builder: (column) => column,
   );
 
@@ -2298,6 +2366,7 @@ class $$BooksTableTableManager
                 Value<DateTime?> endDate = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
                 Value<int> totalReadingTimeMinutes = const Value.absent(),
+                Value<int> sessionsCount = const Value.absent(),
                 Value<int> currentStreak = const Value.absent(),
                 Value<int> longestStreak = const Value.absent(),
                 Value<DateTime?> longestStreakDate = const Value.absent(),
@@ -2317,6 +2386,7 @@ class $$BooksTableTableManager
                 endDate: endDate,
                 isCompleted: isCompleted,
                 totalReadingTimeMinutes: totalReadingTimeMinutes,
+                sessionsCount: sessionsCount,
                 currentStreak: currentStreak,
                 longestStreak: longestStreak,
                 longestStreakDate: longestStreakDate,
@@ -2338,6 +2408,7 @@ class $$BooksTableTableManager
                 Value<DateTime?> endDate = const Value.absent(),
                 Value<bool> isCompleted = const Value.absent(),
                 Value<int> totalReadingTimeMinutes = const Value.absent(),
+                Value<int> sessionsCount = const Value.absent(),
                 Value<int> currentStreak = const Value.absent(),
                 Value<int> longestStreak = const Value.absent(),
                 Value<DateTime?> longestStreakDate = const Value.absent(),
@@ -2357,6 +2428,7 @@ class $$BooksTableTableManager
                 endDate: endDate,
                 isCompleted: isCompleted,
                 totalReadingTimeMinutes: totalReadingTimeMinutes,
+                sessionsCount: sessionsCount,
                 currentStreak: currentStreak,
                 longestStreak: longestStreak,
                 longestStreakDate: longestStreakDate,

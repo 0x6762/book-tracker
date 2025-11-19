@@ -7,6 +7,7 @@ class ReadingProgress {
   final bool isCompleted;
   final int totalReadingTimeMinutes;
   final int? readingStreak; // Accurate streak from daily activity tracking
+  final int sessionsCount; // Accurate session count for average calculation
 
   const ReadingProgress({
     this.id,
@@ -17,6 +18,7 @@ class ReadingProgress {
     this.isCompleted = false,
     this.totalReadingTimeMinutes = 0,
     this.readingStreak,
+    this.sessionsCount = 0,
   });
 
   // Calculate progress percentage
@@ -70,13 +72,12 @@ class ReadingProgress {
 
   // Calculate average session time
   String getAverageSessionTime() {
-    if (getDaysReading() <= 0 || totalReadingTimeMinutes <= 0) {
+    if (sessionsCount <= 0 || totalReadingTimeMinutes <= 0) {
       return '0m';
     }
 
-    // Calculate average session time based on total reading time and days
-    // This gives a more realistic average since users don't read every day
-    final avgMinutes = totalReadingTimeMinutes / getDaysReading();
+    // Calculate average session time based on total reading time and sessions
+    final avgMinutes = totalReadingTimeMinutes / sessionsCount;
     final hours = avgMinutes ~/ 60;
     final minutes = (avgMinutes % 60).round();
 
@@ -148,6 +149,7 @@ class ReadingProgress {
     bool? isCompleted,
     int? totalReadingTimeMinutes,
     int? readingStreak,
+    int? sessionsCount,
   }) {
     return ReadingProgress(
       id: id ?? this.id,
@@ -159,6 +161,7 @@ class ReadingProgress {
       totalReadingTimeMinutes:
           totalReadingTimeMinutes ?? this.totalReadingTimeMinutes,
       readingStreak: readingStreak ?? this.readingStreak,
+      sessionsCount: sessionsCount ?? this.sessionsCount,
     );
   }
 

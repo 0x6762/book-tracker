@@ -29,6 +29,7 @@ class Books extends Table {
   // Reading time tracking
   IntColumn get totalReadingTimeMinutes =>
       integer().withDefault(const Constant(0))();
+  IntColumn get sessionsCount => integer().withDefault(const Constant(0))();
 
   // Streak tracking
   IntColumn get currentStreak => integer().withDefault(const Constant(0))();
@@ -77,7 +78,7 @@ class BookDatabase extends _$BookDatabase {
   BookDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -111,6 +112,14 @@ class BookDatabase extends _$BookDatabase {
         // Initialize streak values for existing books
         await customStatement(
           'UPDATE books SET current_streak = 0, longest_streak = 0 WHERE current_streak IS NULL',
+        );
+      }
+      if (from < 7) {
+        // Add sessionsCount column
+        await m.addColumn(books, books.sessionsCount);
+        // Initialize with 1 if reading started, else 0 (best guess for migration)
+        await customStatement(
+          'UPDATE books SET sessions_count = CASE WHEN start_date IS NOT NULL THEN 1 ELSE 0 END',
         );
       }
     },
@@ -219,10 +228,17 @@ class BookDatabase extends _$BookDatabase {
       // Update both progress and reading time atomically
       // If this is the first time updating progress (no startDate), set it
       final shouldSetStartDate = book.startDate == null;
+      
+      // Increment sessions count only if time was added
+      final newSessionsCount = minutesRead > 0 
+          ? book.sessionsCount + 1 
+          : book.sessionsCount;
+          
       await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
         BooksCompanion(
           currentPage: Value(currentPage),
           totalReadingTimeMinutes: Value(newTotalTime),
+          sessionsCount: Value(newSessionsCount),
           startDate: shouldSetStartDate
               ? Value(DateTime.now())
               : const Value.absent(),
@@ -288,10 +304,16 @@ class BookDatabase extends _$BookDatabase {
       book!.totalReadingTimeMinutes,
       minutes,
     );
+    
+    // Increment sessions count
+    final newSessionsCount = minutes > 0 
+        ? book.sessionsCount + 1 
+        : book.sessionsCount;
 
     await (update(books)..where((tbl) => tbl.id.equals(bookId))).write(
       BooksCompanion(
         totalReadingTimeMinutes: Value(newTotalTime),
+        sessionsCount: Value(newSessionsCount),
         // Always update endDate to track last reading activity
         endDate: Value(DateTime.now()),
       ),
@@ -574,6 +596,7 @@ extension BookToEntity on Book {
               isCompleted: isCompleted,
               totalReadingTimeMinutes: totalReadingTimeMinutes,
               readingStreak: currentStreak, // Use currentStreak from database
+              sessionsCount: sessionsCount,
             )
           : null,
       // Map rating fields
