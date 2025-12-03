@@ -123,13 +123,16 @@ class _SearchInputState extends State<SearchInput>
               color: theme.colorScheme.onSurfaceVariant,
             ),
             suffixIcon: widget.onScan != null
-                ? IconButton(
-                    icon: Icon(
-                      Icons.qr_code_scanner,
-                      color: theme.colorScheme.onSurfaceVariant,
+                ? Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.qr_code_scanner,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                      onPressed: widget.onScan,
+                      tooltip: 'Scan ISBN',
                     ),
-                    onPressed: widget.onScan,
-                    tooltip: 'Scan ISBN',
                   )
                 : null,
             filled: true,
