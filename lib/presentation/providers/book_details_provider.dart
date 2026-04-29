@@ -26,14 +26,14 @@ class BookDetailsProvider with ChangeNotifier {
         bookId,
         minutesRead,
       );
-      print('📖 Added $minutesRead minutes to book $bookId');
+      debugPrint('BookDetailsProvider.addReadingTimeToBook succeeded');
       _error = null;
       // Refresh book list to update UI and wait for completion
       if (_bookListProvider != null) {
         await _bookListProvider!.loadBooks();
       }
     } catch (e) {
-      print('❌ Error adding reading time: $e');
+      debugPrint('BookDetailsProvider.addReadingTimeToBook error: $e');
       _error = 'Failed to add reading time: $e';
       notifyListeners();
     }
@@ -51,16 +51,14 @@ class BookDetailsProvider with ChangeNotifier {
         currentPage,
         minutesRead,
       );
-      print(
-        '📖 Updated progress for book $bookId to page $currentPage and added $minutesRead minutes',
-      );
+      debugPrint('BookDetailsProvider.updateProgressWithTime succeeded');
       _error = null;
       // Refresh book list to update UI and wait for completion
       if (_bookListProvider != null) {
         await _bookListProvider!.loadBooks();
       }
     } catch (e) {
-      print('❌ Error updating progress with time: $e');
+      debugPrint('BookDetailsProvider.updateProgressWithTime error: $e');
       _error = 'Failed to update progress: $e';
       notifyListeners();
     }
@@ -73,14 +71,14 @@ class BookDetailsProvider with ChangeNotifier {
         bookId,
         currentPage,
       );
-      print('📖 Updated progress for book $bookId to page $currentPage');
+      debugPrint('BookDetailsProvider.updateProgress succeeded');
       _error = null;
       // Refresh book list to update UI and wait for completion
       if (_bookListProvider != null) {
         await _bookListProvider!.loadBooks();
       }
     } catch (e) {
-      print('❌ Error updating progress: $e');
+      debugPrint('BookDetailsProvider.updateProgress error: $e');
       _error = 'Failed to update progress: $e';
       notifyListeners();
     }
@@ -90,14 +88,14 @@ class BookDetailsProvider with ChangeNotifier {
   Future<void> completeReading(int bookId) async {
     try {
       await _serviceLocator.readingProgressService.completeReading(bookId);
-      print('📖 Marked book $bookId as completed');
+      debugPrint('BookDetailsProvider.completeReading succeeded');
       _error = null;
       // Refresh book list to update UI and wait for completion
       if (_bookListProvider != null) {
         await _bookListProvider!.loadBooks();
       }
     } catch (e) {
-      print('❌ Error completing book: $e');
+      debugPrint('BookDetailsProvider.completeReading error: $e');
       _error = 'Failed to complete book: $e';
       notifyListeners();
     }

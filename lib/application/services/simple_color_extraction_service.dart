@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:palette_generator/palette_generator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:drift/drift.dart';
@@ -19,7 +20,7 @@ class SimpleColorExtractionService {
   static Future<Color?> extractColor(String imageUrl, int bookId) async {
     // Check memory cache first
     if (_colorCache.containsKey(imageUrl)) {
-      print('🎨 Using memory cached color for book $bookId');
+      debugPrint('SimpleColorExtractionService using memory cache');
       return _colorCache[imageUrl];
     }
 
@@ -30,14 +31,14 @@ class SimpleColorExtractionService {
       if (bookColor?.accentColor != null) {
         final color = Color(bookColor!.accentColor!);
         _colorCache[imageUrl] = color; // Store in memory cache too
-        print('🎨 Using database cached color for book $bookId');
+        debugPrint('SimpleColorExtractionService using database cache');
         return color;
       }
     } catch (e) {
-      print('Error loading color from database: $e');
+      debugPrint('SimpleColorExtractionService DB load failed: $e');
     }
 
-    print('🎨 Cache miss - extracting color for book $bookId');
+    debugPrint('SimpleColorExtractionService cache miss');
 
     // Check if extraction is already in progress
     if (_ongoingExtractions.containsKey(imageUrl)) {
@@ -63,9 +64,9 @@ class SimpleColorExtractionService {
               extractedAt: Value(DateTime.now()),
             ),
           );
-          print('🎨 Saved color to database for book $bookId');
+          debugPrint('SimpleColorExtractionService saved extracted color');
         } catch (e) {
-          print('Error saving color to database: $e');
+          debugPrint('SimpleColorExtractionService DB save failed: $e');
         }
       }
 
@@ -94,7 +95,7 @@ class SimpleColorExtractionService {
 
       return pickedColor;
     } catch (e) {
-      print('Color extraction failed for $imageUrl: $e');
+      debugPrint('SimpleColorExtractionService extraction failed: $e');
       return null;
     }
   }

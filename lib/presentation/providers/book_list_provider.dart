@@ -25,7 +25,7 @@ class BookListProvider with ChangeNotifier {
   Future<void> loadBooks() async {
     _setLoading(true);
     try {
-      print('🔄 Loading books...');
+      debugPrint('BookListProvider.loadBooks started');
       final stopwatch = Stopwatch()..start();
 
       final allBooks = await _serviceLocator.bookManagementService.getAllBooks();
@@ -37,13 +37,13 @@ class BookListProvider with ChangeNotifier {
       ];
 
       stopwatch.stop();
-      print(
-        '📚 Loaded ${_books.length} books in ${stopwatch.elapsedMilliseconds}ms',
+      debugPrint(
+        'BookListProvider.loadBooks loaded ${_books.length} in ${stopwatch.elapsedMilliseconds}ms',
       );
       _error = null;
       _isInitialized = true; // Mark as initialized
     } catch (e) {
-      print('❌ Error loading books: $e');
+      debugPrint('BookListProvider.loadBooks error: $e');
       _error = 'Failed to load books: $e';
       _isInitialized = true; // Mark as initialized even on error
     } finally {
@@ -64,7 +64,7 @@ class BookListProvider with ChangeNotifier {
         return;
       }
 
-      print('📖 Adding book: ${book.title}');
+      debugPrint('BookListProvider.addBook started');
       final stopwatch = Stopwatch()..start();
 
       // Add book to database (color will be extracted in UI)
@@ -77,11 +77,13 @@ class BookListProvider with ChangeNotifier {
       _lastAddedBookId = book.googleBooksId;
 
       stopwatch.stop();
-      print('✅ Book added successfully in ${stopwatch.elapsedMilliseconds}ms');
+      debugPrint(
+        'BookListProvider.addBook completed in ${stopwatch.elapsedMilliseconds}ms',
+      );
 
       _error = null;
     } catch (e) {
-      print('❌ Error adding book: $e');
+      debugPrint('BookListProvider.addBook error: $e');
       _error = 'Failed to add book: $e';
     }
   }
@@ -89,12 +91,12 @@ class BookListProvider with ChangeNotifier {
   /// Update an existing book
   Future<void> updateBook(BookEntity book) async {
     try {
-      print('📝 Updating book: ${book.title}');
+      debugPrint('BookListProvider.updateBook started');
       await _serviceLocator.bookManagementService.updateBook(book);
       await loadBooks(); // Refresh the list
       _error = null;
     } catch (e) {
-      print('❌ Error updating book: $e');
+      debugPrint('BookListProvider.updateBook error: $e');
       _error = 'Failed to update book: $e';
     }
   }
@@ -102,14 +104,14 @@ class BookListProvider with ChangeNotifier {
   /// Delete a book from the library
   Future<void> deleteBook(String googleBooksId) async {
     try {
-      print('🗑️ Deleting book: $googleBooksId');
+      debugPrint('BookListProvider.deleteBook started');
       // Find the book by googleBooksId and delete by id
       final book = _books.firstWhere((b) => b.googleBooksId == googleBooksId);
       await _serviceLocator.bookManagementService.deleteBook(book.id!);
       await loadBooks(); // Refresh the list
       _error = null;
     } catch (e) {
-      print('❌ Error deleting book: $e');
+      debugPrint('BookListProvider.deleteBook error: $e');
       _error = 'Failed to delete book: $e';
     }
   }

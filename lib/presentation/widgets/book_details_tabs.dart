@@ -61,7 +61,7 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
         return;
       }
     } catch (e) {
-      print('Error checking cached color: $e');
+      debugPrint('BookDetailsTabs color cache check failed: $e');
     }
 
     // Color not cached - extract with a small delay for image loading
@@ -93,7 +93,7 @@ class _BookDetailsTabsState extends State<BookDetailsTabs>
       final book = await database.getBookById(widget.book.id!);
       return book?.longestStreak ?? 0;
     } catch (e) {
-      print('Error getting longest streak: $e');
+      debugPrint('BookDetailsTabs longest streak load failed: $e');
       return 0;
     }
   }

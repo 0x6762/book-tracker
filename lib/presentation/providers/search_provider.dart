@@ -29,7 +29,7 @@ class SearchProvider with ChangeNotifier {
 
     _setSearching(true);
     try {
-      print('🔍 Searching for: $query');
+      debugPrint('SearchProvider.searchBooks started');
       final stopwatch = Stopwatch()..start();
       List<BookEntity> results = [];
 
@@ -74,12 +74,12 @@ class SearchProvider with ChangeNotifier {
       _searchResults = results;
 
       stopwatch.stop();
-      print(
-        '🔍 Found ${results.length} results in ${stopwatch.elapsedMilliseconds}ms',
+      debugPrint(
+        'SearchProvider.searchBooks found ${results.length} results in ${stopwatch.elapsedMilliseconds}ms',
       );
       _error = null;
     } catch (e) {
-      print('❌ Error searching books: $e');
+      debugPrint('SearchProvider.searchBooks error: $e');
       _error = 'Failed to search books: $e';
       _searchResults = [];
     } finally {

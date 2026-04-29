@@ -95,7 +95,7 @@ class _BookCardState extends State<BookCard> with TickerProviderStateMixin {
         return;
       }
     } catch (e) {
-      print('Error checking cached color: $e');
+      debugPrint('BookCard color cache check failed: $e');
     }
 
     // Color not cached - extract with a small delay for image loading
